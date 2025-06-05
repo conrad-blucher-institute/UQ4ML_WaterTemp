@@ -26,15 +26,6 @@ architectures = ['mse','PNN', "CRPS"]
 iterations = 100
 obsVsPred = 'val' # This should be set to either "val" or "testing"
 
-# This line is ran so that the files needed to create the pltos are created and retrieved
-mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred)
-
-# For loop to loop through leadtimes and create plots for each cycle (rotation)
-for leadTime in leadTimes:
-    
-    # This Line Will need to be ran to plot the graphs
-    decentralized_graphing_driver(architectures, leadTime, cycles)
-
 
 ########### Data Retrieval Code ############
 
@@ -126,7 +117,7 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
                 MAIN_DIRECTORY = 'VOID'
 
             elif architecture == "PNN":
-                MAIN_DIRECTORY = '/Users/unseamedwizard0/Desktop/Combined_PNNResults'
+                MAIN_DIRECTORY = 'Void'
 
             # For every lead time, grab data for each hyperparameter combo.
             for leadTime in leadTimes:
@@ -134,31 +125,24 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
                 if leadTime == 12 and architecture == "mse":
                     hyper_combos = ['3_layers-leaky_relu-32_neurons']
                     
-                elif leadTime == 12 and architecture == "mape":
-                    hyper_combos = ['3_layers-leaky_relu-8_neurons', '2_layers-leaky_relu-128_neurons']
                     
                 elif leadTime == 48 and architecture == "mse":
                     hyper_combos = ['2_layers-leaky_relu-16_neurons']
-                    
-                elif leadTime == 48 and architecture == "mape":
-                    hyper_combos = ['2_layers-relu-32_neurons', '3_layers-selu-32_neurons']
+
                     
                 elif leadTime == 96 and architecture == "mse":
                     hyper_combos = ['2_layers-leaky_relu-16_neurons']
                     
-                elif leadTime == 96 and architecture == "mape":
-                    
-                    hyper_combos = ['2_layers-relu-8_neurons', '3_layers-leaky_relu-8_neurons']
                     
                 elif leadTime == 12 and architecture == "CRPS":
                     
-                    hyper_combos = ['3_layers-relu-32_neurons']#['2_layers-leaky_relu-100_neurons', '1_layers-selu-128_neurons', '1_layers-leaky_relu-100_neurons', '1_layers-leaky_relu-128_neurons', '3_layers-relu-32_neurons', '1_layers-relu-128_neurons', '3_layers-leaky_relu-128_neurons', '2_layers-leaky_relu-256_neurons', '3_layers-leaky_relu-100_neurons']
+                    hyper_combos = ['3_layers-relu-32_neurons']
                     
                 elif leadTime == 48 and architecture == "CRPS":
-                    hyper_combos = ['3_layers-selu-64_neurons']#['3_layers-selu-64_neurons', '2_layers-relu-128_neurons', '2_layers-relu-100_neurons', '1_layers-selu-128_neurons', '1_layers-selu-100_neurons', '3_layers-leaky_relu-64_neurons', '2_layers-selu-100_neurons', '3_layers-relu-32_neurons']
+                    hyper_combos = ['3_layers-selu-64_neurons']
                     
                 elif leadTime == 96 and architecture == "CRPS":
-                    hyper_combos = ['3_layers-relu-100_neurons']#['1_layers-selu-128_neurons', '1_layers-selu-64_neurons', '2_layers-selu-128_neurons', '2_layers-selu-256_neurons', '3_layers-selu-32_neurons', '3_layers-selu-256_neurons', '2_layers-leaky_relu-128_neurons', '3_layers-relu-100_neurons']
+                    hyper_combos = ['3_layers-relu-100_neurons']
                 
                 elif leadTime == 12 and architecture == "PNN":
 
@@ -781,3 +765,19 @@ def pnn_metrics(df):
     return df
 
 # END: def pnn_metrics()
+
+if __name__ == "__main__":
+    
+    ##### TO Run the Code#######
+    # This line is ran so that the files needed to create the pltos are created and retrieved
+    mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred)
+    
+    # For loop to loop through leadtimes and create plots for each cycle (rotation)
+    for leadTime in leadTimes:
+        
+        # This Line Will need to be ran to plot the graphs
+        decentralized_graphing_driver(architectures, leadTime, cycles)
+        
+else:
+    
+    print ("Cross_validation_visuals.py is running")
