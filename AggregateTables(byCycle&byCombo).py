@@ -5,7 +5,6 @@ Created on Thu Feb 20 16:04:05 2025
 
 @author: Jarett Woodall
 
-NAVIGATE AT YOUR OWN PERIL!
 """
 
 import numpy as np
@@ -96,13 +95,13 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, locatio
                     # IF structure to retrieve relevant code
                     if byCycle == True:
                         
-                        df = pd.read_csv(location + str(leadTime) + 'h_' + architecture + '_Cycle_' + str(cycle) + '_Combo_' + combo + ".csv")
+                        df = pd.read_csv(str(leadTime) + 'h_' + architecture + '_Cycle_' + str(cycle) + '_Combo_' + combo + ".csv")
                         
                         saveIdentifier = "byCycle"
                         
                     else:
                         
-                        df = pd.read_csv(location + "_".join(architectures) + "_Combo_UQ_Files/" + str(leadTime) + 'h_' + architecture + '_Combo_' + combo + ".csv")
+                        df = pd.read_csv("_".join(architectures) + "_Combo_UQ_Files/" + str(leadTime) + 'h_' + architecture + '_Combo_' + combo + ".csv")
                         
                         saveIdentifier = "byCombo"
                         
@@ -224,9 +223,9 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, locatio
     
     
     # Save the DataFrame to a CSV file
-    whole_results_df.to_csv(location + 'whole_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
-    cold_results_df.to_csv(location + 'cold_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
-    temp_results_df.to_csv(location + 'temp<' + str(threshold) + '_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
+    whole_results_df.to_csv('whole_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
+    cold_results_df.to_csv('cold_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
+    temp_results_df.to_csv('temp<' + str(threshold) + '_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
     
 # END: def aggregateTable()
 
