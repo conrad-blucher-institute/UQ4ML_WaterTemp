@@ -142,14 +142,19 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
         Parameters:
           hyper_combos : list
               List of hyperparameter combinations.
+
           architectures : list
               List of model architectures.
+
           iterations : int
               Number of iterations to run.
+
           cycles : list
               List of cycle numbers.
+
           leadTimes : list
               List of lead times.
+
           obsVsPred : type
               Flag or data indicating observed versus predicted values.
               
@@ -175,9 +180,8 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
                 
                 # Loop over each hyperparameter combo.
                 for model in model_list:
-                    # Grab and process the data for this model, cycle, leadTime, and architecture.
-                    print("Before ingestion")
 
+                    # Grab and process the data for this model, cycle, leadTime, and architecture.
                     df = model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cycle, leadTime)
                     
                     # Remove any duplicate indices. # Unnecessary
@@ -738,6 +742,7 @@ def pnn_metrics(df):
 
 # END: def pnn_metrics()
 
+######## DEBUGGING CODE ###########
 if __name__ == "__main__":
     
     ######## Code To Run ########

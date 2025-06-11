@@ -9,6 +9,8 @@ This file process and evaluates model performance and places them into Aggregate
 This file creates byCycle tables and byUQMethod tables, 
 for the byUQMethod tables, this file handles data processing as well as evaluation.
 """
+
+####### Imports #######
 import numpy as np
 
 import pandas as pd
@@ -19,6 +21,7 @@ from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian
 
 from evaluations.cross_validation_visuals_paper import model_selection_conditional
 
+######## Table Code and Data Retrieval Function ########
 def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, URI=False, padding = 24):
     
     """
@@ -316,6 +319,7 @@ def pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred):
                 
 ##END: def pre_aggregate_byUQMethod_file()
 
+######## DEBUGGING CODE ###########
 if __name__ == "__main__":
     
     # Variables that are changeable
