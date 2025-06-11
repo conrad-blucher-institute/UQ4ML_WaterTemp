@@ -4,6 +4,10 @@
 Created on Wed Jun  4 12:37:16 2025
 
 @author: Jarett Woodall
+
+This file serves multiple features: it handles the plotting of 
+the Standard Deviation Plots, hourly metric calculations, 
+data cleaning and retrieval, and file creation for post processing.
 """
 
 ####### IMPORTS ########
