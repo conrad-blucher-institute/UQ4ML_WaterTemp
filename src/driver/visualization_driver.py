@@ -10,14 +10,21 @@ effectively.
 @author: Jarett Woodall
 
 """
-
 ####### Imports ########
+import sys
 
-from cross_validation_visuals_paper import mme_mse_crps_PNN_lead_times_singlePlot, decentralized_graphing_driver
+import os
 
-from aggregate_tables import aggregateTable
+from pathlib import Path
 
-from boxplot_figures import figure_4_plot, figure_5_6_plot, figure_12_plot, existance_checker
+# Add the parent directory of 'driver' to the path
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from evaluations.cross_validation_visuals_paper import mme_mse_crps_PNN_lead_times_singlePlot, decentralized_graphing_driver
+
+from evaluations.aggregate_tables import aggregateTable
+
+from evaluations.boxplot_figures import figure_4_plot, figure_5_6_plot, figure_12_plot, existance_checker
 
 ######## Variables ########
 """
@@ -30,7 +37,7 @@ IMPORTANT:
 Set to False first to ensure the files are there, 
 this exists so you dont have to run the intensive functions again
 """
-runAggregateCode = False #False
+runAggregateCode = True #False
 
 # Variable to save the plots will be set to True, otherwise false
 save = True
@@ -52,7 +59,7 @@ Should be set to either "val", "test", or "train" depending on what information
 you want to visualize. If you ran the 2021 or 2024 testing years please use 
 '2021' or '2024' to retrieve relevant information.
 """
-obsVsPred = 'val' 
+obsVsPred = '2021' 
 
 """
 Set to true if you want csvs outputted that contain all of the predictions 
@@ -83,7 +90,7 @@ if runAggregateCode == False:
 else:
     
     ##### Aggregate Table Execution Code #######
-    byCycle = True # Set to false if you wish to run byCombo code
+    byCycle = False # Set to false if you wish to run byCombo code
     
     # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified
     threshold = 12

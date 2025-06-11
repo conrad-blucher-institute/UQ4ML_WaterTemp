@@ -16,9 +16,9 @@ import tensorflow as tf
 
 import plotly.graph_objects as go
 
-import pathlib
+from pathlib import Path
 
-from evaluation_functions import mae12, mae, rmse_avg, crps_gaussian_tf
+from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian_tf
 
 ########### Data Retrieval Code ############
 
@@ -39,12 +39,9 @@ def model_parser(MAIN_DIRECTORY, combination, architecture, obsVsPred, iteration
         # Increment to start at 1
         i+=1
         
-        if architecture == "PNN":
-            df = pd.read_csv(MAIN_DIRECTORY + "/_LT_" +str(leadTime) + "_/results_" + str(architecture) + "_" + str(leadTime)+"_"+combination + "_LT_" + str(leadTime) +"__cycle_" + str(cycle) + "__rep_num_" + str(i) + "_/" + str(obsVsPred) + "_datetime_obsv_predictions.csv")
-
-        else:
-            df = pd.read_csv(MAIN_DIRECTORY +"/" +str(leadTime) + "h/"+ str(architecture) + "-" + combination + "-cycle_" + str(cycle) + "-iteration_" + str(i) + "/" + str(obsVsPred) + "_datetime_obsv_predictions.csv")
-
+        # Reads dataframes in regardless of macOS or Windows
+        file_path = Path("UQ4ML_WaterTemp") / "src" / MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture}-{combination}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
+        df = pd.read_csv(file_path)
         if i == 1:
             
             mainDf["target"] = df['target']
@@ -199,8 +196,15 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
                     elif architecture == "mse":
                         modDf2 = mse_metrics(modDf1)
 
-                    # Save the processed CSV (you can modify the filename as needed).
-                    modDf2.to_csv(f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv")
+                    # To ensure cross compatability
+                    base_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"
+
+                    # Create the directories if they do not exist
+                    base_dir.mkdir(parents=True, exist_ok=True)
+
+                    # Now define the output path
+                    output_path = base_dir / f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                    modDf2.to_csv(output_path)
 
 # END: def mme_mse_crps_PNN_lead_times_singlePlot()
 
@@ -231,8 +235,10 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
             
             # Loop over each hyperparameter combo.
             for model in model_list:
-                
-                df = pd.read_csv(f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv")
+
+                # Utilizes Path for cross compatability regardless of macOs or Windows
+                input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                df = pd.read_csv(input_path)
 
                 df['date_time'] = pd.to_datetime(df["date_time"])
 
@@ -298,18 +304,9 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
         model_name = key.split("-")[0] + "-MME"
         model_name = model_name.upper()
         
-        # Color Logic
+        # Hover Text Templates and Colors
         if 'CRPS' in key:
             color = "#D8B7DD"
-        elif 'PNN' in key:
-            color = "#ADD8E6"
-        elif 'mse' in key:
-            color = "#A8E6A1"
-        else:
-            color = ""
-
-
-        if 'CRPS' in key:
             customda = df[['target', 'central_mae', 'central_mae<12', 'crps_gauss']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
@@ -322,6 +319,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             ])
             
         elif 'PNN' in key:
+            color = "#ADD8E6"
             customda = df[['target', 'crps', 'central_mae', 'central_mae<12']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
@@ -334,6 +332,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             ])
             
         elif 'mse' in key:
+            color = "#A8E6A1"
             customda = df[['target','central_mae', 'central_mae<12', 'rmse_avg']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
@@ -445,9 +444,12 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
     )
 
     if save:
-        p = pathlib.Path(arch_title + "_StdevPlot/")
-        p.mkdir(parents=True, exist_ok=True)
-        fig.write_html(p / f"{save_path}.html")
+        # Define output directory path
+        output_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / f"{arch_title}_StdevPlot"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save the figure to HTML
+        fig.write_html(output_dir / f"{save_path}.html")
     else:
         fig.show()
 
