@@ -37,7 +37,7 @@ IMPORTANT:
 Set to False first to ensure the files are there, 
 this exists so you dont have to run the intensive functions again
 """
-runAggregateCode = True #False
+runAggregateCode = False #True
 
 # Variable to save the plots will be set to True, otherwise false
 save = True
@@ -83,7 +83,7 @@ if runAggregateCode == False:
     
     # For loop to loop through leadtimes and create plots for each cycle (rotation)
     for leadTime in leadTimes:
-        
+
         # This Line Will need to be ran to plot the graphs
         decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
         
@@ -132,10 +132,15 @@ else:
  exist so that Figure 4 can be created. If the aggregate tables do not exist
  please run the above script to output the correct outputs so that figure 4 
 code can run."""
-if existance_checker():
-    
-    # Function to run figure 4
-    figure_4_plot()
+
+# Set to true to get this figure to be saved; ensur eyou have the files described above.
+runFig4 = False
+
+if runFig4:
+    if existance_checker():
+        
+        # Function to run figure 4
+        figure_4_plot()
 
 
 

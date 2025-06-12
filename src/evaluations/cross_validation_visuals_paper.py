@@ -243,11 +243,12 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
             
             # Loop over each hyperparameter combo.
             for model in model_list:
-
+                print("Before Read")
                 # Utilizes Path for cross compatability regardless of macOs or Windows
                 input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
                 df = pd.read_csv(input_path)
 
+                print("after read")
                 df['date_time'] = pd.to_datetime(df["date_time"])
 
                 df = df.set_index('date_time')
@@ -259,17 +260,17 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
             # Update the cycle-level dictionary with the lead time–specific data.
             modelsDict_cycle.update(modelsDict)
     
-    # Combines architectures to make an effective title
-    if len(architectures) > 1:
+        # Combines architectures to make an effective title
+        if len(architectures) > 1:
+            
+            arch_title = ", ".join(architectures)
+            
+        else:
+            
+            arch_title = architectures[0]
         
-        arch_title = ", ".join(architectures)
-        
-    else:
-        
-        arch_title = architectures[0]
-    
-    # Call the boxplot function with the aggregated data.
-    standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTime, arch_title, cycle, obsVsPred, save)
+        # Call the boxplot function with the aggregated data.
+        standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTime, arch_title, cycle, obsVsPred, save)
     
 # END: def decentralized_graphing_driver()
 
@@ -314,7 +315,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
         
         # Hover Text Templates and Colors
         if 'CRPS' in key:
-            color = "#D8B7DD"
+            color = "#4B0082"
             customda = df[['target', 'central_mae', 'central_mae<12', 'crps_gauss']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
@@ -327,7 +328,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             ])
             
         elif 'PNN' in key:
-            color = "#ADD8E6"
+            color =  "#4682B4"
             customda = df[['target', 'crps', 'central_mae', 'central_mae<12']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
