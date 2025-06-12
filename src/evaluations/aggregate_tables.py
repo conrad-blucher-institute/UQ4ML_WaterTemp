@@ -263,14 +263,14 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
         results_URI_padded_df = pd.DataFrame(resultsCsvURIPadded)
         
         # Places into csvs
-        results_URI_df.to_csv(aggregate_dir /f'{obsVsPred}_URI_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv')
-        results_URI_padded_df.to_csv(aggregate_dir /f'{obsVsPred}_URI_padded_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv')
+        results_URI_df.to_csv(aggregate_dir /f'{obsVsPred}_URI_metrics_results_performance_{saveIdentifier}AggregateTable.csv')
+        results_URI_padded_df.to_csv(aggregate_dir /f'{obsVsPred}_URI_padded_metrics_results_performance_{saveIdentifier}AggregateTable.csv')
     
     
     # Save the DataFrame to a CSV file
-    whole_results_df.to_csv(aggregate_dir /f'{obsVsPred}_whole_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
-    cold_results_df.to_csv(aggregate_dir /f'{obsVsPred}_cold_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
-    temp_results_df.to_csv(aggregate_dir /f'{obsVsPred}_temp<' + str(threshold) + '_metrics_results_performance_' + saveIdentifier + 'AggregateTable.csv', index=False)
+    whole_results_df.to_csv(aggregate_dir /f'{obsVsPred}_whole_metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
+    cold_results_df.to_csv(aggregate_dir /f'{obsVsPred}_cold_metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
+    temp_results_df.to_csv(aggregate_dir /f'{obsVsPred}_temp<{threshold}_metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
     
 # END: def aggregateTable()
 

@@ -59,7 +59,7 @@ Should be set to either "val", "test", or "train" depending on what information
 you want to visualize. If you ran the 2021 or 2024 testing years please use 
 '2021' or '2024' to retrieve relevant information.
 """
-obsVsPred = '2021' 
+obsVsPred = '2024' 
 
 """
 Set to true if you want csvs outputted that contain all of the predictions 
@@ -90,7 +90,7 @@ if runAggregateCode == False:
 else:
     
     ##### Aggregate Table Execution Code #######
-    byCycle = False # Set to false if you wish to run byCombo code
+    byCycle = True # Set to false if you wish to run byCombo code
     
     # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified
     threshold = 12
@@ -99,28 +99,28 @@ else:
     padding = 24
     
     # Conditional to run function if you are working with the 2021 year; obsVsPred must be set to '2021' to pass if
-    if obsVsPred == '2021':
+    if obsVsPred == '2021' and byCycle == True:
         
         # Driver function call to include files for URI
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True , padding)
         
-        # Outputs Figure 12 
+        # Outputs Figure 12. The figures created using this function are outputted to a folder called "Paper_Figures".
         figure_12_plot(padding)
         
-    elif obsVsPred == '2024':
+    elif obsVsPred == '2024' and byCycle == True:
     
         # Runs the Function helper
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
-        # Figure 6 is ran and outputted
+        # Figure 6 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
         figure_5_6_plot(obsVsPred, threshold)
     
-    elif obsVsPred == 'test':
+    elif obsVsPred == 'test' and byCycle == True:
     
         # Runs the Function helper
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
-        # Figure 5 is ran and outputted
+        # Figure 5 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
         figure_5_6_plot(obsVsPred, threshold)
         
     else:

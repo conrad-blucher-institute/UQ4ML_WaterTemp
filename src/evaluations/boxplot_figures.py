@@ -6,7 +6,8 @@ Created on Tue Jun 10 13:18:42 2025
 @author: Jarett Woodall
 
 This file serves as a host for all of the functions needed for the various
-figures created for the UQ Paper. (Figure 4, 5, 6, and 12).
+figures created for the UQ Paper. (Figure 4, 5, 6, and 12). The figures created
+using this file are outputted to a folder called "Paper_Figures".
 """
 
 ######### Imports #########
@@ -26,6 +27,8 @@ import os
 
 import matplotlib.patches as mpatches
 
+from pathlib import Path
+
 ####### PLotting Functions ########
 
 def figure_4_plot():
@@ -34,9 +37,11 @@ def figure_4_plot():
      Paper. IT assumes that the relevant aggregate table files exist for both
      validation and testing.
     """
+    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables" 
+    
     # Read in two dataframes for concatenation and preparation for plotting
-    valDf = pd.read_csv('val_cold_metrics_results_performance_byCycleAggregateTable.csv')
-    testDf = pd.read_csv('test_cold_metrics_results_performance_byCycleAggregateTable.csv')
+    valDf = pd.read_csv(aggregate_dir / 'val_cold_metrics_results_performance_byCycleAggregateTable.csv')
+    testDf = pd.read_csv( aggregate_dir / 'test_cold_metrics_results_performance_byCycleAggregateTable.csv')
     df = pd.concat([valDf, testDf], axis=0, ignore_index=True)
     
     # Flip sign of ME and ME12 to reflect prediction - observation
@@ -159,11 +164,15 @@ def figure_4_plot():
         ncol=3,
         fontsize=22,
         frameon=False,
+
     )
     
-    fig.savefig('Figure4.png', dpi=900)
-    
-    plt.show()
+    save_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" "Paper_Figures"
+
+    # Create it if it doesn't exist
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    fig.savefig(save_dir / 'Figure4.png', dpi=900)
 
 # END: def figure_4_plots()
 
@@ -178,10 +187,12 @@ def figure_5_6_plot(obsVsPred, threshold):
         obsVsPred: string - use '2021', '2024', 'val' or 'testing'
         threshold: integer representing threshold
     """
+    # Specifies Path to Aggregate Tables Folder
+    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     
     # Read in two dataframes for concatenation and preparation for plotting
-    df1 = pd.read_csv(f'{obsVsPred}_cold_metrics_results_performance_byCycleAggregateTable.csv')
-    df2 = pd.read_csv(f'{obsVsPred}_temp<' +str(threshold)+'_metrics_results_performance_byCycleAggregateTable.csv')
+    df1 = pd.read_csv(aggregate_dir / f'{obsVsPred}_cold_metrics_results_performance_byCycleAggregateTable.csv')
+    df2 = pd.read_csv(aggregate_dir / f'{obsVsPred}_temp<{threshold}_metrics_results_performance_byCycleAggregateTable.csv')
     df = pd.concat([df1, df2], axis=0, ignore_index=True)
     
     # Flip sign of ME and ME12 to reflect prediction - observation
@@ -314,12 +325,16 @@ def figure_5_6_plot(obsVsPred, threshold):
         
     else:
         figname = 'Fig5_6_Plot_' + obsVsPred
+
+    
+    save_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Paper_Figures"
+
+    # Create it if it doesn't exist
+    save_dir.mkdir(parents=True, exist_ok=True)
     
     
     # Save with bounding box tight to remove unnecessary white space
-    fig.savefig(figname, dpi=900, bbox_inches='tight')
-    
-    plt.show()
+    fig.savefig(save_dir / figname, dpi=900, bbox_inches='tight')
     
 # END: def figure_5_6_plot()
 
@@ -332,9 +347,9 @@ def figure_12_plot(padded):
         
         padded: integer representing hours before and after URI
     """
-    
+    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     # Reads in the correct Csv containing the relevant information
-    df = pd.read_csv('2021_URI_padded_metrics_results_performance_byCycleAggregateTable.csv') 
+    df = pd.read_csv(aggregate_dir / '2021_URI_padded_metrics_results_performance_byCycleAggregateTable.csv') 
     
     # Flip sign of ME and ME12 to reflect prediction - observation
     df["me"] = -df["me"]
@@ -461,9 +476,15 @@ def figure_12_plot(padded):
         left=0.05, right=0.98, top=0.93, bottom=0.12,
         wspace=0.25, hspace=0.35
     )
+
+    # Build Path
+    save_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Paper_Figures"
+
+    # Create it if it doesn't exist
+    save_dir.mkdir(parents=True, exist_ok=True)
+
     # Saves Plot
-    plt.savefig('Figure12.png', dpi=900) 
-    plt.show()
+    plt.savefig(save_dir / 'Figure12.png', dpi=900) 
     
 # END: def figure_12_plot()
 
@@ -474,9 +495,10 @@ def existance_checker():
     """
     Function to check for the relevant files needed to run Figure_4 code.
     """
+    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     files = {
-        'val': 'val_cold_metrics_results_performance_byCycleAggregateTable.csv',
-        'test': 'test_cold_metrics_results_performance_byCycleAggregateTable.csv'
+        'val': aggregate_dir / 'val_cold_metrics_results_performance_byCycleAggregateTable.csv',
+        'test': aggregate_dir / 'test_cold_metrics_results_performance_byCycleAggregateTable.csv'
     }
 
     # Check for missing files
@@ -492,6 +514,7 @@ def existance_checker():
 
 # END: def existance_checker()
 
+######## DEBUGGING CODE ###########
 if __name__ == "__main__":
     
     # Variables that are changeable
