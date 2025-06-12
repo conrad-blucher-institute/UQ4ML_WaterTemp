@@ -1,34 +1,21 @@
 # UQ4ML_WaterTemp
+description
 
-## Cold Stunning Models
-![ColdStunNet Overview](placeholder_image_url)
+## Cold Stunning Models Time Series
+![ColdStunNet Overview](images/Fig5OG_Sub12Legend.png)
 
-## Publications
-
-[Your publication citation will go here]
-
-Citation:
-```
-@article{yourname2024coldstunnet,
-    title={ColdStunNet: Deep learning approach for predicting cold stunning events},
-    author={Your Name and Collaborators},
-    journal={Journal Name},
-    pages={page_numbers},
-    year={2024},
-    publisher={Publisher}
-}
-```
-
-
+## Publication
+[Publication citation will go here]
 
 ## Data Sources
 
 **Environmental Data:**
-- Sea surface temperature (SST) 
-- Air temperature from weather stations
 - Water temperature
+- Air temperature
+- Air temperature predictions / perfect prognosis
 
-**Time horizon (hours/days):** How far ahead is the prediction? Options: 6H, 12H, 24H, 48H, 72H, 96H, 120H (Operational)
+
+**Leadtime (hours):** How far ahead is the prediction? 12h, 48h, 96h
 
 **Temperature threshold (°C):** Critical temperature threshold for cold stunning risk for sea turtles 8°C, for fisheries 4.5°C,
 
@@ -42,8 +29,12 @@ Citation:
 ## Installation (Windows 10)
 we provide a .yaml
 then the steps
+```
+lilypod run
+```
 
 
+### idea 1
 ### Conda Environment Setup
 ```bash
 # Create environment
@@ -89,10 +80,29 @@ python src/train.py
 **Train PNN off a config file in models/, use existing config or make your own**
 **Train PNN model**
 ```bash
-python src/driver/cmd_ai_builder.py @models/PNN_.txt
+python pnn_driver.py @c/pnn_12.txt
+python pnn_driver.py @c/pnn_48.txt
+python pnn_driver.py @c/pnn_96.txt
+
+python mse_driver.py @c/mse_12.txt
+python mse_driver.py @c/mse_48.txt
+python mse_driver.py @c/mse_96.txt
+
+python crps_driver.py @c/crps_12.txt
+python crps_driver.py @c/crps_48.txt
+python crps_driver.py @c/crps_96.txt
+
+python driver.py @c/crps_96.txt # make the file name / architeccture
 ```
 
+## Contact
+Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.edu)
+Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)
+Son Nguyen: [Son.Nguyen@tamucc.edu](mailto:Son.Nguyen@tamucc.edu)
+Hector Marrero-Colominas: [Hector.MarreroColominas@tamucc.edu](mailto:Hector.MarreroColominas@tamucc.edu)
 
+## idea 2
+```
 **Make predictions with pre-trained model**
 
 The `trained_model` subdirectory includes outputs from MSE, CRPS, & PNN.
@@ -106,36 +116,3 @@ python src/driver/cmd_ai_builder.py \
     --flag3 False \
     --flag4 False
 ```
-
-
-## Data Format
-
-Example dataset structure:
-```
-$DATASETS/
-├── 24HOURS/
-│   ├── INPUT/
-│   │   ├── SST_CUBE_2022_24H.npz
-│   │   ├── WEATHER_CUBE_2022_24H.npz
-│   │   ├── BATHYMETRY_CUBE_2022.npz
-│   │   └── TIDAL_CUBE_2022_24H.npz
-│   ├── TARGET/
-│   │   ├── cold_stunning_events_2022_24H.csv
-│   │   └── species_locations_2022.csv
-│   └── METADATA/
-│       ├── station_locations.csv
-│       └── data_quality_flags.csv
-```
-
-
-## Contributing
-[Add contribution guidelines]
-
-## License
-[Add license information]
-
-## Acknowledgments
-[Add acknowledgments for data sources, funding, collaborators]
-
-## Contact
-[Your contact information]
