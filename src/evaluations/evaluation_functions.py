@@ -215,7 +215,7 @@ def ssrat_avg(y_true, y_pred, y_pred_std):
 # END: def ssrat_avg
 
 
-@tf.function
+@tf.function # Enables graph execution
 def crps_gaussian_tf(mu, sigma, y_true):
     """
     Compute the CRPS for a Gaussian predictive distribution in TensorFlow.

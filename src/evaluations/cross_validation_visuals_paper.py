@@ -4,6 +4,10 @@
 Created on Wed Jun  4 12:37:16 2025
 
 @author: Jarett Woodall
+
+This file serves multiple features: it handles the plotting of 
+the Standard Deviation Plots, hourly metric calculations, 
+data cleaning and retrieval, and file creation for post processing.
 """
 
 ####### IMPORTS ########
@@ -16,13 +20,13 @@ import tensorflow as tf
 
 import plotly.graph_objects as go
 
-import pathlib
+from pathlib import Path
 
-from evaluation_functions import *
+from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian_tf
 
 ########### Data Retrieval Code ############
 
-def hyper_combo_parser(MAIN_DIRECTORY, combination, architecture, obsVsPred, iterations, cycle, leadTime):
+def model_parser(MAIN_DIRECTORY, combination, architecture, obsVsPred, iterations, cycle, leadTime):
     """
     function to grab corressponding combination information
 
@@ -35,14 +39,14 @@ def hyper_combo_parser(MAIN_DIRECTORY, combination, architecture, obsVsPred, ite
     
     # Loop for parsing data and grabbing data
     for i in range(iterations):
-
-        if architecture == "PNN":
-            df = pd.read_csv(MAIN_DIRECTORY + "/_LT_" +str(leadTime) + "_/results_" + str(architecture) + "_" + str(leadTime)+"_"+combination + "_LT_" + str(leadTime) +"__cycle_" + str(cycle) + "__rep_num_" + str(i) + "_/" + str(obsVsPred) + "_datetime_obsv_predictions.csv")
-
-        else:
-            df = pd.read_csv(MAIN_DIRECTORY +"/" +str(leadTime) + "h/"+ str(architecture) + "-" + combination + "-cycle_" + str(cycle) + "-iteration_" + str(i) + "/" + str(obsVsPred) + "_datetime_obsv_predictions.csv")
-
-        if i == 0:
+        
+        # Increment to start at 1
+        i+=1
+        
+        # Reads dataframes in regardless of macOS or Windows
+        file_path = Path("UQ4ML_WaterTemp") / "src" / MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture}-{combination}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
+        df = pd.read_csv(file_path)
+        if i == 1:
             
             mainDf["target"] = df['target']
             mainDf['date_time'] = df['date_time']
@@ -65,7 +69,67 @@ def hyper_combo_parser(MAIN_DIRECTORY, combination, architecture, obsVsPred, ite
         
     return mainDf
         
-# END: def hyper_combo_parser()
+# END: def model_parser()
+
+######### Helper Function Code ########
+
+def model_selection_conditional(leadTime, architecture):
+    
+    """
+    Helper function for grabbing the model names for file reference.
+    
+    Inputs:
+        
+        leadTime: integer
+        architecture: string
+        
+    returns:
+        
+        list of models
+    """
+    
+    if leadTime == 12 and architecture == "mse":
+        
+        model_names = ['3_layers-leaky_relu-32_neurons']
+        
+    elif leadTime == 48 and architecture == "mse":
+        
+        model_names = ['2_layers-leaky_relu-16_neurons']
+
+    elif leadTime == 96 and architecture == "mse":
+        
+        model_names = ['2_layers-leaky_relu-16_neurons']
+        
+    elif leadTime == 12 and architecture == "CRPS":
+        
+        model_names = ['3_layers-relu-32_neurons']
+        
+    elif leadTime == 48 and architecture == "CRPS":
+        
+        model_names = ['3_layers-selu-64_neurons']
+        
+    elif leadTime == 96 and architecture == "CRPS":
+        
+        model_names = ['3_layers-relu-100_neurons']
+    
+    elif leadTime == 12 and architecture == "PNN":
+
+        model_names = ['combo2']  
+
+    elif leadTime == 48 and architecture == "PNN":
+        
+        model_names = ['combo1']  
+
+    elif leadTime == 96 and architecture == "PNN":
+        
+        model_names = ['combo1']  
+        
+    else:
+        model_names = []
+        
+    return model_names
+
+# END: def model_selection_conditional()
 
 ########## Driver Code ############
 
@@ -78,14 +142,19 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
         Parameters:
           hyper_combos : list
               List of hyperparameter combinations.
+
           architectures : list
               List of model architectures.
+
           iterations : int
               Number of iterations to run.
+
           cycles : list
               List of cycle numbers.
+
           leadTimes : list
               List of lead times.
+
           obsVsPred : type
               Flag or data indicating observed versus predicted values.
               
@@ -100,66 +169,20 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
         # Loop over each architecture.
         for architecture in architectures:
             
-            if architecture == "mse":
-                
-                MAIN_DIRECTORY = 'mse_Results'
-                
-            elif architecture == "CRPS": 
-                
-                MAIN_DIRECTORY = 'CRPS_Results'
-
-            elif architecture == "PNN":
-                
-                MAIN_DIRECTORY = 'PNN_Results'
+            # Grabs the corresponding directory where training information was stored
+            MAIN_DIRECTORY = 'results/' + str(architecture.lower()) + "_results"
 
             # For every lead time, grab data for each hyperparameter combo.
             for leadTime in leadTimes:
                 
-                if leadTime == 12 and architecture == "mse":
-                    
-                    hyper_combos = ['3_layers-leaky_relu-32_neurons']
-                    
-                elif leadTime == 48 and architecture == "mse":
-                    
-                    hyper_combos = ['2_layers-leaky_relu-16_neurons']
-
-                elif leadTime == 96 and architecture == "mse":
-                    
-                    hyper_combos = ['2_layers-leaky_relu-16_neurons']
-                    
-                elif leadTime == 12 and architecture == "CRPS":
-                    
-                    hyper_combos = ['3_layers-relu-32_neurons']
-                    
-                elif leadTime == 48 and architecture == "CRPS":
-                    
-                    hyper_combos = ['3_layers-selu-64_neurons']
-                    
-                elif leadTime == 96 and architecture == "CRPS":
-                    
-                    hyper_combos = ['3_layers-relu-100_neurons']
-                
-                elif leadTime == 12 and architecture == "PNN":
-
-                    hyper_combos = ['combo2']  
-
-                elif leadTime == 48 and architecture == "PNN":
-                    
-                    hyper_combos = ['combo1']  
-
-                elif leadTime == 96 and architecture == "PNN":
-                    
-                    hyper_combos = ['combo1']  
-                    
-                else:
-                    hyper_combos = []
+                # Calls helper function for conditional tree for models
+                model_list = model_selection_conditional(leadTime, architecture)
                 
                 # Loop over each hyperparameter combo.
-                for combo in hyper_combos:
-                    # Grab and process the data for this hyperparameter combo, cycle, leadTime, and architecture.
-                    print("Before ingestion")
+                for model in model_list:
 
-                    df = hyper_combo_parser(MAIN_DIRECTORY, combo, architecture, obsVsPred, iterations, cycle, leadTime)
+                    # Grab and process the data for this model, cycle, leadTime, and architecture.
+                    df = model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cycle, leadTime)
                     
                     # Remove any duplicate indices. # Unnecessary
                     df = df[~df.index.duplicated(keep='first')]
@@ -174,24 +197,33 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
                         modDf2 = crps_metrics(modDf1)
                         
                     elif architecture == 'PNN':
+                        
                         # Runs calc on PNN MME
-                        modDf2 = pnn_metrics(modDf1)    
-                    else:
+                        modDf2 = pnn_metrics(modDf1)  
+                        
+                    elif architecture == "mse":
                         modDf2 = mse_metrics(modDf1)
 
-                    # Save the processed CSV (you can modify the filename as needed).
-                    modDf2.to_csv(f"{leadTime}h_{architecture}_Cycle_{cycle}_Combo_{combo}.csv")
+                    # To ensure cross compatability
+                    base_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"
+
+                    # Create the directories if they do not exist
+                    base_dir.mkdir(parents=True, exist_ok=True)
+
+                    # Now define the output path
+                    output_path = base_dir / f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                    modDf2.to_csv(output_path)
 
 # END: def mme_mse_crps_PNN_lead_times_singlePlot()
 
-
-def decentralized_graphing_driver(architectures, leadTime, cycles, save):
+def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save):
     """
     This function serves as a driver that will retrieve the created files and 
     plot standard deviation plots.
 
     inputs: architectures : list of strings, leadTime : integer, 
-    cycles: list of integers, save: boolean (True or False)
+    cycles: list of integers, obsVsPred: string to differentiate between data, 
+    save: boolean (True or False)
 
     outputs: plots made using plotly
     """
@@ -199,57 +231,22 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, save):
     for cycle in cycles:
         
         # Dictionary to accumulate data across all lead times and architectures for the given cycle.
-        combosDict_cycle = {}
+        modelsDict_cycle = {}
         
         # Loop over each architecture.
         for architecture in architectures:
                             
-            if leadTime == 12 and architecture == "mse":
-                
-                hyper_combos = ['3_layers-leaky_relu-32_neurons']
-                
-            elif leadTime == 48 and architecture == "mse":
-                
-                hyper_combos = ['2_layers-leaky_relu-16_neurons']
-                
-            elif leadTime == 96 and architecture == "mse":
-                
-                hyper_combos = ['2_layers-leaky_relu-16_neurons']
-
-            elif leadTime == 12 and architecture == "CRPS":
-                
-                hyper_combos = ['3_layers-relu-32_neurons']
-                
-            elif leadTime == 48 and architecture == "CRPS":
-                
-                hyper_combos = ['3_layers-selu-64_neurons']
-                
-            elif leadTime == 96 and architecture == "CRPS":
-                
-                hyper_combos = ['3_layers-relu-100_neurons']
-
-            elif leadTime == 12 and architecture == "PNN":
-
-                hyper_combos = ['combo2']    
-
-            elif leadTime == 48 and architecture == "PNN":
-
-                hyper_combos = ['combo1']    
-
-            elif leadTime == 96 and architecture == "PNN":
-                
-                hyper_combos = ['combo1']   
-
-            else:
-                hyper_combos = []
+            model_list = model_selection_conditional(leadTime, architecture)
                 
             # For this leadTime, initialize a temporary dictionary.
-            combosDict = {}
+            modelsDict = {}
             
             # Loop over each hyperparameter combo.
-            for combo in hyper_combos:
-                
-                df = pd.read_csv(f"{leadTime}h_{architecture}_Cycle_{cycle}_Combo_{combo}.csv")
+            for model in model_list:
+
+                # Utilizes Path for cross compatability regardless of macOs or Windows
+                input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                df = pd.read_csv(input_path)
 
                 df['date_time'] = pd.to_datetime(df["date_time"])
 
@@ -257,21 +254,28 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, save):
 
                 # Create a key that encodes the combo, architecture, and leadTime.
                 key = f"{architecture}-{leadTime}h"
-                combosDict[key] = df
+                modelsDict[key] = df
                 
             # Update the cycle-level dictionary with the lead time–specific data.
-            combosDict_cycle.update(combosDict)
+            modelsDict_cycle.update(modelsDict)
     
     # Combines architectures to make an effective title
-    arch_title = ", ".join(architectures)
+    if len(architectures) > 1:
+        
+        arch_title = ", ".join(architectures)
+        
+    else:
+        
+        arch_title = architectures[0]
     
     # Call the boxplot function with the aggregated data.
-    standardDeviationFan_leadTime_plot(combosDict_cycle, leadTime, arch_title, cycle, save)
-
+    standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTime, arch_title, cycle, obsVsPred, save)
+    
+# END: def decentralized_graphing_driver()
 
 ########### Graphing Function ############
 
-def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, save):
+def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsVsPred, save):
     
     """
     This function serves as the plotting function for a standard deviation fan.
@@ -280,6 +284,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, save
         dfDict: dictionary holding dataframes for plotting,
         leadTime: integer representing leadtime,
         arch_title: string for the save file naming convention,
+        obsVsPred: string to denote data being used,
         cycle: integer denoting cycle being plotted,
         save: boolean to save or display
     Output:
@@ -307,22 +312,13 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, save
         model_name = key.split("-")[0] + "-MME"
         model_name = model_name.upper()
         
-        # Color Logic
+        # Hover Text Templates and Colors
         if 'CRPS' in key:
             color = "#D8B7DD"
-        elif 'PNN' in key:
-            color = "#ADD8E6"
-        elif 'mse' in key:
-            color = "#A8E6A1"
-        else:
-            color = ""
-
-
-        if 'CRPS' in key:
             customda = df[['target', 'central_mae', 'central_mae<12', 'crps_gauss']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
-                f"Combination: {model_name}",
+                f"Model: {model_name}",
                 "Mean Predicted Temperature (°C): %{y}",
                 "Actual temperature (°C): %{customdata[0]}",
                 "CRPS (°C): %{customdata[3]}",
@@ -331,10 +327,11 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, save
             ])
             
         elif 'PNN' in key:
+            color = "#ADD8E6"
             customda = df[['target', 'crps', 'central_mae', 'central_mae<12']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
-                f"Combination: {model_name}",
+                f"Model: {model_name}",
                 "Mean Predicted Temperature (°C): %{y}",
                 "Actual temperature (°C): %{customdata[0]}",
                 "CRPS (°C): %{customdata[1]}",
@@ -342,11 +339,12 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, save
                 "Central_MAE<12 (°C): %{customdata[3]}"
             ])
             
-        else:
+        elif 'mse' in key:
+            color = "#A8E6A1"
             customda = df[['target','central_mae', 'central_mae<12', 'rmse_avg']]
             hovertemp = "<br>".join([
                 "date_time: %{x}",
-                f"Combination: {model_name}",
+                f"Model: {model_name}",
                 "Mean Predicted Temperature (°C): %{y}",
                 "Actual temperature (°C): %{customdata[0]}",
                 "RMSE_Average_Func (°C): %{customdata[3]}",
@@ -412,7 +410,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, save
 
     # Laebeling 
     title_text = f"Stdev_plot_{leadTime}h_Cycle_{cycle}"
-    save_path = f"{arch_title}_{leadTime}h_Cycle_{cycle}"
+    save_path = f"{obsVsPred}_{arch_title}_{leadTime}h_Cycle_{cycle}"
 
     # Plot adjustme
     fig.update_layout(
@@ -454,9 +452,12 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, save
     )
 
     if save:
-        p = pathlib.Path(architecture + "_StdevPlot/")
-        p.mkdir(parents=True, exist_ok=True)
-        fig.write_html(p / f"{save_path}.html")
+        # Define output directory path
+        output_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / f"{arch_title}_StdevPlot"
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Save the figure to HTML
+        fig.write_html(output_dir / f"{save_path}.html")
     else:
         fig.show()
 
@@ -741,25 +742,27 @@ def pnn_metrics(df):
 
 # END: def pnn_metrics()
 
+######## DEBUGGING CODE ###########
 if __name__ == "__main__":
     
     ######## Code To Run ########
     save = True
-    cycles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    cycles = [1]#[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     leadTimes = [12, 48, 96]
-    architectures = ['mse','PNN', "CRPS"]
-    iterations = 100
+    architectures = ['mse']#['mse','PNN', "CRPS"]
+    iterations = 10#100
     obsVsPred = 'val' # This should be set to either "val" or "testing"
+    expanded = False
     
     ##### TO Run the Code#######
     # This line is ran so that the files needed to create the pltos are created and retrieved
-    mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred)
+    mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred, expanded)
     
     # For loop to loop through leadtimes and create plots for each cycle (rotation)
     for leadTime in leadTimes:
         
         # This Line Will need to be ran to plot the graphs
-        decentralized_graphing_driver(architectures, leadTime, cycles)
+        decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
         
 else:
     
