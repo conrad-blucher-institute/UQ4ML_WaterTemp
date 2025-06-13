@@ -37,21 +37,22 @@ IMPORTANT:
 Set to False first to ensure the files are there, 
 this exists so you dont have to run the intensive functions again
 """
-runAggregateCode = False #True
+runAggregateCode = True #True
 
-# Variable to save the plots will be set to True, otherwise false
+# Variable to save the plots will be set to True, otherwise false. 
+# Note: It is probably better to just save the plots, they are not large files. 
 save = True
 
 # List of cycles to create necessary files for plotting and aggregate tables 
 cycles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-# List of leadTimes to make visuals and tables for
+# List of leadTimes to make visuals and tables for models at different lead times. 
 leadTimes = [12, 48, 96]
 
-# Architecture lists; code will only work if you use these three types, any deviation will require refactoring
+# Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
 architectures = ['mse','PNN', "CRPS"]
 
-# This should match the number of iterations you ran while training, you can have this number set to something smaller
+# This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
 iterations = 100
 
 """
@@ -59,14 +60,14 @@ Should be set to either "val", "test", or "train" depending on what information
 you want to visualize. If you ran the 2021 or 2024 testing years please use 
 '2021' or '2024' to retrieve relevant information.
 """
-obsVsPred = '2024' 
+obsVsPred = '2021' 
 
 """
 Set to true if you want csvs outputted that contain all of the predictions 
 instead of having just summary statistics.
 
 WARNING if this is set to True, the files will grow to very large sizes, 
-particularly for CRPS
+particularly for CRPS.
 """
 expanded = False
 
@@ -75,10 +76,11 @@ expanded = False
 ##### CODE EXECUTION for Plotting and Calculation Files
 
 if runAggregateCode == False:
-    
-    # This line is ran so that the files needed to create the pltos are created and retrieved
-    # If you want to modify the graph code you can uncomment this line if the files have been created; it will save time
-    # The loop below assumes that the files created by this function exist.
+    """
+    This line is ran so that the files needed to create the pltos are created and retrieved.
+    If you want to modify only the graph code and  if the files have been created you can uncomment this line. 
+    It will save you time. The loop below assumes that the files created by this function exist.
+    """
     mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred, expanded)
     
     # For loop to loop through leadtimes and create plots for each cycle (rotation)
@@ -90,26 +92,44 @@ if runAggregateCode == False:
 else:
     
     ##### Aggregate Table Execution Code #######
-    byCycle = True # Set to false if you wish to run byCombo code
+    """
+    Set to false if you wish to run byCombo code. 
+    NOTE: If you decided to save all of the predictions to the files, this process will take time to load and execute calculations.
+    Mainly this note is only for the CRPS model. 
+    """
+    byCycle = False
     
-    # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified
+    # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified.
     threshold = 12
-    
-    # Controls how many hours before and after Winter Storm URI should be included in calculations
+    """
+    Controls how many hours before and after Winter Storm URI should be included in calculations.
+    NOTE: This variable only matters if you are working with the 2021 testing year.
+    """
     padding = 24
     
-    # Conditional to run function if you are working with the 2021 year; obsVsPred must be set to '2021' to pass if
+    """
+    This if sturcture was designed so that the relevant box plot functions (Figures for the paper) 
+    only run if byCycle Aggregate Tables have been created. Within each condition the aggregate table 
+    function runs to create these tables.
+    """
+    # Conditional to run function if you are working with the 2021 year; obsVsPred must be set to '2021' to pass if-structure.
     if obsVsPred == '2021' and byCycle == True:
         
-        # Driver function call to include files for URI
-        aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True , padding)
+        # Driver function call to include files for URI.
+        aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
         
         # Outputs Figure 12. The figures created using this function are outputted to a folder called "Paper_Figures".
         figure_12_plot(padding)
+
+    # This elif is here to ensure the URI code in the aggregate table function is ran when byUQMethod is selected.
+    elif obsVsPred == '2021' and byCycle == False:
+
+        # Driver Function call to create byUQMethod tables.
+         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
         
     elif obsVsPred == '2024' and byCycle == True:
     
-        # Runs the Function helper
+        # Runs the function helper to get byCycle tables. 
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
         # Figure 6 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
@@ -117,14 +137,14 @@ else:
     
     elif obsVsPred == 'test' and byCycle == True:
     
-        # Runs the Function helper
+         # Runs the function helper to get byCycle tables. 
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
         # Figure 5 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
         figure_5_6_plot(obsVsPred, threshold)
         
     else:
-        # Runs the Function helper
+         # Runs the function helper to get byCycle tables, or if byCycle is set to False it will get the byUQMethod tables. 
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
 ########################################################################

@@ -50,7 +50,7 @@ def mae(y_true, y_pred):
 
     return score.numpy()
 
-# END: def mae
+# END: def mae()
 
 
 def mae12(y_true, y_pred):
@@ -81,7 +81,7 @@ def mae12(y_true, y_pred):
 
     return score
 
-# END: def mae12
+# END: def mae12()
 
 
 def me(y_true, y_pred):
@@ -109,7 +109,7 @@ def me(y_true, y_pred):
 
     return score.numpy()
 
-# END: def me
+# END: def me()
 
 
 def me12(y_true, y_pred):
@@ -139,7 +139,8 @@ def me12(y_true, y_pred):
     score = tf.reduce_mean(differences).numpy()
 
     return score
-# END: def me12
+
+# END: def me12()
 
 
 def mse(y_true, y_pred):
@@ -165,7 +166,7 @@ def mse(y_true, y_pred):
 
     return score.numpy()
 
-# END: def mse
+# END: def mse()
 
 
 def rmse_avg(y_true, y_pred):
@@ -188,7 +189,7 @@ def rmse_avg(y_true, y_pred):
 
     return score.numpy()
 
-# END: def rmse_avg
+# END: def rmse_avg()
 
 ######## Uncertainty Quantification Evaluation Functions ########
 
@@ -212,7 +213,7 @@ def ssrat_avg(y_true, y_pred, y_pred_std):
 
     return ssrat_score.numpy()
 
-# END: def ssrat_avg
+# END: def ssrat_avg()
 
 
 @tf.function # Enables graph execution
@@ -245,7 +246,7 @@ def crps_gaussian_tf(mu, sigma, y_true):
 
     return tf.reduce_mean(crps_per_sample)
 
-# END: def crps_gaussian_tf
+# END: def crps_gaussian_tf()
 
 
 def get_pit_points(y_true, y_pred, y_std):
@@ -293,7 +294,7 @@ def get_pit_points(y_true, y_pred, y_std):
 
     return pitd_score
 
-# END: def get_pit_points
+# END: def get_pit_points()
 
 
 def get_spread_skill_points(y_true, y_pred, y_std, nBins=10, bins=None, showR2=True, spread_last=None, verbose=True):
@@ -362,4 +363,4 @@ def get_spread_skill_points(y_true, y_pred, y_std, nBins=10, bins=None, showR2=T
 
     return ssRel
 
-# END: def get_spread_skill_points
+# END: def get_spread_skill_points()
