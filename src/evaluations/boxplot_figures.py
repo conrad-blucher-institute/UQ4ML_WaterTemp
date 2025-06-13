@@ -29,7 +29,7 @@ import matplotlib.patches as mpatches
 
 from pathlib import Path
 
-####### PLotting Functions ########
+####### Plotting Functions ########
 
 def figure_4_plot():
     """
@@ -184,8 +184,8 @@ def figure_5_6_plot(obsVsPred, threshold):
     
     Inputs:
         
-        obsVsPred: string - use '2021', '2024', 'val' or 'testing'
-        threshold: integer representing threshold
+        obsVsPred: string - use '2021', '2024', 'val' or 'testing',
+        threshold: integer representing threshold.
     """
     # Specifies Path to Aggregate Tables Folder
     aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
@@ -332,7 +332,6 @@ def figure_5_6_plot(obsVsPred, threshold):
     # Create it if it doesn't exist
     save_dir.mkdir(parents=True, exist_ok=True)
     
-    
     # Save with bounding box tight to remove unnecessary white space
     fig.savefig(save_dir / figname, dpi=900, bbox_inches='tight')
     
@@ -345,7 +344,7 @@ def figure_12_plot(padded):
     
     Inputs:
         
-        padded: integer representing hours before and after URI
+        padded: integer representing hours before and after URI.
     """
     aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     # Reads in the correct Csv containing the relevant information
@@ -491,10 +490,15 @@ def figure_12_plot(padded):
 ####### Helper Function Checking For Files ######
 
 def existance_checker():
-    
     """
     Function to check for the relevant files needed to run Figure_4 code.
+
+    returns:
+
+        False if one or more files do not exist.
+        True if both files exist.
     """
+    # Path build
     aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     files = {
         'val': aggregate_dir / 'val_cold_metrics_results_performance_byCycleAggregateTable.csv',

@@ -26,13 +26,20 @@ from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian
 
 ########### Data Retrieval Code ############
 
-def model_parser(MAIN_DIRECTORY, combination, architecture, obsVsPred, iterations, cycle, leadTime):
+def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cycle, leadTime):
     """
     function to grab corressponding combination information
+    Inputs:
+    MAIN_DIRECTORY - A path to the data needed,
+    model - string representation of a specific model, 
+    architecture - a string representing the model to be retrieved,
+    obsVsPred - string to determine to look at training or val, 
+    iterations - integer of the number of times a specific combo was ran,
+    cycle - integer representation of the cycle,
+    leadTime - integer representing leadtime.
 
-    # combination - string representation of a specific combo, obsVsPred - string to determine to look at training or val, iterations - integer of the number of times a specific combo was ran, cycle - integer representation of the cycle
-
-    return dataframe containing all the predictions
+    return:
+    dataframe containing all the predictions
     """ 
     # Creates empty dataframe
     mainDf = pd.DataFrame()
@@ -44,7 +51,7 @@ def model_parser(MAIN_DIRECTORY, combination, architecture, obsVsPred, iteration
         i+=1
         
         # Reads dataframes in regardless of macOS or Windows
-        file_path = Path("UQ4ML_WaterTemp") / "src" / MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture}-{combination}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
+        file_path = Path("UQ4ML_WaterTemp") / "src" / MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture}-{model}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
         df = pd.read_csv(file_path)
         if i == 1:
             
@@ -221,11 +228,15 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
     This function serves as a driver that will retrieve the created files and 
     plot standard deviation plots.
 
-    inputs: architectures : list of strings, leadTime : integer, 
-    cycles: list of integers, obsVsPred: string to differentiate between data, 
+    inputs: 
+    architectures : list of strings, 
+    leadTime : integer, 
+    cycles: list of integers, 
+    obsVsPred: string to differentiate between data, 
     save: boolean (True or False)
 
-    outputs: plots made using plotly
+    outputs: 
+    plots made using plotly
     """
     # Loop over each cycle so that each cycle gets its own combined boxplot.
     for cycle in cycles:
@@ -243,12 +254,11 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
             
             # Loop over each hyperparameter combo.
             for model in model_list:
-                print("Before Read")
+
                 # Utilizes Path for cross compatability regardless of macOs or Windows
                 input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
                 df = pd.read_csv(input_path)
 
-                print("after read")
                 df['date_time'] = pd.to_datetime(df["date_time"])
 
                 df = df.set_index('date_time')
@@ -271,6 +281,8 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
         
         # Call the boxplot function with the aggregated data.
         standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTime, arch_title, cycle, obsVsPred, save)
+
+        print(f"Plot_Created_{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}")
     
 # END: def decentralized_graphing_driver()
 
@@ -285,9 +297,10 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
         dfDict: dictionary holding dataframes for plotting,
         leadTime: integer representing leadtime,
         arch_title: string for the save file naming convention,
-        obsVsPred: string to denote data being used,
         cycle: integer denoting cycle being plotted,
+        obsVsPred: string to denote data being used,
         save: boolean to save or display
+
     Output:
         
         A fan plot
@@ -397,7 +410,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
         ))
 
 
-    # Code to add Traces to the Plot in an order to clearly see
+    # Code to add Traces to the Plot in an order to clearly see the differentiation
     for trace in fan_traces:
         fig.add_trace(trace)
     for trace in mean_traces:
@@ -409,11 +422,11 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
     # Threshold Line
     fig.add_hline(y=8, line_dash="dot", line_color="red", annotation_text="Turtle Threshold", annotation_position="top left", annotation_font_size=26, annotation_font_color="red")
 
-    # Laebeling 
+    # Labeling 
     title_text = f"Stdev_plot_{leadTime}h_Cycle_{cycle}"
     save_path = f"{obsVsPred}_{arch_title}_{leadTime}h_Cycle_{cycle}"
 
-    # Plot adjustme
+    # Plot adjustments
     fig.update_layout(
         title=title_text,
         font=dict(size=26),
@@ -472,11 +485,11 @@ def combine_gaussian_predictions(mu_list, sigma_list):
     into a single Gaussian approximation.
 
     Parameters:
-    - mu_list: List or numpy array of mean predictions from each model.
+    - mu_list: List or numpy array of mean predictions from each model,
     - sigma_list: List or numpy array of standard deviations from each model.
 
     Returns:
-    - mu_final: Combined mean prediction.
+    - mu_final: Combined mean prediction,
     - sigma_final: Combined standard deviation prediction.
     """
 
@@ -504,7 +517,7 @@ def visualization_metric_calcs(df, architecture, expanded):
     Inputs:
         df: dataframe,
         architecture: string denoting architecture,
-        expanded: boolean to determine if all predictions should be saved
+        expanded: boolean to determine if all predictions should be saved.
         
     Output:
         returns a dataframe with calculations

@@ -33,10 +33,10 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
         leadTimes: list of ints,
         cycles: list of ints,
         architectures: list of strings,
-        threshold: int or float representing temperature
+        threshold: int or float representing temperature,
         byCycle: boolean to swap between byCycle and byUQMethod,
         obsVsPred: string denoting whether or not val, testing, 2021, or 2024 data is being used,
-        URI: boolean to run additional calculations if 2021 independent year is present
+        URI: boolean to run additional calculations if 2021 independent year is present,
         padding: int (set to 24, user can determine how many hours before and after Winter Storm URI the user can include in calculations)
         
     Output: 
@@ -50,14 +50,13 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
     resultsCsvURI = []
     resultsCsvURIPadded = []
     
-    # Conditional to run for byCombo
+    # Conditional to run for byUQMethod
     if byCycle == False:
-        
-        #Change to byUQMethod
-        # Runs helper function to combine files for byCombo metrics (wraps all cycles into one file for a model)
+
+        # Runs helper function to combine files for byCombo metrics (wraps all cycles into one file for a model).
         pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred)
         
-        # This line is here so that the code executes only once, instead of through all the cycles
+        # This line is here so that the code executes only once, instead of through all the cycles.
         cycles = [0]
         
     for cycle in cycles:
@@ -70,10 +69,10 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                         
                 for model in model_list:
                     
-                    # Initializes dictionary for storage of 3 dataframes
+                    # Initializes dictionary for storage for dataframes
                     dfDict = {}
             
-                    # IF structure to retrieve relevant file
+                    # If-structure to retrieve relevant file
                     if byCycle == True:
                         
                         # Path creation
@@ -144,12 +143,13 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                         dfDict['URI' + str(padding)] = uriDfpadded
                                                 
                     #######################################################
-                    
+                    # Looping structure for dataframe dictionary.
                     for key in dfDict:
                         
+                        # Retrieves the dataframe
                         modDf = dfDict[key]
                         
-                        # Print statements to give the user an idea of where the calcilations are
+                        # Print statements to give the user an idea of where the calculations are currently at.
                         print(cycle)
                         print(leadTime)
                         print(architecture)
@@ -241,7 +241,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                             
                             resultsCsvURIPadded.append(row)
                             
-                    # Line of code to help ensure memory is being freed up
+                    # Line of code to help ensure memory is being freed up. Necessary when the files have all of the predictions.
                     del df, coldDf, filtered_df, dfDict
 
     # Convert the results list into a DataFrame
@@ -278,7 +278,18 @@ def pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred):
     
     """
     Function to combine files so that they are no longer separated by Cycle.
+
+    Inputs:
+        leadTimes: list of integers,
+        cycles: list of integers,
+        architectures: list of strings denoting architectures of models,
+        obsVsPred: string denoting the dataset being use.
+    Output:
+
+        A cleaned file of data that removes the byCycle distinction 
+        and places all information into one file.
     """
+    # Looping structure
     for leadTime in leadTimes:
         
         for architecture in architectures:
@@ -313,6 +324,7 @@ def pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred):
                 # Create the directory (and any parents) if it doesn't exist
                 output_dir.mkdir(parents=True, exist_ok=True)
                 
+                # Outputs dataframe into a csv.
                 mainDf.to_csv(output_dir/ f"{obsVsPred}_{leadTime}h_{architecture}_Model_{model}.csv")
                 
                 print("Converted to CSV")
