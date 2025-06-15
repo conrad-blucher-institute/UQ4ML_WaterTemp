@@ -97,6 +97,8 @@ python driver.py @c/crps_96.txt # make the file name / architeccture
 
 **After Training models, follow the instructions and run visualization_driver.py while changing the relevant fields**
 
+**Note: This file assumes that a main folder called "results" exists in the src directory that contains the corresponding model runs.
+
 ## Contact
 Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.edu)
 Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)
