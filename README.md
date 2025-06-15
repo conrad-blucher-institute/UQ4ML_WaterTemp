@@ -95,6 +95,8 @@ python crps_driver.py @c/crps_96.txt
 python driver.py @c/crps_96.txt # make the file name / architeccture
 ```
 
+**After Training models, follow the instructions and run visualization_driver.py while changing the relevant fields**
+
 ## Contact
 Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.edu)
 Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)
