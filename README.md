@@ -98,6 +98,22 @@ python driver.py @c/crps_96.txt # make the file name / architeccture
 **After Training models, follow the instructions and run visualization_driver.py while changing the relevant fields**
 
 **Note: This file assumes that a main folder called "results" exists in the src directory that contains the corresponding model runs.
+```
+$src/
+├── results/
+│   ├── mse_Results/
+│   │   ├── 12h/
+│   │   │   ├── mse-1_layers-leaky_relu-64_neurons-cycle_1-iteration_1/
+│   │   │   │   ├── val_datetime_obsv_predictions.csv
+                ├── test_datetime_obsv_predictions.csv
+                ├── test_datetime_obsv_predictions.csv
+
+│   │   └── TIDAL_CUBE_2022_24H.npz
+│   ├── PNN_Results/
+│   │   ├── ...
+│   └── CRPS_Results/
+│   └── ├── ...
+```
 
 ## Contact
 Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.edu)
