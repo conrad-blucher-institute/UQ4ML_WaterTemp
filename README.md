@@ -19,7 +19,7 @@ We use water and air temperature observation measurements provided by Texas Coas
 - Air temperature observations
 - Air temperature predictions (_perfect prognosis_)
 
-**Leadtime (hours):** 12h, 48h, 96h
+**Leadtime (hours):** 12-hr, 48-hr, 96-hr
 
 **Temperature threshold (°C):** Critical water temperature threshold for cold-stunning event risk for sea turtles: 8°C (Shaver et al., 2017); for fisheries: 4.5°C (Texas Parks and Wildlife Department, 2021)
 
