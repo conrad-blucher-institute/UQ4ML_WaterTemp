@@ -11,17 +11,17 @@ White, M. C., et al. (to be submitted) "Machine Learning Uncertainty Quantificat
 
 ## Data Sources
 
+**Data Availability:**
+We use water and air temperature observation measurements provided by Texas Coastal Ocean Observation Network (TCOON; https://tidesandcurrents.noaa.gov/tcoon.html), publicly available within the NOAA Tides and Current website (https://tidesandcurrents.noaa.gov/map/index.shtml?region=Texas). This data was then cleaned using an imputation framework described in White et al. (2024), publicly available in the Github repository (https://github.com/conrad-blucher-institute/LagunaMadreWaterAirTempDataCleaner).
+
 **Environmental Data:**
 - Water temperature observations
 - Air temperature observations
 - Air temperature predictions (_perfect prognosis_)
 
-**Leadtime (hours):** How far ahead is the prediction? 12h, 48h, 96h
+**Leadtime (hours):** 12h, 48h, 96h
 
 **Temperature threshold (°C):** Critical water temperature threshold for cold-stunning event risk for sea turtles: 8°C (Shaver et al., 2017); for fisheries: 4.5°C (Texas Parks and Wildlife Department, 2021)
-
-**Data Availability:**
-We use water and air temperature observation measurements provided by Texas Coastal Ocean Observation Network (TCOON; https://tidesandcurrents.noaa.gov/tcoon.html), publicly available within the NOAA Tides and Current website (https://tidesandcurrents.noaa.gov/map/index.shtml?region=Texas). This data was then cleaned using an imputation framework described in White et al. (2024), publicly available in the Github repository (https://github.com/conrad-blucher-institute/LagunaMadreWaterAirTempDataCleaner).
 
 
 ## Installation (Windows 10)
