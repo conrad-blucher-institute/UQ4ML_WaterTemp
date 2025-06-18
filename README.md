@@ -93,7 +93,8 @@ python crps_driver.py @c/crps_96.txt
 python driver.py @c/crps_96.txt # make the file name / architeccture
 ```
 
-**After Training models, follow the instructions and run visualization_driver.py while changing the relevant fields**
+**After Training models, follow the instructions and run visualization_driver.py while changing the relevant field. Evaluation and visaulization are reliant on one another. Please follow the instructions carefully in the comments within the visualization_driver file.
+If you wish to make changes to the visuals, calculations, or other parts of this process please note you will have to refactor the code in their correspondng reference files.s**
 
 **Note: This file assumes that a main folder called "results" exists in the src directory that contains the corresponding model runs.
 ```
