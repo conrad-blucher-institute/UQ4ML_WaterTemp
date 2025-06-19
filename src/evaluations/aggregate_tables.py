@@ -55,7 +55,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
 
         # Runs helper function to combine files for byCombo metrics (wraps all cycles into one file for a model).
         pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred)
-        
+        print("byUQMEthod running")
         # This line is here so that the code executes only once, instead of through all the cycles.
         cycles = [0]
         
