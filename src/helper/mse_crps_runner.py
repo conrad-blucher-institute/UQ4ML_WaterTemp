@@ -127,15 +127,7 @@ elif model_name == "MSE":
     metrics = ['mae']
 
 
-input_structure = "descending"
-independent_year = "cycle"
-output_activation = 'linear'
 
-# starting with 0.01, the LEARNING RATE REDUCER reduces this value by 0.01 incrementally later within code # 1e-1, 1e-2, 1e-3, 1e-4, 1e-5
-learning_rate = 0.01 
-
-optimizer = 'adam' 
-kernel_regularizer = 'l2'
 
 call_back_monitor = "val_loss"
 # batch size was determined to utilize the entire dataset... when left undeclared, the batch defaults to 32 
@@ -155,19 +147,13 @@ if tune_train_test == "train":
 
 
     for iteration in range(start_iteration, end_iteration, up_down):  
-    for iteration in range(start_iteration, end_iteration, up_down):  
 
-        for lead_time in lead_time_list:
         for lead_time in lead_time_list:
 
             if lead_time == 12:
-            if lead_time == 12:
 
                 cross_val_combinations = [1]
-                cross_val_combinations = [1]
 
-            elif lead_time == 48:
-                cross_val_combinations = [2]
             elif lead_time == 48:
                 cross_val_combinations = [2]
 
@@ -197,7 +183,6 @@ if tune_train_test == "train":
                             neurons = 32
 
                 elif lead_time == 48:
-                elif lead_time == 48:
 
                     if model_name == "CRPS":
                         if combination == 1:
@@ -230,7 +215,6 @@ if tune_train_test == "train":
                             act_func = 'leaky_relu'
                             neurons = 16
 
-                elif lead_time == 96:
                 elif lead_time == 96:
 
                     if model_name == "CRPS":
@@ -255,15 +239,11 @@ if tune_train_test == "train":
                 combo_name = f"{model_name.lower()}-{num_layers}_layers-{act_func}-{neurons}_neurons"
 
                 for cycle in cycle_list:
-                for cycle in cycle_list:
 
                     print(f"RUNNING {lead_time}h, {combo_name}-cycle_{cycle}-iteration_{iteration} ...\n")
                     
                     cycle_time_start = datetime.now()
                     
-                    print(f"RUNNING {lead_time}h, {combo_name}-cycle_{cycle}-iteration_{iteration} ...\n")
-                    
-                    cycle_time_start = datetime.now()
                     
 
                     """ Model Input Variables """
@@ -273,11 +253,7 @@ if tune_train_test == "train":
                     pred_atp_interval = 1                   
 
                     data_prep_time_start = datetime.now()
-                    data_prep_time_start = datetime.now()
 
-                    # clearing stale nodes that might be persisting in the 
-                    # computation graph, causing corruption; throwing an error
-                    K.clear_session()
                     # clearing stale nodes that might be persisting in the 
                     # computation graph, causing corruption; throwing an error
                     K.clear_session()
@@ -293,33 +269,18 @@ if tune_train_test == "train":
                                                                                                                                 IPPOffset = temperature_list[0],
                                                                                                                                 cycle=cycle,
                                                                                                                                 model=model_name) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
-                    """ Manipulating data for AI Model """
-                    x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(path_to_data,
-                                                                                                                                input_structure,
-                                                                                                                                independent_year,
-                                                                                                                                input_hours_forecast,
-                                                                                                                                atp_hours_back,
-                                                                                                                                wtp_hours_back,
-                                                                                                                                pred_atp_interval,
-                                                                                                                                IPPOffset = temperature_list[0],
-                                                                                                                                cycle=cycle,
-                                                                                                                                model=model_name) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
-
-                    """PREPARINGDATA FUNCTION COMPUTE TIME"""
-                    data_prep_time_end = datetime.now()
+                
                     """PREPARINGDATA FUNCTION COMPUTE TIME"""
                     data_prep_time_end = datetime.now()
 
                     # Path to folder for visualization results
-                    model = model_name.lower() + "_results"
-                    save_path = Path("UQ4ML_WaterTemp") / "src" / "results" /  model /f"{leadTime}h" / f"{architecture}-{model_name.lower()}-cycle_{cycle}-iteration_{i}"
+                    save_path = Path("UQ4ML_WaterTemp") / "src" / "results" /  f"{model_name.lower()}_results" /f"{lead_time}h" / f"{combo_name}-cycle_{cycle}-iteration_{iteration}"
                     save_path.mkdir(parents=True, exist_ok=True)
 
                     with open(save_path / "data_prep_compute_time.txt", 'w') as compute_time_file:
                         compute_time_file.write(f"preparingData() compute time: {data_prep_time_end - data_prep_time_start}")
 
                     train_time_start = datetime.now()
-                    train_time_start = datetime.now()
 
                     inputShape = x_train[0].shape
                     
@@ -337,13 +298,9 @@ if tune_train_test == "train":
                         batch_size = 512
 
                     """TRAINING THE MODEL"""
-                    """TRAINING THE MODEL"""
 
                     model = Sequential()                
-                    model = Sequential()                
 
-                    # first layer = input layer
-                    model.add(Input(shape=(inputShape)))
                     # first layer = input layer
                     model.add(Input(shape=(inputShape)))
 
@@ -357,9 +314,6 @@ if tune_train_test == "train":
 
                     # last layer = output layer
                     model.add(Dense(output_units, activation=output_activation))
-                    # last layer = output layer
-                    model.add(Dense(output_units, activation=output_activation))
-
 
                     model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=learning_rate), 
                                 loss=loss_function, metrics=metrics)
@@ -404,7 +358,6 @@ if tune_train_test == "train":
                     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
                     model_callbacks = [early_stopping, reduce_lr, tensorboard_callback, logger]
-                    model_callbacks = [early_stopping, reduce_lr, tensorboard_callback, logger]
 
                     # Training the model
                     history = model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs=epochs, 
@@ -425,16 +378,12 @@ if tune_train_test == "train":
                     with open(save_path / "train_compute_time.txt", 'w') as compute_time_file:
                         compute_time_file.write(f"Model Train Time: {train_time_end-train_time_start}")
                     
-                    with open(save_path / "train_compute_time.txt", 'w') as compute_time_file:
-                        compute_time_file.write(f"Model Train Time: {train_time_end-train_time_start}")
                     
 
                     """LOSS INFORMATION"""
                     loss = history.history['loss']
                     val_loss = history.history['val_loss']
-                    """LOSS INFORMATION"""
-                    loss = history.history['loss']
-                    val_loss = history.history['val_loss']
+                   
 
                     losses = pd.DataFrame(columns=['Loss', 'Val_Loss']) 
                     losses['Loss'] = loss
@@ -444,7 +393,6 @@ if tune_train_test == "train":
 
                     # saving the model to h5 file
                     model.save(save_path / f"model_{datetime.now().strftime('%Y%m%d-%H%M%S')}_.keras") 
-                    model.save(save_path / f"model_{datetime.now().strftime('%Y%m%d-%H%M%S')}_.h5")
                     
                     train_predictions = model.predict(x_train)
                     val_predictions = model.predict(x_val)
@@ -454,21 +402,11 @@ if tune_train_test == "train":
                     train_vs_preds = pd.DataFrame(columns=prediction_column_names, data=train_predictions)
                     val_vs_preds = pd.DataFrame(columns=prediction_column_names, data=val_predictions)
                     test_vs_preds = pd.DataFrame(columns=prediction_column_names, data=test_predictions)
-                    """SAVING PREDICTIONS AND OBSERVATIONS"""
-                    train_vs_preds = pd.DataFrame(columns=prediction_column_names, data=train_predictions)
-                    val_vs_preds = pd.DataFrame(columns=prediction_column_names, data=val_predictions)
-                    test_vs_preds = pd.DataFrame(columns=prediction_column_names, data=test_predictions)
-
-                    train_vs_preds.insert(loc=0, column='date_time', value=training_dates)
-                    val_vs_preds.insert(loc=0, column='date_time', value=validation_dates)
-                    test_vs_preds.insert(loc=0, column='date_time', value=testingDates)
+                    
                     train_vs_preds.insert(loc=0, column='date_time', value=training_dates)
                     val_vs_preds.insert(loc=0, column='date_time', value=validation_dates)
                     test_vs_preds.insert(loc=0, column='date_time', value=testingDates)
 
-                    train_vs_preds.insert(loc=1, column='target', value=y_train)
-                    val_vs_preds.insert(loc=1, column='target', value=y_val)
-                    test_vs_preds.insert(loc=1, column='target', value=y_test)
                     train_vs_preds.insert(loc=1, column='target', value=y_train)
                     val_vs_preds.insert(loc=1, column='target', value=y_val)
                     test_vs_preds.insert(loc=1, column='target', value=y_test)
@@ -482,7 +420,7 @@ if tune_train_test == "train":
                     train_path = save_path / "train_datetime_obsv_predictions.csv"
                     val_path = save_path / "val_datetime_obsv_predictions.csv"
 
-                    if independent_year != "cycle"
+                    if independent_year != "cycle":
                         test_path = save_path / f"{independent_year}_datetime_obsv_predictions.csv"
                     else:
 
