@@ -1,3 +1,4 @@
+import tensorflow as tf
 class TrainingLogger(tf.keras.callbacks.Callback):
     def __init__(self, log_file):
         super().__init__()
@@ -13,7 +14,6 @@ class TrainingLogger(tf.keras.callbacks.Callback):
         # Append to log file
         with open(self.log_file, "a") as f:
             f.write(log_message)
-
 
 """ CREATING INPUT VECTOR """
 # MAIN function to create the input vector for the ml model
@@ -35,9 +35,9 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     if independent_year != 'cycle':
 
         if independent_year == '21':
-            data_independent_year = pd.read_csv("../June_May_Datasets/june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENT_TEST_YEAR_MW.csv")
+            data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
         elif independent_year == '24':
-            data_independent_year = pd.read_csv("../June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENT_TEST_YEAR_MW.csv")
+            data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
 
         
         year_independent = creatingAdditionalColumns(data_independent_year, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
@@ -481,7 +481,6 @@ def dataframe_checker(checkNum, dfList):
 
 
 """ METRICS / LOSS FUNCTIONS """ 
-
 def crps(y_true, y_pred): 
     """ From Ryan Lagerquist... 
 
@@ -536,8 +535,6 @@ def crps(y_true, y_pred):
     score = tf.reduce_mean(score) 
     
     return score
-  
-
 
 def mae(y_true, y_pred): 
     import tensorflow as tf 
@@ -593,7 +590,6 @@ def mse(y_true, y_pred):
     
     return score.numpy() 
   
-
 def me(y_true, y_pred): 
     import tensorflow as tf 
 
@@ -610,7 +606,6 @@ def me(y_true, y_pred):
     
     return score.numpy()
   
-
 def rmse(y_true, y_pred): 
     import tensorflow as tf 
 
