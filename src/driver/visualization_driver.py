@@ -37,7 +37,7 @@ IMPORTANT:
 Set to False first to ensure the files are there, 
 this exists so you dont have to run the intensive functions again
 """
-runAggregateCode = True #True
+runAggregateCode = False #True
 
 # Variable to save the plots will be set to True, otherwise false. 
 # Note: It is probably better to just save the plots, they are not large files. 
@@ -60,7 +60,7 @@ Should be set to either "val", "test", or "train" depending on what information
 you want to visualize. If you ran the 2021 or 2024 testing years please use 
 '2021' or '2024' to retrieve relevant information.
 """
-obsVsPred = '2021' 
+obsVsPred = 'val' 
 
 """
 Set to true if you want csvs outputted that contain all of the predictions 
@@ -97,7 +97,7 @@ else:
     NOTE: If you decided to save all of the predictions to the files, this process will take time to load and execute calculations.
     Mainly this note is only for the CRPS model. 
     """
-    byCycle = False
+    byCycle = True
     
     # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified.
     threshold = 12

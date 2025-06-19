@@ -10,17 +10,14 @@ Edits made by: Hector
 
 '''hector's imports @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
 from helper.utils import preparingData
-# from src.evaluation import modelEvaluation
-from pathlib import Path
-from datetime import datetime
-import sys
-from helper.Logger import Logging# logging experiment to mimic schooners std.out  and std.error files
+# logging experiment to mimic schooners std.out & std.error files
+from helper.Logger import Logging 
 from helper.job_iterator import JobIterator
 # import result_visualizer
 
-import tensorflow_probability as tfp
-
 from my_parser import create_parser
+from src.utils import ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError
+
 '''@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
 import tensorflow as tf
 import pandas as pd
@@ -29,20 +26,20 @@ import os
 import fnmatch
 import matplotlib.pyplot as plt
 import pickle
-
 from tensorflow import keras
 from tensorflow.keras import Sequential, regularizers
 from tensorflow.keras.layers import Convolution2D, Dense, MaxPooling2D, GlobalMaxPooling2D, Flatten, BatchNormalization, Dropout, SpatialDropout2D, InputLayer
-#from tensorflow.keras.optimizers import RMSprop
 import random
 import re
-
-
 import multiprocessing as mp
+
+from pathlib import Path
+from datetime import datetime
+import sys
+import tensorflow_probability as tfp
 
 # from mpi4py import MPI
 
-from src.utils import ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError
 
 #from pypng
 ''' import png '''

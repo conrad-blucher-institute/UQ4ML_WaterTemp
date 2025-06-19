@@ -1,29 +1,27 @@
 # UQ4ML_WaterTemp
-description
+Uncertainty in reference to machine learning (ML) systems are notable across a wide span of scientific domains due to their influence on critical decision-making processes. But further attention is needed when using ML-uncertainty quantification (UQ) approaches for rare and often impactful environmental events.  
 
-## Cold Stunning Models Time Series
-![ColdStunNet Overview](images/Fig5OG_Sub12Legend.png)
+This repository contains several sets of code for implementing, evaluating, and visualizing three ML-UQ multi-model ensemble (MME) approaches using various loss functions (_mean squared error [MSE], negative log-likelihood [NLL, i.e., PNN], continuous ranked probability score [CRPS]_) discussed in its companion paper cited below. This was done to understand which methods best estimate uncertainty of predictive water temperature information at various lead times (12-, 48-, 96-hr) for improved cold-stunning event advisory in south Texas (or when water temperatures reach threatening levels for wildlife). A 10-fold cross-validation framework was used to compare deterministic and probabilistic skill among all UQ methods during cold seasons and sub-12°C cases. Two case studies representing the most recent event and most impactful event were also used to assess model performance on unseen data, under rare, high-impact cold conditions. 
+
+## Cold-Stunning Models Time Series
+![ColdStunNet Overview](images/image10.png)
 
 ## Publication
-[Publication citation will go here]
+White, M. C., et al. (to be submitted) "Machine Learning Uncertainty Quantifications for Extreme Cold Events." _Artificial Intelligence for the Earth Systems._
 
 ## Data Sources
 
-**Environmental Data:**
-- Water temperature
-- Air temperature
-- Air temperature predictions / perfect prognosis
-
-
-**Leadtime (hours):** How far ahead is the prediction? 12h, 48h, 96h
-
-**Temperature threshold (°C):** Critical temperature threshold for cold stunning risk for sea turtles 8°C, for fisheries 4.5°C,
-
 **Data Availability:**
-- [Laguna Madre Water Air Temp Data Cleaner](https://github.com/conrad-blucher-institute/LagunaMadreWaterAirTempDataCleaner)
-- [NOAA Sea Surface Temperature](https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/)
-- [Weather station data](https://www.ncei.noaa.gov/data/)
-- [tccoon?](placeholder_url)
+We use water and air temperature observation measurements provided by Texas Coastal Ocean Observation Network (TCOON; https://tidesandcurrents.noaa.gov/tcoon.html), publicly available within the NOAA Tides and Current website (https://tidesandcurrents.noaa.gov/map/index.shtml?region=Texas). This data was then cleaned using an imputation framework described in White et al. (2024), publicly available in the Github repository (https://github.com/conrad-blucher-institute/LagunaMadreWaterAirTempDataCleaner).
+
+**Environmental Data:**
+- Water temperature observations
+- Air temperature observations
+- Air temperature predictions (_perfect prognosis_)
+
+**Leadtime (hours):** 12-hr, 48-hr, 96-hr
+
+**Temperature threshold (°C):** Critical water temperature threshold for cold-stunning event risk for sea turtles: 8°C (Shaver et al., 2017); for fisheries: 4.5°C (Texas Parks and Wildlife Department, 2021)
 
 
 ## Installation (Windows 10)
@@ -93,6 +91,26 @@ python crps_driver.py @c/crps_48.txt
 python crps_driver.py @c/crps_96.txt
 
 python driver.py @c/crps_96.txt # make the file name / architeccture
+```
+
+**After Training models, follow the instructions and run visualization_driver.py while changing the relevant field. Evaluation and visaulization are reliant on one another. Please follow the instructions carefully in the comments within the visualization_driver file.
+If you wish to make changes to the visuals, calculations, or other parts of this process please note you will have to refactor the code in their correspondng reference files.s**
+
+**Note: This file assumes that a main folder called "results" exists in the src directory that contains the corresponding model runs.
+```
+This is an example of what the results directory should look like, and where it should be located within the repository directory.
+$src/
+└── results/
+    ├── mse_Results/
+    │   ├── 12h/
+    │   │   └──  mse-1_layers-leaky_relu-64_neurons-cycle_1-iteration_1/
+    │   │        ├── val_datetime_obsv_predictions.csv
+    │   │        ├── train_datetime_obsv_predictions.csv
+    │   │        └── test_datetime_obsv_predictions.csv
+    │   ├── 48h/...
+    │   └── 96h/...
+    ├── PNN_Results/...
+    └── CRPS_Results/...
 ```
 
 ## Contact

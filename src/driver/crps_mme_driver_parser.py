@@ -45,6 +45,7 @@ from keras.callbacks import EarlyStopping
 import pickle 
 import pandas as pd
 from datetime import datetime
+
 import parser_crps
 from src.helper.utils import preparingData
 #from properscoring import crps_ensemble ; used for evaluating the model after using the testing set to create predictions
@@ -62,8 +63,9 @@ all_vars = parser_crps.get_all_variables()
     output_activation, learning_rate_list, optimizer_list, kernel_regularizer, obj, call_back_monitor, 
     compute_times) = all_vars
 
-# Print
 parser_crps.print_configuration()
+
+print("hours back check:", hours_back)
 
 if loss_function == None or metrics == None:
     try:
@@ -97,7 +99,6 @@ for iteration in tuner_iterations:
 
 
             """ Model Input Variables """
-            input_hours_forecast = lead_time + 6
             atp_hours_back = hours_back
             wtp_hours_back = hours_back
             pred_atp_interval = 1 # hour intervals (3 hrs for operational team currently)
@@ -111,6 +112,8 @@ for iteration in tuner_iterations:
                                                                                                     IPPOffset = temperature_list[0],
                                                                                                     cycle=cycle,
                                                                                                     model="CRPS-MME")
+            
+            # inputShape used to build the input layer of the model
             inputShape = x_train[0].shape
 
             # batch size to be the full length (# rows) of dataset
