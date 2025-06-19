@@ -199,21 +199,7 @@ if tune_train_test == "train":
                             num_layers = 2
                             act_func = 'leaky_relu'
                             neurons = 16
-                    if model_name == "CRPS":
-                        if combination == 1:
-                            num_layers = 3
-                            act_func = 'relu'
-                            neurons = 32
-        
-                        elif combination == 2:
-                            num_layers = 3
-                            act_func = 'selu'
-                            neurons = 64
-                    elif model_name == "MSE":
-                        if combination == 2:
-                            num_layers = 2
-                            act_func = 'leaky_relu'
-                            neurons = 16
+                    
 
                 elif lead_time == 96:
 
