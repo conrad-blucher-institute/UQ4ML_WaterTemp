@@ -430,8 +430,8 @@ if tune_train_test == "train":
 
 
                     # saving the model to h5 file
-                    hdf_file = save_path + '/model_' + datetime.now().strftime("%Y%m%d-%H%M%S") + '_.h5'
-                    keras_file = save_path + '/model_' + datetime.now().strftime("%Y%m%d-%H%M%S") + '_.keras'
+                    hdf_file = save_path / f'model_{datetime.now().strftime("%Y%m%d-%H%M%S")}_.h5'
+                    keras_file = save_path / f'model_{datetime.now().strftime("%Y%m%d-%H%M%S")}_.keras'
 
                     model.save(keras_file) 
                     model.save(hdf_file)
@@ -455,7 +455,13 @@ if tune_train_test == "train":
 
                     train_path = save_path / "train_datetime_obsv_predictions.csv"
                     val_path = save_path / "val_datetime_obsv_predictions.csv"
-                    test_path = save_path / "test_datetime_obsv_predictions.csv"
+
+                    if independent_year != "cycle"
+                        test_path = save_path / f"{independent_year}_datetime_obsv_predictions.csv"
+                    else:
+
+                        test_path = save_path / "test_datetime_obsv_predictions.csv"
+
 
                     train_vs_preds.to_csv(train_path)
                     val_vs_preds.to_csv(val_path)
