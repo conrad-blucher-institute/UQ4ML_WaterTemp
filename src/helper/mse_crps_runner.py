@@ -83,8 +83,7 @@ learning_rate = 0.01
 optimizer = 'adam' 
 kernel_regularizer = 'l2'
 
-# Shouldnt have to change this; it references the data within UQ4ML_WaterTemperature
-path_to_data = "UQ4ML_WaterTemp/data"
+
 
 ##### Checks to see if user wishes to contine training ########
 while True:
