@@ -29,8 +29,8 @@ we provide a .yaml
 then the steps
 ```
 lilypod run
-```
-
+``` -->
+<!-- 
 
 ### idea 1
 ### Conda Environment Setup
@@ -43,36 +43,39 @@ conda activate coldstun
 
 # Install pip specific packages
 pip install lib1 lib2 lib3 lib4 etc
-```
+``` -->
 
-
-## Download & Format Data
-
-You can either:
-
-1. Generate data from original sources, [Laguna Madre Water Air Temp Data Cleaner](https://github.com/conrad-blucher-institute/LagunaMadreWaterAirTempDataCleaner) 
-2. use prebuilt datasets, file location is data\June_May_Datasets (to replicate published results)
-
-In this README, we refer to your dataset directory as `$DATASETS`
-Change the location of data to whereever you are stowing the data you want to use
 
 ## Quickstart
-
-Activate your environment:
-```bash
-conda activate coldstun
+Build environment needed to run repo:
+```bash 
+python src/setup/setup.py
 ```
 
+<!-- Activate your environment:
+```bash
+conda activate coldstun
+``` -->
 
+**default values, change to your preference**
+independent_year variable determines if the models train normally or if the users wishes to test on independent testing years, Set this to be '2021' or '2024', or for Regular testing on rolling origin rotation structure set to "cycle".
+independent_year = "cycle"
+cycle_list = [0,1,2,3,4,5,6,7,8,9] 
+start_iteration = 1
+end_iteration = 100
 
 **Train MSE model from scratch**
+go into the python script and change this variable
+model_name = "MSE"
 ```bash
-python src/train.py 
+python src/operational_mse_crps_driver.py 
 ```
 
 **Train CRPS model from scratch**
+go into the python script and change this variable
+model_name = "CRPS" 
 ```bash
-python src/train.py 
+python src/operational_mse_crps_driver.py 
 ```
 
 **Train PNN off a config file in models/, use existing config or make your own**
@@ -82,15 +85,6 @@ python pnn_driver.py @c/pnn_12.txt
 python pnn_driver.py @c/pnn_48.txt
 python pnn_driver.py @c/pnn_96.txt
 
-python mse_driver.py @c/mse_12.txt
-python mse_driver.py @c/mse_48.txt
-python mse_driver.py @c/mse_96.txt
-
-python crps_driver.py @c/crps_12.txt
-python crps_driver.py @c/crps_48.txt
-python crps_driver.py @c/crps_96.txt
-
-python driver.py @c/crps_96.txt # make the file name / architeccture
 ```
 
 **After Training models, follow the instructions and run visualization_driver.py while changing the relevant field. Evaluation and visaulization are reliant on one another. Please follow the instructions carefully in the comments within the visualization_driver file.
@@ -118,19 +112,3 @@ Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.ed
 Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)
 Son Nguyen: [Son.Nguyen@tamucc.edu](mailto:Son.Nguyen@tamucc.edu)
 Hector Marrero-Colominas: [Hector.MarreroColominas@tamucc.edu](mailto:Hector.MarreroColominas@tamucc.edu)
-
-## idea 2
-```
-**Make predictions with pre-trained model**
-
-The `trained_model` subdirectory includes outputs from MSE, CRPS, & PNN.
-
-```bash
-# Generate predictions
-# idea below, not actually implemented
-python src/driver/cmd_ai_builder.py \
-    --flag1 False \
-    --flag2 False \
-    --flag3 False \
-    --flag4 False
-```

@@ -49,8 +49,8 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD
 """
 
 # if train:     training a model using hyperparameters gained from tuning
-tune_train_test = "train" # "train", "test"
-model_name = "MSE" 
+tune_train_test = "train" 
+model_name = "MSE" # "MSE" or "CRPS"
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
 # For Regular testing on rolling origin rotation structure set to "cycle"
