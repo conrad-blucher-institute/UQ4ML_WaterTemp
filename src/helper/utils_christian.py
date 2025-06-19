@@ -34,9 +34,9 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # if independent_year == 'cycle', then that means that we are doing the regular cycle year as testing
     if independent_year != 'cycle':
 
-        if independent_year == '21':
+        if independent_year == '2021':
             data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
-        elif independent_year == '24':
+        elif independent_year == '2024':
             data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
 
         
