@@ -12,7 +12,7 @@
 --activation_function=leaky_relu
 --patience=25
 --min_delta=0
---epochs=2000
+--epochs=2
 --metrics
 mae
 mse
@@ -22,17 +22,9 @@ mse
 256
 --num_output_neurons=1
 --lambda_l2=0.01
---repetitions=100
+--repetitions=2
 --leadtime
 12
 --cycle
 0
 1
-2
-3
-4
-5
-6
-7
-8
-9

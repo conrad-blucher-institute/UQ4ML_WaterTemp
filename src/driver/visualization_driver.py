@@ -53,7 +53,8 @@ leadTimes = [12]#[12, 48, 96]
 architectures = ['mse','PNN', "CRPS"] #['mse','PNN', "CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 100
+# iterations = 100
+iterations = 2
 
 """
 Should be set to either "val", "test", or "train" depending on what information
@@ -88,7 +89,7 @@ if runAggregateCode == False:
 
         # This Line Will need to be ran to plot the graphs
         decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
-        
+
 else:
     
     ##### Aggregate Table Execution Code #######

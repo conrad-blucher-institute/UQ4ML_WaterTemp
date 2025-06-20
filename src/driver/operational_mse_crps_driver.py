@@ -11,6 +11,9 @@ for predicting water temperature in the Laguna Madre, TX for Cold Stunning Event
 
 
 # Import packages
+from src.helper.utils_christian import crps_loss, crps
+from src.helper.utils_christian import preparingData
+
 import os
 from pathlib import Path
 import sys 
@@ -34,8 +37,6 @@ from keras.callbacks import EarlyStopping
 
 import pickle 
 
-from utils_christian import crps_loss, crps
-from utils_christian import preparingData
 import pandas as pd
 
 from datetime import datetime
@@ -50,7 +51,7 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD
 
 # if train:     training a model using hyperparameters gained from tuning
 tune_train_test = "train" 
-model_name = "MSE" # "MSE" or "CRPS"
+model_name = "CRPS" # "MSE" or "CRPS"
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
 # For Regular testing on rolling origin rotation structure set to "cycle"
@@ -58,21 +59,24 @@ independent_year = "cycle"
 
 """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
 # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
-cycle_list = [0,1,2,3,4,5,6,7,8,9] 
+# cycle_list = [0,1,2,3,4,5,6,7,8,9] 
+cycle_list = [0,1] 
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1
-end_iteration = 10
+end_iteration = 1
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [12,48,96] 
+# lead_time_list = [12,48,96] 
+lead_time_list = [12,48] 
 hours_back = 24  
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
 temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
 
 # number of epochs
-epochs = 2000
+# epochs = 2000
+epochs = 1
 
 input_structure = "descending"
 output_activation = 'linear'
@@ -305,7 +309,7 @@ if tune_train_test == "train":
                 
                 
                     # grabbing the epoch logs to save after training
-                    from utils_christian import TrainingLogger
+                    from src.helper.utils_christian import TrainingLogger
 
                     logger = TrainingLogger(save_path / "std_output.txt")
 

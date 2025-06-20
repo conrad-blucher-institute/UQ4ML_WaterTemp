@@ -1,7 +1,0 @@
-[project]
-name = "your_project"
-entrypoint = "python setup.py"
-
-[environment]
-base = "conda:python=3.10.13"
-files = ["environment.yml", "requirements.txt"]

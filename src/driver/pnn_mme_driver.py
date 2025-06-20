@@ -9,14 +9,14 @@ Edits made by: Hector
 "scp -r nextgun@schooner.oscer.ou.edu:/home/nextgun/ /Users/hmarrero/"
 
 '''hector's imports @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
-from helper.utils import preparingData
+from src.helper.utils_pnn import preparingData
 # logging experiment to mimic schooners std.out & std.error files
-from helper.Logger import Logging 
-from helper.job_iterator import JobIterator
+from src.helper.Logger import Logging 
+from src.helper.job_iterator import JobIterator
 # import result_visualizer
 
-from my_parser import create_parser
-from src.utils import ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError
+from src.helper.my_parser import create_parser
+from src.helper.utils_christian import ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError
 
 '''@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
 import tensorflow as tf

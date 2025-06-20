@@ -551,7 +551,7 @@ def mae(y_true, y_pred):
     score = tf.reduce_mean(differences) 
     
     return score.numpy() 
-  
+
 def mae12(y_true, y_pred):
     import tensorflow as tf 
     # If there are multiple ensemble outputs, compute ensemble mean and take one target value.
@@ -589,7 +589,7 @@ def mse(y_true, y_pred):
     score = tf.reduce_mean(mean_square) 
     
     return score.numpy() 
-  
+
 def me(y_true, y_pred): 
     import tensorflow as tf 
 
@@ -605,7 +605,7 @@ def me(y_true, y_pred):
     score = tf.reduce_mean(mean_square) 
     
     return score.numpy()
-  
+
 def rmse(y_true, y_pred): 
     import tensorflow as tf 
 
@@ -745,3 +745,155 @@ def crps_loss(y_true, y_pred):
     score = tf.reduce_mean(score)
 
     return score
+
+
+# functions below are needed only in pnn_mme_driver.py, might need refactoring
+
+def ryan_ssrel(y_true, y_pred, y_std=None): 
+    import tensorflow as tf 
+    import numpy as np 
+
+    y_true = tf.expand_dims(y_true, axis=-1) 
+
+    if not isinstance(y_true, np.ndarray):
+        # y_true = y_true.numpy()
+        y_true = np.array(y_true)
+    
+    if not isinstance(y_pred, np.ndarray):
+        # y_pred = y_pred.numpy()
+        y_pred = np.array(y_pred)
+    
+    if not isinstance(y_std, np.ndarray):
+        # y_pred = y_pred.numpy()
+        y_std = np.array(y_std)
+    
+    def create_contours(minVal, maxVal, nContours, match=False): 
+        if match: 
+            xVal = np.max([np.abs(minVal), np.abs(maxVal)]) 
+            interval = 2 * xVal / (nContours - 1) 
+        else: 
+            interval = (maxVal - minVal) / (nContours - 1) 
+        contours = np.empty((nContours)) 
+        for i in range(nContours): 
+            contours[i] = minVal + i * interval 
+        return contours 
+    
+    nPts = y_true.shape[0] 
+    y_pred_mean = tf.math.reduce_mean(y_pred, axis=-1) 
+    # if y_std == None:
+    if y_std is None:
+        y_std = np.std(y_pred, axis=-1) 
+    minBin = np.min([0., y_std.min()]) 
+    
+    print()
+    maxBin = np.ceil(np.max([rmse(y_true, y_pred), y_std.max()])) 
+    
+    nBins = 10 
+    ssRel = 0. 
+    error = np.zeros((nBins)) - 999. 
+    spread = np.zeros((nBins)) - 999. 
+    y_on_error = np.zeros((y_pred.shape)) - 999. 
+    
+    bins = create_contours(minBin, maxBin, nBins+1) 
+    
+    for i in range(nBins): 
+        refs = np.logical_and(y_std >= bins[i], y_std < bins[i + 1]) 
+        nPtsBin = np.count_nonzero(refs) 
+        if nPtsBin > 0: 
+            ytrueBin = y_true[refs] 
+            ymeanBin = y_pred[refs] 
+            error[i] = rmse(ytrueBin, ymeanBin) 
+            spread[i] = np.mean(y_std[refs]) 
+            y_on_error[refs] = np.abs(y_true[refs] - y_pred[refs]) 
+            ssRel += (nPtsBin/nPts) * np.abs(error[i] - spread[i])
+
+    score = ssRel
+
+    return score
+
+def ssrat_avg(y_true, y_pred, y_std):
+    import tensorflow as tf 
+    ssrat_score = tf.math.reduce_mean(y_std)/rmse_avg(y_true, y_pred)
+
+    return ssrat_score.numpy()
+
+def me(y_true, y_pred):
+    import tensorflow as tf
+
+    return tf.reduce_mean(tf.subtract(y_true, y_pred), axis=-1)
+
+'''
+me12() computes only Mean Error below 12 degrees celsuis.
+Referenced Jaretts earlier version 'errorBelow12c' funciton. 
+Author: Hector M. Marrero-Colominas
+'''
+def me12(y_true, y_pred):
+    import numpy as np
+    meanErrBelow12List = []
+    
+    for i in range(len(y_true)):
+        # Creating lists that contains the mean error and mae below 12 celsius
+        if (y_true[i] < 12): meanErrBelow12List.append(y_pred[i] - y_true[i])
+
+    # Computing the mean error for the predictions
+    return np.mean(meanErrBelow12List)
+
+"""
+errorBelow12c() computes the mean error and mae below 12 celsius. It also returns a list of all
+the errors for both metrics. These lists are necessary to later compute the std and std error
+"""
+def errorBelow12c(y_true, y_pred):
+    import numpy as np
+    
+    meanErrBelow12List = []
+    maeBelow12List = []
+    
+    for i in range(len(y_true)):
+        
+        # Creating lists that contains the mean error and mae below 12 celsius
+        if (y_true[i] < 12):
+            residualBelow12 = y_pred[i] - y_true[i]
+            meanErrBelow12List.append(residualBelow12)
+            
+            absResidual = abs(residualBelow12)
+            maeBelow12List.append(absResidual)
+    
+    # Computing the mean error and mae for the predictions
+    meanErrorBelow12 = np.mean(meanErrBelow12List)
+    maeBelow12 = np.mean(maeBelow12List)
+    
+    return meanErrorBelow12,  maeBelow12, maeBelow12List
+
+"""
+max10PercError() computes the mean error for the 10% worst predictions. It also retunrs a list
+with all the mean absolute errors for the top 10% worst predictions
+Referenced Jaretts earlier version 'max10PercError' funciton. 
+Author: Hector M. Marrero-Colominas 
+"""
+def max10PercentError(y_true, y_pred):
+    """
+    Calculate the mean of the top 10% largest absolute residual errors from a list of residuals.
+    
+    Args:
+        residuals (list or array): List of residual errors (could be negative or positive).
+        trials (int): The number of trials (not used in this calculation but could be used for further processing).
+        
+    Returns:
+        float: The mean of the top 10% largest absolute residual errors, rounded to 4 decimal places.
+    """
+
+    import numpy as np
+
+    # Step 1: Compute the residuals of each prediction in the input list
+    residuals = [y_pred[i] - y_true[i] for i in range(len(y_pred))]
+
+    # Step 2: Compute the absolute value of each residual in the input list
+    absResiduals = [abs(residual) for residual in residuals] 
+
+    # Step 3: Sort the absolute residuals in descending order and get the top 10% worst residuals
+    top10Percent = sorted(absResiduals, reverse=True)[:max(1, int(len(absResiduals) * 0.1))]
+
+    # Step 4: Calculate and return the mean of the top 10% of residuals, rounded to 4 decimal places
+    return np.round(np.mean(top10Percent), 4)
+
+
