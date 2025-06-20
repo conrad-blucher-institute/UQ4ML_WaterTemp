@@ -51,7 +51,7 @@ def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cyc
         i+=1
         
         # Reads dataframes in regardless of macOS or Windows
-        file_path = Path("UQ4ML_WaterTemp") / "src" / MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture}-{model}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
+        file_path = Path("UQ4ML_WaterTemp") / "src" / MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture.lower()}-{model}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
         df = pd.read_csv(file_path)
         if i == 1:
             
