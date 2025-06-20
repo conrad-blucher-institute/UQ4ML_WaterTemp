@@ -122,3 +122,23 @@ Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.ed
 Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)
 Son Nguyen: [Son.Nguyen@tamucc.edu](mailto:Son.Nguyen@tamucc.edu)
 Hector Marrero-Colominas: [Hector.MarreroColominas@tamucc.edu](mailto:Hector.MarreroColominas@tamucc.edu)
+
+
+
+# jarett - delete later
+**can be concurrent - one for mse**
+python -m src.driver.operational_mse_crps_driver 
+**can be concurrent - one for crps**
+python -m src.driver.operational_mse_crps_driver 
+**can be concurrent**
+python -m src.driver.pnn_mme_driver @configs/pnn_12h.txt
+python -m src.helper.pnn_to_csv @configs/pnn_12h.txt
+**can be concurrent**
+python -m src.driver.pnn_mme_driver @configs/pnn_48h.txt
+python -m src.helper.pnn_to_csv @configs/pnn_48h.txt
+**can be concurrent**
+python -m src.driver.pnn_mme_driver @configs/pnn_96h.txt
+python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
+
+**this is where it broke for me**
+python -m src.driver.visualization_driver

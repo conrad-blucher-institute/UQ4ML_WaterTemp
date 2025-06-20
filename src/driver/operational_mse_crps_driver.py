@@ -51,7 +51,7 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD
 
 # if train:     training a model using hyperparameters gained from tuning
 tune_train_test = "train" 
-model_name = "CRPS" # "MSE" or "CRPS"
+model_name = "MSE" # "MSE" or "CRPS"
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
 # For Regular testing on rolling origin rotation structure set to "cycle"
@@ -64,7 +64,7 @@ cycle_list = [0,1]
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1
-end_iteration = 1
+end_iteration = 2
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
 # lead_time_list = [12,48,96] 
@@ -87,28 +87,12 @@ learning_rate = 0.01
 optimizer = 'adam' 
 kernel_regularizer = 'l2'
 
-
-
-##### Checks to see if user wishes to contine training ########
-while True:
-    user_input = input(f"You are about to start\n-------------------- {tune_train_test.upper()}ING --------------------\nAre you sure you want to continue {tune_train_test.upper()}ING ? (y/n)\n").strip().lower()
-    if user_input in ['y', 'n']:
-        break
-    else:
-        print("Invalid input. Try again. (input a 'y' or a 'n')")
-
-if user_input == 'y':
-    print(f"Continuing...")
-elif user_input == 'n':
-    print(f"Stopping...")
-    sys.exit()
-
 path_to_data = "../UQ4ML_WaterTemp/data/June_May_Datasets"
 
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
-start_iteration = 1
-end_iteration = 100
+# start_iteration = 1
+# end_iteration = 100
 
 if start_iteration > end_iteration:
     up_down = -1

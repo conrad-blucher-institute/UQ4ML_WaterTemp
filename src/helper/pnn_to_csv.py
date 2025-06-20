@@ -203,8 +203,19 @@ if __name__ == "__main__":
 
             # Path to folder
             model_folder = f"results/{model_args.results_folder}_csv/_LT_{model_args.c_leadtime}_/{model_name}_/"
-
+            
             Path(model_folder).mkdir(parents=True, exist_ok=True)   # create path for results; so directory wont get flooded
+
+            if model_args.c_leadtime == 12:
+                combo = 'combo2'
+            if model_args.c_leadtime == 48:
+                combo = 'combo1'
+            if model_args.c_leadtime == 96:
+                combo = 'combo1'
+
+
+            path_to_csv = f"UQ4ML_WaterTemp/src/results/pnn_results/{model_args.c_leadtime}h/pnn-{combo}-cycle_{model_args.c_cycle}-iteration_{model_args.c_repetitions+1}/"
+            Path(path_to_csv).mkdir(parents=True, exist_ok=True)
 
             # Path to where model is saved 
             # modelPath = model_folder + model_name
@@ -237,6 +248,7 @@ if __name__ == "__main__":
                                     "mae12": mae12})  
                 #       Save to CSV  
                 df.to_csv(model_folder + f"metrics_{item}.csv", index=False)
+                df.to_csv(path_to_csv + f"metrics_{item}.csv", index=False)
 
                 #       Create DataFrame  
                 df = pd.DataFrame({"date_time": r[f"{item}_data_dateAndTime"], 
@@ -245,3 +257,4 @@ if __name__ == "__main__":
                                     "sigma_1": sigma_pred})  
                 #       Save to CSV  
                 df.to_csv(model_folder + f"{item}_datetime_obsv_predictions.csv", index=False)
+                df.to_csv(path_to_csv + f"{item}_datetime_obsv_predictions.csv", index=False)

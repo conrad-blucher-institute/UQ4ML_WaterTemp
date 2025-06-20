@@ -1,0 +1,2 @@
+Epoch 1: loss=101.8618, mae=9.4596, val_loss=1711.3810, val_mae=40.0652, lr=0.0100
+Epoch 1: loss=1672.2306, mae=39.4820, val_loss=245.2611, val_mae=14.9972, lr=0.0100
