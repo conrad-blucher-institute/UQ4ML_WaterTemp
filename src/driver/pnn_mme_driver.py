@@ -559,9 +559,10 @@ def create_classifier_network(  input_shape=None,
 
 #fname functions needs to be updated
 def generate_fname_folder(args):
-    strng = args.results_folder
 
-    strng = 'results/' + args.results_folder + '/' 
+    strng = 'UQ4ML_WaterTemp/src/results/pnn_results/' 
+
+    strng += 'results/' + args.results_folder + '/' 
 
     strng += '_LT_' + str(args.c_leadtime) + '_/'
 

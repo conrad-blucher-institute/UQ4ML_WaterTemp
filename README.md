@@ -24,38 +24,11 @@ We use water and air temperature observation measurements provided by Texas Coas
 **Temperature threshold (°C):** Critical water temperature threshold for cold-stunning event risk for sea turtles: 8°C (Shaver et al., 2017); for fisheries: 4.5°C (Texas Parks and Wildlife Department, 2021)
 
 
-<!-- ## Installation (Windows 10) -->
-<!-- we provide a .yaml
-then the steps
-```
-lilypod run
-``` -->
-<!-- 
+# Setting up the environment
+**Simple Fix**
+This repository was made with specific versions of libraries. Most notably Tensorflow version 2.15.0
+If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml everything in this repository will work. 
 
-### idea 1
-### Conda Environment Setup
-```bash
-# Create environment
-conda env create -f environment.yml
-
-# Activate environment
-conda activate coldstun
-
-# Install pip specific packages
-pip install lib1 lib2 lib3 lib4 etc
-``` --> -->
-
-
-## Quickstart
-Build environment needed to run repo:
-```bash 
-python setup.py
-```
-
-<!-- Activate your environment:
-```bash
-conda activate coldstun
-``` -->
 
 **default values, change to your preference**
 independent_year variable determines if the models train normally or if the users wishes to test on independent testing years, Set this to be '2021' or '2024', or for Regular testing on rolling origin rotation structure set to "cycle".
@@ -79,13 +52,11 @@ python -m src.driver.operational_mse_crps_driver
 ```
 
 **Train PNN off a config file in models/, use existing config or make your own**
-**Train PNN model**
 ```bash
 python -m src.driver.pnn_mme_driver @configs/pnn_12h.txt
 python -m src.driver.pnn_mme_driver @configs/pnn_48h.txt
 python -m src.driver.pnn_mme_driver @configs/pnn_96h.txt
-```
-```bash
+
 python -m src.helper.pnn_to_csv @configs/pnn_12h.txt
 python -m src.helper.pnn_to_csv @configs/pnn_48h.txt
 python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
@@ -94,7 +65,7 @@ python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
 **How to Evaluate and Visualize the results**
 inside visualization_driver there is comments explaining how to change the variables to fit what you need.
 ```bash
-python src/driver/visualization_driver.py
+python -m src/driver/visualization_driver.py
 ```
 
 **After Training models, follow the instructions and run visualization_driver.py while changing the relevant field. Evaluation and visaulization are reliant on one another. Please follow the instructions carefully in the comments within the visualization_driver file.
@@ -122,23 +93,3 @@ Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.ed
 Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)
 Son Nguyen: [Son.Nguyen@tamucc.edu](mailto:Son.Nguyen@tamucc.edu)
 Hector Marrero-Colominas: [Hector.MarreroColominas@tamucc.edu](mailto:Hector.MarreroColominas@tamucc.edu)
-
-
-
-# jarett - delete later
-**can be concurrent - one for mse**
-python -m src.driver.operational_mse_crps_driver 
-**can be concurrent - one for crps**
-python -m src.driver.operational_mse_crps_driver 
-**can be concurrent**
-python -m src.driver.pnn_mme_driver @configs/pnn_12h.txt
-python -m src.helper.pnn_to_csv @configs/pnn_12h.txt
-**can be concurrent**
-python -m src.driver.pnn_mme_driver @configs/pnn_48h.txt
-python -m src.helper.pnn_to_csv @configs/pnn_48h.txt
-**can be concurrent**
-python -m src.driver.pnn_mme_driver @configs/pnn_96h.txt
-python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
-
-**this is where it broke for me**
-python -m src.driver.visualization_driver

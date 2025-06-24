@@ -120,7 +120,10 @@ def looper(leadtime, cycle, directory, numTrials, verbose=0, independent=False):
         if verbose==1:
             print('lt:',lt)
 
-        folder = 'results/' + directory + '/_LT_' + str(lt) + '_/'
+            
+        folder = 'UQ4ML_WaterTemp/src/results/pnn_results/' 
+
+        folder += 'results/' + directory + '/_LT_' + str(lt) + '_/'
         
         # folder = f"E:/pnn_tuning/Phase_3_7zip/{directory}/_LT_{lt}_/" # ssd path 
 

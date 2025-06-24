@@ -1,2 +1,0 @@
-Epoch 1: loss=1.6998, crps=1.3359, val_loss=0.7889, val_crps=0.5545, lr=0.0100
-Epoch 1: loss=0.7411, crps=0.5399, val_loss=0.7369, val_crps=0.5654, lr=0.0100
