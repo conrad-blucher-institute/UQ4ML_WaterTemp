@@ -51,7 +51,7 @@ def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cyc
         i+=1
         
         # Reads dataframes in regardless of macOS or Windows
-        file_path = Path("UQ4ML_WaterTemp") / "src" / MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture.lower()}-{model}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
+        file_path = Path("src") /  MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture.lower()}-{model}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
         df = pd.read_csv(file_path)
         if i == 1:
             
@@ -212,7 +212,7 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
                         modDf2 = mse_metrics(modDf1)
 
                     # To ensure cross compatability
-                    base_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"
+                    base_dir = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"
 
                     # Create the directories if they do not exist
                     base_dir.mkdir(parents=True, exist_ok=True)
@@ -256,7 +256,7 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
             for model in model_list:
 
                 # Utilizes Path for cross compatability regardless of macOs or Windows
-                input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                input_path = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
                 df = pd.read_csv(input_path)
 
                 df['date_time'] = pd.to_datetime(df["date_time"])
@@ -467,7 +467,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
 
     if save:
         # Define output directory path
-        output_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / f"{arch_title}_StdevPlot"
+        output_dir = Path("src") / "UQ_Visuals_Tables_Files" / f"{arch_title}_StdevPlot"
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Save the figure to HTML
