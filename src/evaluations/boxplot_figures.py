@@ -37,7 +37,7 @@ def figure_4_plot():
      Paper. IT assumes that the relevant aggregate table files exist for both
      validation and testing.
     """
-    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables" 
+    aggregate_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Aggregate_Tables" 
     
     # Read in two dataframes for concatenation and preparation for plotting
     valDf = pd.read_csv(aggregate_dir / 'val_cold_metrics_results_performance_byCycleAggregateTable.csv')
@@ -167,7 +167,7 @@ def figure_4_plot():
 
     )
     
-    save_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" "Paper_Figures"
+    save_dir = Path("src") / "UQ_Visuals_Tables_Files"/ "Paper_Figures"
 
     # Create it if it doesn't exist
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -188,11 +188,11 @@ def figure_5_6_plot(obsVsPred, threshold):
         threshold: integer representing threshold.
     """
     # Specifies Path to Aggregate Tables Folder
-    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
+    aggregate_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     
     # Read in two dataframes for concatenation and preparation for plotting
     df1 = pd.read_csv(aggregate_dir / f'{obsVsPred}_cold_metrics_results_performance_byCycleAggregateTable.csv')
-    df2 = pd.read_csv(aggregate_dir / f'{obsVsPred}_temp<{threshold}_metrics_results_performance_byCycleAggregateTable.csv')
+    df2 = pd.read_csv(aggregate_dir / f'{obsVsPred}_templt{threshold}_metrics_results_performance_byCycleAggregateTable.csv')
     df = pd.concat([df1, df2], axis=0, ignore_index=True)
     
     # Flip sign of ME and ME12 to reflect prediction - observation
@@ -228,6 +228,7 @@ def figure_5_6_plot(obsVsPred, threshold):
     
     # Plot
     fig, axes = plt.subplots(len(metrics), len(lead_times), figsize=(6.5, 2.0 * len(metrics)), sharey='row')
+    print(axes)
     fig.subplots_adjust(hspace=0.4, wspace=0.3)
     
     for i, metric in enumerate(metrics):
@@ -327,7 +328,7 @@ def figure_5_6_plot(obsVsPred, threshold):
         figname = 'Fig5_6_Plot_' + obsVsPred
 
     
-    save_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Paper_Figures"
+    save_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Paper_Figures"
 
     # Create it if it doesn't exist
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -346,7 +347,7 @@ def figure_12_plot(padded):
         
         padded: integer representing hours before and after URI.
     """
-    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
+    aggregate_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     # Reads in the correct Csv containing the relevant information
     df = pd.read_csv(aggregate_dir / '2021_URI_padded_metrics_results_performance_byCycleAggregateTable.csv') 
     
@@ -477,7 +478,7 @@ def figure_12_plot(padded):
     )
 
     # Build Path
-    save_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Paper_Figures"
+    save_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Paper_Figures"
 
     # Create it if it doesn't exist
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -499,7 +500,7 @@ def existance_checker():
         True if both files exist.
     """
     # Path build
-    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
+    aggregate_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
     files = {
         'val': aggregate_dir / 'val_cold_metrics_results_performance_byCycleAggregateTable.csv',
         'test': aggregate_dir / 'test_cold_metrics_results_performance_byCycleAggregateTable.csv'
