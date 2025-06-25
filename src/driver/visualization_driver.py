@@ -18,7 +18,7 @@ import os
 from pathlib import Path
 
 # Add the parent directory of 'driver' to the path
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+#sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from evaluations.cross_validation_visuals_paper import mme_mse_crps_PNN_lead_times_singlePlot, decentralized_graphing_driver
 
@@ -40,22 +40,20 @@ this exists so you dont have to run the intensive functions again
 runAggregateCode = False #True
 
 # Variable to save the plots will be set to True, otherwise false. 
-# Note: It is probably better to just save the plots, they are not large files. 
+# Note: The plot files are not large, but I would keep this true so that you can look at your plots. 
 save = True
 
 # List of cycles to create necessary files for plotting and aggregate tables 
-# cycles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-cycles = [0, 1]
+cycles = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 # List of leadTimes to make visuals and tables for models at different lead times. 
-leadTimes = [12]#[12, 48, 96]
+leadTimes = [12, 48, 96]
 
 # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
 architectures = ['mse','PNN',"CRPS"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-# iterations = 100
-iterations = 2
+iterations = 100
 
 """
 Should be set to either "val", "test", or "train" depending on what information
@@ -155,7 +153,7 @@ else:
  please run the above script to output the correct outputs so that figure 4 
 code can run."""
 
-# Set to true to get this figure to be saved; ensur eyou have the files described above.
+# Set to true to get this figure to be saved; ensure you have the files described above.
 runFig4 = False
 
 if runFig4:
