@@ -234,7 +234,7 @@ if tune_train_test == "train":
                     data_prep_time_end = datetime.now()
 
                     # Path to folder for visualization results
-                    save_path = Path("UQ4ML_WaterTemp") / "src" / "results" /  f"{model_name.lower()}_results" /f"{lead_time}h" / f"{combo_name}-cycle_{cycle}-iteration_{iteration}"
+                    save_path = Path("src") / "results" / f"{model_name.lower()}_results" / f"{lead_time}h" / f"{combo_name}-cycle_{cycle}-iteration_{iteration}"
                     save_path.mkdir(parents=True, exist_ok=True)
 
                     with open(save_path / "data_prep_compute_time.txt", 'w') as compute_time_file:
