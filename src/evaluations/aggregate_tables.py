@@ -76,7 +76,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                     if byCycle == True:
                         
                         # Path creation
-                        input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                        input_path = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
                         df = pd.read_csv(input_path)
                         
                         saveIdentifier = "byCycle"
@@ -84,7 +84,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                     else:
                         # Path creation
                         uq_folder = "_".join(architectures) + "_byUQMethod_UQ_Files"
-                        input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / uq_folder / f"{obsVsPred}_{leadTime}h_{architecture}_Model_{model}.csv"
+                        input_path = Path("src") / "UQ_Visuals_Tables_Files" / uq_folder / f"{obsVsPred}_{leadTime}h_{architecture}_Model_{model}.csv"
                         
                         df = pd.read_csv(input_path)
 
@@ -251,7 +251,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
 
     # This section of code takes care of creating a folder called AggregateTables that will store all of the csvs
     # Define the folder path
-    aggregate_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
+    aggregate_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Aggregate_Tables"
 
     # Create it if it doesn't exist
     aggregate_dir.mkdir(parents=True, exist_ok=True)
@@ -270,7 +270,8 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
     # Save the DataFrame to a CSV file
     whole_results_df.to_csv(aggregate_dir /f'{obsVsPred}_whole_metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
     cold_results_df.to_csv(aggregate_dir /f'{obsVsPred}_cold_metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
-    temp_results_df.to_csv(aggregate_dir /f'{obsVsPred}_temp<{threshold}_metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
+    temp_results_df.to_csv(aggregate_dir /f'{obsVsPred}_templt{threshold}_metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
+
     
 # END: def aggregateTable()
 
@@ -304,7 +305,7 @@ def pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred):
                 for cycle in cycles:
                     
                     # Path to ensure compatability
-                    input_path = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                    input_path = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
                     df = pd.read_csv(input_path)
 
                     # Appends dataframe to list for concatenation
@@ -319,7 +320,7 @@ def pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred):
                 uq_folder_name = "_".join(architectures) + "_byUQMethod_UQ_Files"
 
                 # Define the full path under UQ_Visuals_Tables_Files
-                output_dir = Path("UQ4ML_WaterTemp") / "src" / "UQ_Visuals_Tables_Files" / uq_folder_name
+                output_dir = Path("src") / "UQ_Visuals_Tables_Files" / uq_folder_name
 
                 # Create the directory (and any parents) if it doesn't exist
                 output_dir.mkdir(parents=True, exist_ok=True)
