@@ -30,7 +30,7 @@ This repository was made with specific versions of libraries. Most notably Tenso
 If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml everything in this repository will work. 
 
 # Preparing Models for Training
-**Variable descriptions for training.**
+**Variable descriptions for training:**
 * independent_year: 
     * Variable that controls model testing mode:
         * Set to **"2021"** or **"2024"** to have the models test on the independent hold-out years.
@@ -56,21 +56,21 @@ If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml 
         * Set to **CRPS** to run the trainer to train CRPS. 
 
 
-**Default values, change to your preference.**
-independent_year = "cycle"
-cycle_list = [0,1,2,3,4,5,6,7,8,9] 
-start_iteration = 1
-end_iteration = 100
+**Default values, change to your preference:** <br>
+independent_year = "cycle"<br>
+cycle_list = [0,1,2,3,4,5,6,7,8,9] <br> 
+start_iteration = 1 <br>
+end_iteration = 100 <br>
 
 **Train MSE model from scratch**
-To train the MSE model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"MSE"**
+To train the MSE model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"MSE"** <br>
 model_name = "MSE"
 ```bash
 python -m src.driver.operational_mse_crps_driver 
 ```
 
 **Train CRPS model from scratch**
-To train the CRPS model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"CRPS"**
+To train the CRPS model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"CRPS"**<br>
 model_name = "CRPS" 
 ```bash
 python -m src.driver.operational_mse_crps_driver 
