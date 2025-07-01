@@ -56,11 +56,11 @@ If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml 
         * Set to **CRPS** to run the trainer to train CRPS. 
 
 
-**Default values, change to your preference:** <br>
-independent_year = "cycle"<br>
-cycle_list = [0,1,2,3,4,5,6,7,8,9] <br> 
-start_iteration = 1 <br>
-end_iteration = 100 <br>
+**Default values, change to your preference:** 
+* independent_year = "cycle"
+* cycle_list = [0,1,2,3,4,5,6,7,8,9] 
+* start_iteration = 1 
+* end_iteration = 100 
 
 **Train MSE model from scratch**
 To train the MSE model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"MSE"** <br>
