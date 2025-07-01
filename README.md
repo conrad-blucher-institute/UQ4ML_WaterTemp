@@ -89,8 +89,8 @@ $src/
 ```
 
 ## Contact
-Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.edu) <br>
-Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)<br>
-Son Nguyen: [Son.Nguyen@tamucc.edu](mailto:Son.Nguyen@tamucc.edu) <br>
-Hector Marrero-Colominas: [Hector.MarreroColominas@tamucc.edu](mailto:Hector.MarreroColominas@tamucc.edu) <br>
-Jarett Woodall: [jarett.woodall@tamucc.edu](mailto:jarett.woodall@tamucc.edu) <br>
+* Miranda White: [MWhite20@islander.tamucc.edu](mailto:mwhite20@islander.tamucc.edu) <br>
+* Dr. Philippe Tissot: [Philippe.Tissot@tamucc.edu](mailto:Philippe.Tissot@tamucc.edu)<br>
+* Son Nguyen: [Son.Nguyen@tamucc.edu](mailto:Son.Nguyen@tamucc.edu) <br>
+* Hector Marrero-Colominas: [Hector.MarreroColominas@tamucc.edu](mailto:Hector.MarreroColominas@tamucc.edu) <br>
+* Jarett Woodall: [jarett.woodall@tamucc.edu](mailto:jarett.woodall@tamucc.edu) <br>
