@@ -30,22 +30,47 @@ This repository was made with specific versions of libraries. Most notably Tenso
 If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml everything in this repository will work. 
 
 
-**default values, change to your preference**
-independent_year variable determines if the models train normally or if the users wishes to test on independent testing years, Set this to be '2021' or '2024', or for Regular testing on rolling origin rotation structure set to "cycle".
+**Variable descriptions for training.**
+* independent_year: 
+    * Variable that controls model testing mode:
+        * Set to **"2021"** or **"2024"** to have the models test on the independent hold-out years.
+        * Set to **"cycle"** for rolling origin cross-validation (Default).
+     
+* cycle_list:
+    * Variable that controls the rotations (cycles) included in training:
+        * Set to **[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]** to test on rolling origin cross-validation (Default).
+     
+* start_iteration:
+    * Variable that controls where the number of trials start:
+        * Set to **1** to have the trainer begin at number 1 (Default).
+        
+* end_iteration:
+    * Variable that controls where the trials end:
+        * Set to **100** to have the triner stop running trials once it reaches 100 (Default).
+        * **Note:** The default value for this means that the trainer will run 100 times.
+        * To run fewer then this, change this variable to a number that will yield you the number of trials you would like.
+     
+* model_name:
+    * Variable that controls whether CRPS or MSE is trained.
+        * Set to **MSE** to run the trainer to train MSE.
+        * Set to **CRPS** to run the trainer to train CRPS. 
+
+
+**Default values, change to your preference.**
 independent_year = "cycle"
 cycle_list = [0,1,2,3,4,5,6,7,8,9] 
 start_iteration = 1
 end_iteration = 100
 
 **Train MSE model from scratch**
-go into the python script and change this variable
+To train the MSE model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"MSE"**
 model_name = "MSE"
 ```bash
 python -m src.driver.operational_mse_crps_driver 
 ```
 
 **Train CRPS model from scratch**
-go into the python script and change this variable
+To train the CRPS model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"CRPS"**
 model_name = "CRPS" 
 ```bash
 python -m src.driver.operational_mse_crps_driver 
