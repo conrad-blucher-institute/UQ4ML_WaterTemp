@@ -11,8 +11,8 @@ for predicting water temperature in the Laguna Madre, TX for Cold Stunning Event
 
 
 # Import packages
-from src.helper.utils_christian import crps_loss, crps
-from src.helper.utils_christian import preparingData
+from src.helper.utils_mse_crps import crps_loss, crps
+from src.helper.utils_mse_crps import preparingData
 
 from pathlib import Path
 
@@ -280,7 +280,7 @@ if tune_train_test == "train":
                 
                 
                     # grabbing the epoch logs to save after training
-                    from src.helper.utils_christian import TrainingLogger
+                    from src.helper.utils_mse_crps import TrainingLogger
 
                     logger = TrainingLogger(save_path / "std_output.txt")
 
