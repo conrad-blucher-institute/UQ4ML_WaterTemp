@@ -156,7 +156,7 @@ code can run."""
 # Set to true to get this figure to be saved; ensure you have the files described above.
 runFig5 = False
 
-if runFig4:
+if runFig5:
     if existance_checker():
         
         # Function to run figure 5
