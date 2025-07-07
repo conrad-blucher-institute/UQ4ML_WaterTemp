@@ -118,7 +118,7 @@ else:
         # Driver function call to include files for URI.
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
         
-        # Outputs Figure 12. The figures created using this function are outputted to a folder called "Paper_Figures".
+        # Outputs Figure 13 to a folder called "Paper_Figures".
         figure_13_plot(padding)
 
     # This elif is here to ensure the URI code in the aggregate table function is ran when byUQMethod is selected.
@@ -132,7 +132,7 @@ else:
         # Runs the function helper to get byCycle tables. 
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
-        # Figure 7 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
+         # Outputs Figure 7 to a folder called "Paper_Figures".
         figure_6_7_plot(obsVsPred, threshold)
     
     elif obsVsPred == 'test' and byCycle == True:
@@ -140,7 +140,7 @@ else:
          # Runs the function helper to get byCycle tables. 
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
-        # Figure 6 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
+         # Outputs Figure 6 to a folder called "Paper_Figures".
         figure_6_7_plot(obsVsPred, threshold)
         
     else:
