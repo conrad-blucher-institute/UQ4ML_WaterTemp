@@ -154,12 +154,12 @@ else:
 code can run."""
 
 # Set to true to get this figure to be saved; ensure you have the files described above.
-runFig4 = False
+runFig5 = False
 
 if runFig4:
     if existance_checker():
         
-        # Function to run figure 4
+        # Function to run figure 5
         figure_5_plot()
 
 
