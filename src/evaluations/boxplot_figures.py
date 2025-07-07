@@ -31,9 +31,9 @@ from pathlib import Path
 
 ####### Plotting Functions ########
 
-def figure_4_plot():
+def figure_5_plot():
     """
-     This function creates a plot folling the structure of Figure 4 in the UQ
+     This function creates a plot folling the structure of Figure 5 in the UQ
      Paper. IT assumes that the relevant aggregate table files exist for both
      validation and testing.
     """
@@ -172,19 +172,19 @@ def figure_4_plot():
     # Create it if it doesn't exist
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    fig.savefig(save_dir / 'Figure4.png', dpi=900)
+    fig.savefig(save_dir / 'Figure5.png', dpi=900)
 
-# END: def figure_4_plots()
+# END: def figure_5_plots()
 
-def figure_5_6_plot(obsVsPred, threshold):
+def figure_6_7_plot(obsVsPred, threshold):
     
     """
-    This function is designed to output the figures 5 and 6 based off of user 
+    This function is designed to output the figures 6 and76 based off of user 
     selections.
     
     Inputs:
         
-        obsVsPred: string - use '2021', '2024', 'val' or 'testing',
+        obsVsPred: string - use '2021', '2024', 'val' or 'test',
         threshold: integer representing threshold.
     """
     # Specifies Path to Aggregate Tables Folder
@@ -319,13 +319,13 @@ def figure_5_6_plot(obsVsPred, threshold):
     # Changes file name pending on what is being output
     if obsVsPred == '2024':
     
-        figname = 'Figure6.png'
+        figname = 'Figure7.png'
         
     elif obsVsPred == 'test':
-        figname = 'Figure5.png'
+        figname = 'Figure6.png'
         
     else:
-        figname = 'Fig5_6_Plot_' + obsVsPred
+        figname = 'Fig6_7_Plot_' + obsVsPred
 
     
     save_dir = Path("src") / "UQ_Visuals_Tables_Files" / "Paper_Figures"
@@ -336,11 +336,11 @@ def figure_5_6_plot(obsVsPred, threshold):
     # Save with bounding box tight to remove unnecessary white space
     fig.savefig(save_dir / figname, dpi=900, bbox_inches='tight')
     
-# END: def figure_5_6_plot()
+# END: def figure_6_7_plot()
 
-def figure_12_plot(padded):
+def figure_13_plot(padded):
     """
-    This function is designed to output the figure 12; if the user is using a
+    This function is designed to output the figure 13; if the user is using a
     different padded value it will be taken into the function.
     
     Inputs:
@@ -484,9 +484,9 @@ def figure_12_plot(padded):
     save_dir.mkdir(parents=True, exist_ok=True)
 
     # Saves Plot
-    plt.savefig(save_dir / 'Figure12.png', dpi=900) 
+    plt.savefig(save_dir / 'Figure13.png', dpi=900) 
     
-# END: def figure_12_plot()
+# END: def figure_13_plot()
 
 ####### Helper Function Checking For Files ######
 
@@ -523,7 +523,7 @@ def existance_checker():
 if __name__ == "__main__":
     
     # Variables that are changeable
-    figure_4_plot()
+    figure_5_plot()
     obsVsPred = "2021"
     padded = 24
     #figure_5_6_plot(obsVsPred, 12)
