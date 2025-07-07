@@ -90,7 +90,7 @@ python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
 **How to Evaluate and Visualize the Results**
 inside visualization_driver there is comments explaining how to change the variables to fit what you need.
 ```bash
-python -m src/driver/visualization_driver.py
+python -m src.driver.visualization_driver
 ```
 **After training models, follow the instructions and run visualization_driver.py while changing the relevant field. Evaluation and visualization are reliant on one another. Please follow the instructions carefully in the comments within the visualization_driver file.
 If you wish to make changes to the visuals, calculations, or other parts of this process please note you will have to refactor the code in their correspondng reference files.**
