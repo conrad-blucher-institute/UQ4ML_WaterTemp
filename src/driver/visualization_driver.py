@@ -132,7 +132,7 @@ else:
         # Runs the function helper to get byCycle tables. 
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
-        # Figure 6 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
+        # Figure 7 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
         figure_6_7_plot(obsVsPred, threshold)
     
     elif obsVsPred == 'test' and byCycle == True:
@@ -140,7 +140,7 @@ else:
          # Runs the function helper to get byCycle tables. 
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
-        # Figure 5 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
+        # Figure 6 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
         figure_6_7_plot(obsVsPred, threshold)
         
     else:
