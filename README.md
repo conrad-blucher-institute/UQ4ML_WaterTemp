@@ -46,7 +46,7 @@ If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml 
         
 * end_iteration:
     * Variable that controls where the trials end:
-        * Set to **100** to have the triner stop running trials once it reaches 100 (Default).
+        * Set to **100** to have the trainer stop running trials once it reaches 100 (Default).
         * **Note:** The default value for this means that the trainer will run 100 times.
         * To run fewer then this, change this variable to a number that will yield you the number of trials you would like.
      
