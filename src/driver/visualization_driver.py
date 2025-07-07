@@ -24,7 +24,7 @@ from evaluations.cross_validation_visuals_paper import mme_mse_crps_PNN_lead_tim
 
 from evaluations.aggregate_tables import aggregateTable
 
-from evaluations.boxplot_figures import figure_4_plot, figure_5_6_plot, figure_12_plot, existance_checker
+from evaluations.boxplot_figures import figure_5_plot, figure_6_7_plot, figure_13_plot, existance_checker
 
 ######## Variables ########
 """
@@ -119,7 +119,7 @@ else:
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
         
         # Outputs Figure 12. The figures created using this function are outputted to a folder called "Paper_Figures".
-        figure_12_plot(padding)
+        figure_13_plot(padding)
 
     # This elif is here to ensure the URI code in the aggregate table function is ran when byUQMethod is selected.
     elif obsVsPred == '2021' and byCycle == False:
@@ -133,7 +133,7 @@ else:
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
         # Figure 6 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
-        figure_5_6_plot(obsVsPred, threshold)
+        figure_6_7_plot(obsVsPred, threshold)
     
     elif obsVsPred == 'test' and byCycle == True:
     
@@ -141,7 +141,7 @@ else:
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
         
         # Figure 5 is ran and outputted. The figures created using this function are outputted to a folder called "Paper_Figures".
-        figure_5_6_plot(obsVsPred, threshold)
+        figure_6_7_plot(obsVsPred, threshold)
         
     else:
          # Runs the function helper to get byCycle tables, or if byCycle is set to False it will get the byUQMethod tables. 
@@ -160,7 +160,7 @@ if runFig4:
     if existance_checker():
         
         # Function to run figure 4
-        figure_4_plot()
+        figure_5_plot()
 
 
 
