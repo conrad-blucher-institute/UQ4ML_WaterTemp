@@ -30,7 +30,7 @@ This repository was made with specific versions of libraries. Most notably Tenso
 If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml everything in this repository will work. 
 
 # Preparing Models for Training
-**Variable descriptions for training:**
+**Variable descriptions for training (MSE and CRPS):**
 * independent_year: 
     * Variable that controls model testing mode:
         * Set to **"2021"** or **"2024"** to have the models test on the independent hold-out years.
@@ -62,6 +62,21 @@ If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml 
 * start_iteration = 1 
 * end_iteration = 100 
 
+**Variable descriptions for training (PNN):**
+
+To change the variables for the PNN model, you will have to navigate to the configs folder in the repository.
+Within the folder there are currently three files one for 12-hr, 48-hr, and 96-hr.
+* repetitions:
+    * Variable that controls the number of times the model runs:
+        * Set to **100** to have 100 runs execute (Default).
+     
+* cycle:
+    * Variable that determines the cycles that the model will train on:
+        * Numbers 0 - 9 are placed on new lines below **--cycle** within the config file (Default).
+* leadtime:
+     * Variable that controls what the leadtime the model will predict:
+        * Set to either 12, 48, 96, or a number a user wishes to test on. 
+
 **Train MSE model from scratch**
 To train the MSE model, go into **operational_mse_crps_driver** and change the **model_name** variable to equal **"MSE"** <br>
 model_name = "MSE"
@@ -77,6 +92,7 @@ python -m src.driver.operational_mse_crps_driver
 ```
 
 **Train PNN off a config file in models/, use existing config or make your own**
+
 ```bash
 python -m src.driver.pnn_mme_driver @configs/pnn_12h.txt
 python -m src.driver.pnn_mme_driver @configs/pnn_48h.txt
@@ -95,7 +111,7 @@ python -m src.driver.visualization_driver
 **After training models, follow the instructions and run visualization_driver.py while changing the relevant field. Evaluation and visualization are reliant on one another. Please follow the instructions carefully in the comments within the visualization_driver file.
 If you wish to make changes to the visuals, calculations, or other parts of this process please note you will have to refactor the code in their correspondng reference files.**
 
-**Note:** This file assumes that a main folder called "results" exists in the src directory that contains the corresponding model runs.
+**Note:** The visualization_driver.py assumes that a main folder called "results" exists in the src directory that contains the corresponding model runs. In other words, evaluation and visualization should only be made after the training of models is complete. 
 ```
 This is an example of what the results directory should look like, and where it should be located within the repository directory.
 $src/
