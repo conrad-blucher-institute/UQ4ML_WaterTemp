@@ -103,8 +103,8 @@ python -m src.helper.pnn_to_csv @configs/pnn_48h.txt
 python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
 ```
 # Model Evaluation and Visualization Creation
-**How to Evaluate and Visualize the Results**
-inside visualization_driver there is comments explaining how to change the variables to fit what you need.
+**How to Evaluate and Visualize the Results**<br>
+Inside the visualization_driver.py file there are comments explaining how to change the variables to fit what you need.
 ```bash
 python -m src.driver.visualization_driver
 ```
