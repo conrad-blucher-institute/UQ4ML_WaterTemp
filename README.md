@@ -49,7 +49,7 @@ No need to make an account.
     * You may have to extract the contents of the zip folder that has the repo
  - Click Import
 
-4. Activate the Environment:
+3. Activate the Environment:
 After the environment finishes installing, press the green play button next to environment name, and select 'open terminal'
 
  - If succeded near your shell prompt will be:
