@@ -1,14 +1,26 @@
 '''
-Original Author: Dr. Fagg
-Edits made by: Hector
+Author: Hector Marrero-Colominas
+Original Author & Inspo: Dr. Fagg
 '''
+# example execution:    $ python pnn_mme_driver.py @models/config.txt --enviroment=local (add optional command line args here)
 
-# example execution:    $ python cmd_ai_builder.py @models/PNN_customLoss-Mu.txt --enviroment=local (add optional command line args here)
-#                       $ python cmd_ai_builder.py @models/PNN_24h_inputted.txt -vv 
+import tensorflow as tf
+import pandas as pd
+import numpy as np
+import os
+import matplotlib.pyplot as plt
+import pickle
+from tensorflow import keras
+from tensorflow.keras import Sequential, regularizers
+from tensorflow.keras.layers import Convolution2D, Dense, MaxPooling2D, GlobalMaxPooling2D, Flatten, BatchNormalization, Dropout, SpatialDropout2D, InputLayer
+import re
+import multiprocessing as mp
 
-"scp -r nextgun@schooner.oscer.ou.edu:/home/nextgun/ /Users/hmarrero/"
+from pathlib import Path
+import sys
+import tensorflow_probability as tfp
 
-'''hector's imports @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
+
 from src.helper.utils_pnn import preparingData
 # logging experiment to mimic schooners std.out & std.error files
 from src.helper.Logger import Logging 
@@ -16,35 +28,8 @@ from src.helper.job_iterator import JobIterator
 # import result_visualizer
 
 from src.helper.my_parser import create_parser
-from src.helper.utils_christian import ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError
+from src.helper.utils_mse_crps import ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError
 
-'''@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@'''
-import tensorflow as tf
-import pandas as pd
-import numpy as np
-import os
-import fnmatch
-import matplotlib.pyplot as plt
-import pickle
-from tensorflow import keras
-from tensorflow.keras import Sequential, regularizers
-from tensorflow.keras.layers import Convolution2D, Dense, MaxPooling2D, GlobalMaxPooling2D, Flatten, BatchNormalization, Dropout, SpatialDropout2D, InputLayer
-import random
-import re
-import multiprocessing as mp
-
-from pathlib import Path
-from datetime import datetime
-import sys
-import tensorflow_probability as tfp
-
-# from mpi4py import MPI
-
-
-#from pypng
-''' import png '''
-#from sklearn.p
-import sklearn.metrics
 
 ################## Configure figure parameters
 FONTSIZE = 18
@@ -57,149 +42,6 @@ plt.rcParams['figure.figsize'] = FIGURE_SIZE
 plt.rcParams['xtick.labelsize'] = FONTSIZE
 plt.rcParams['ytick.labelsize'] = FONTSIZE
 ##################
-
-# CNN functions
-def readPngFile(filename):
-    '''
-    Read a single PNG file
-    
-    filename = fully qualified file name
-    
-    Return: 3D numpy array (rows x cols x chans)
-    
-    Note: all pixel values are floats in the range 0.0 .. 1.0
-    
-    This implementation relies on the pypng package
-    '''
-    #print("reading:", filename)
-    # Load in the image meta-data
-    r = png.Reader(filename)
-    it = r.read()
-    
-    # Load in the image itself and convert to a 2D array
-    image_2d = np.vstack(map(np.uint8, it[2]))
-    
-    # Reshape into rows x cols x chans
-    image_3d = np.reshape(image_2d,
-                            (it[0],it[1],it[3]['planes'])) / 255.0
-    return image_3d
-def read_images_from_directory(directory, file_regexp):
-    '''
-    Read a set of images from a directory.  All of the images must be the same size
-    
-    directory = Directory to search
-    
-    file_regexp = a regular expression to match the file names against
-    
-    Return: 4D numpy array (images x rows x cols x chans)
-    '''
-    
-    print(directory, file_regexp)
-    # Get all of the file names
-    files = sorted(os.listdir(directory))
-    
-    # Construct a list of images from those that match the regexp
-    list_of_images = [readPngFile(directory + "/" + f) for f in files if re.search(file_regexp, f) ]
-    
-    # Create a 3D numpy array
-    return np.array(list_of_images, dtype=np.float32)
-def read_image_set_from_directories(directory, spec):
-    '''
-    Read a set of images from a set of directories
-    
-    directory  = base directory to read from
-    
-    spec = n x 2 array of subdirs and file regexps
-    
-    Return: 4D numpy array (images x rows x cols x chans)
-    
-    '''
-    out = read_images_from_directory(directory + "/" + spec[0][0], spec[0][1])
-    for sp in spec[1:]:
-        out = np.append(out, read_images_from_directory(directory + "/" + sp[0], sp[1]), axis=0)
-    return out
-def load_multiple_image_sets_from_directories(directory_base, directory_list, object_list, test_files):
-    '''
-    
-    '''
-    print("##################")
-    # Create the list of object/image specs
-    inputs = [[obj, test_files] for obj in object_list]
-    
-    # First directory
-    ret = read_image_set_from_directories(directory_base + "/" + directory_list[0], inputs)
-    
-    # Loop over directories
-    for directory in directory_list[1:]:
-        ret = np.append(ret,
-                        read_image_set_from_directories(directory_base + "/" + directory, inputs),
-                        axis=0)
-
-    return ret
-def load_data_sets():
-    ## File location
-    directory_base = 'core50_128x128'
-
-    # Training set: define which files to load for each object
-    #test_files = '.*[05].png'
-    test_files = '.*[0].png'
-
-    ### Positive cases
-    # Define which objects to load
-    #object_list = ['o25', 'o22', 'o23', 'o24']
-    object_list = ['o21']
-
-    # Define which conditions to load
-    #condition_list = ['s1', 's2', 's3', 's4', 's5', 's7', 's8', 's9', 's10', 's11']
-    #condition_list = ['s1', 's2', 's3', 's4']
-    condition_list = ['s1']
-
-    # Load all of the objects/condition
-    ins_pos = load_multiple_image_sets_from_directories(directory_base, condition_list, object_list, test_files)
-
-    ### Negative cases
-    # Define which objects to load
-    #object_list2 = ['o45', 'o42', 'o43', 'o44']
-    object_list2 = ['o41']
-    ins_neg = load_multiple_image_sets_from_directories(directory_base, condition_list, object_list2, test_files)
-
-    ### Combine positives and negatives into a common data set
-    outs_pos = np.append(np.ones((ins_pos.shape[0],1)), np.zeros((ins_pos.shape[0],1)), axis=1)
-    outs_neg = np.append(np.zeros((ins_pos.shape[0],1)), np.ones((ins_pos.shape[0],1)), axis=1)
-
-    ins = np.append(ins_pos, ins_neg, axis=0)
-    outs = np.append(outs_pos, outs_neg, axis=0)
-
-    ########################################################################
-    # Validation set
-    # Define which files to load for each object
-    test_files = '.*[5].png'
-
-    ### Positives
-    # Define which objects to load
-    object_list = ['o22']
-    #object_list = ['o21']
-    condition_list = ['s2']
-
-    # Load the positives
-    ins_pos_validation = load_multiple_image_sets_from_directories(directory_base, condition_list, object_list, test_files)
-
-    ### Negatives
-    # Define objects
-    object_list2 = ['o42']
-    #object_list2 = ['o41']
-
-    # Load the negative cases
-    ins_neg_validation = load_multiple_image_sets_from_directories(directory_base, condition_list, object_list2, test_files)
-
-    ### Combine positives and negatives
-    outs_pos_validation = np.append(np.ones((ins_pos_validation.shape[0], 1)), np.zeros((ins_pos_validation.shape[0], 1)), axis=1)
-    outs_neg_validation = np.append(np.zeros((ins_pos_validation.shape[0], 1)), np.ones((ins_pos_validation.shape[0], 1)), axis=1)
-
-    ins_validation = np.append(ins_pos_validation, ins_neg_validation, axis=0)
-    outs_validation = np.append(outs_pos_validation, outs_neg_validation, axis=0)
-    
-    return ins, outs, ins_validation, outs_validation
 
 #
 def create_classifier_network_generic_probability(  input_shape=None,
@@ -901,12 +743,6 @@ def execute_experiment(args):
     if args.enviroment == 'local':
         sys.stdout.flush()
         sys.stderr.flush()
-        # log_redirector.close_logs()
-        # log_redirector.restore_output()
-    # if args.enviroment == 'local':
-    #     # Close the log files for the current folder
-    #     sys.stdout = sys.__stdout__
-    #     sys.stderr = sys.__stderr__
 
 def execute_experiment_wrapper(i, args, function):
     """
@@ -967,30 +803,6 @@ def run_experiments(args, function):
         pool.close() # Close the pool to prevent any new tasks from being submitted
         pool.join() # Wait for all tasks to complete before moving forward
 
-# def run_experiments_mpi(args, function):
-#     """
-#     Runs all experiments using MPI for multi-node parallel execution.
-#     Each node will use multiprocessing to parallelize experiments locally.
-#     """
-#     comm = MPI.COMM_WORLD
-#     rank = comm.Get_rank()
-#     size = comm.Get_size()
-
-#     num_of_total_experiments = len(args.cycle) * len(args.leadtime) * args.repetitions
-#     experiments_per_node = num_of_total_experiments // size
-#     start = rank * experiments_per_node
-#     end = start + experiments_per_node if rank != size - 1 else num_of_total_experiments
-
-#     with mp.Pool(processes=args.pool) as pool:
-#         for i in range(start, end):
-#             pool.apply_async(execute_experiment_wrapper, args=(i, args, function))
-
-#         pool.close()
-#         pool.join()
-
-#     comm.Barrier()  # Ensure all nodes complete before proceeding
-
-
 if __name__ == "__main__":
 
     # Parse incoming command-line arguments
@@ -1050,15 +862,5 @@ if __name__ == "__main__":
         configue_gpus(verbose=args.verbose)
         execute_experiment(args) # If not running locally (e.g., on schooner), run the experiment directly
 
-    '''the old sequential way I was running things'''
-    # # check enviroment
-    # if args.enviroment == 'local': # the local enviroment is more manuel and less automated then schooner
-    #     num_of_total_experiments = len(args.cycle)*len(args.leadtime)*args.repetitions
-    #     for i in range(num_of_total_experiments): #do the work
-    #         args.experiment_number = i
-    #         print('exp num:', i, args.experiment_number)
-    #         print('total num:', num_of_total_experiments)
-    #         execute_experiment(args)
-    # else: # we r in schooner
-    #     execute_experiment(args) # Do the work
+    # os.system("python -m src.helper.pnn_to_csv @configs/pnn_12h.txt") # unsure if i want this here -hector 7-10-2025
 

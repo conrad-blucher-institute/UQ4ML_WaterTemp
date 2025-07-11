@@ -25,9 +25,40 @@ We use water and air temperature observation measurements provided by Texas Coas
 
 
 # Setting up the environment
-**Simple Fix**
-This repository was made with specific versions of libraries. Most notably Tensorflow version 2.15.0
-If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yaml everything in this repository will work. 
+**Quick Start**
+There are a few ways you can set up the environment to get this repo working. Here's one approach that worked for us—your setup might differ depending on your hardware and preferences.
+
+This repository was made using Windows 11 
+We used specific versions of certain Python libraries. Most notably Tensorflow version 2.15.0
+If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yml, everything in this repository will work. 
+
+1. Install Anaconda Distribution GUI:
+Download from:
+<!-- https://www.anaconda.com/download/success -->
+https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Windows-x86_64.exe
+Follow the installation wizard using all default options.
+No need to make an account.
+
+2. Create the Environment:
+
+ - Open Anaconda Navigator
+ - Go to the Environments tab (left side)
+    * Might need to wait for it to load
+ - Click Import at the bottom
+ - Use the file browser to navigate to src/setup/UQ4ML_2025.yml in the repo
+    * You may have to extract the contents of the zip folder that has the repo
+ - Click Import
+
+4. Activate the Environment:
+After the environment finishes installing, press the green play button next to environment name, and select 'open terminal'
+
+ - If succeded near your shell prompt will be:
+```bash
+(UQ4ML_2025)
+``` 
+
+Now you're ready to follow the rest of the guide! Dont forgot to change the directory into the folder containing the repo you downloaded
+
 
 # Preparing Models for Training
 **Variable descriptions for training (MSE and CRPS):**
@@ -69,10 +100,11 @@ Within the folder there are currently three files one for 12-hr, 48-hr, and 96-h
 * repetitions:
     * Variable that controls the number of times the model runs:
         * Set to **100** to have 100 runs execute (Default).
-     
+
 * cycle:
     * Variable that determines the cycles that the model will train on:
         * Numbers 0 - 9 are placed on new lines below **--cycle** within the config file (Default).
+        
 * leadtime:
      * Variable that controls what the leadtime the model will predict:
         * Set to either 12, 48, 96, or a number a user wishes to test on. 
@@ -91,20 +123,31 @@ model_name = "CRPS"
 python -m src.driver.operational_mse_crps_driver 
 ```
 
-**Train PNN off a config file in models/, use existing config or make your own**
+**Train PNN off a config file in models/, you can use existing config or make your own**
 
 ```bash
 python -m src.driver.pnn_mme_driver @configs/pnn_12h.txt
 python -m src.driver.pnn_mme_driver @configs/pnn_48h.txt
 python -m src.driver.pnn_mme_driver @configs/pnn_96h.txt
-
+```
+**This line takes the output of pnn_mme_driver and reformats it into something the visualization_driver can use:**
+```bash
 python -m src.helper.pnn_to_csv @configs/pnn_12h.txt
 python -m src.helper.pnn_to_csv @configs/pnn_48h.txt
 python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
 ```
+
+**If you want to run the independent testing years as well, both 2021 and 2024, you run the command like so:**
+```bash
+python -m src.helper.pnn_to_csv @configs/pnn_12h.txt -I
+python -m src.helper.pnn_to_csv @configs/pnn_48h.txt -I
+python -m src.helper.pnn_to_csv @configs/pnn_96h.txt -I
+```
+
+
 # Model Evaluation and Visualization Creation
 **How to Evaluate and Visualize the Results**
-inside visualization_driver there is comments explaining how to change the variables to fit what you need.
+Go inside visualization_driver, there are comments explaining how to change the variables to fit what you need.
 ```bash
 python -m src.driver.visualization_driver
 ```

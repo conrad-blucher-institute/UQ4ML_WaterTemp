@@ -77,7 +77,7 @@ learning_rate = 0.01
 optimizer = 'adam' 
 kernel_regularizer = 'l2'
 
-path_to_data = "../UQ4ML_WaterTemp/data/June_May_Datasets"
+path_to_data = "data/June_May_Datasets"
 
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
