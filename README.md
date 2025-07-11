@@ -34,8 +34,7 @@ If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yml, 
 
 1. Install Anaconda Distribution GUI:
  - Download from:
-<!-- https://www.anaconda.com/download/success -->
-   * https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Windows-x86_64.exe
+    * https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Windows-x86_64.exe
 Follow the installation wizard using all default options.
 No need to make an account.
 
