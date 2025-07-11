@@ -28,8 +28,7 @@ We use water and air temperature observation measurements provided by Texas Coas
 **Quick Start**
 There are a few ways you can set up the environment to get this repo working. Here's one approach that worked for us—your setup might differ depending on your hardware and preferences.
 
-This repository was made using Windows 11 
-We used specific versions of certain Python libraries. Most notably Tensorflow version 2.15.0
+This repository was made using Windows 11. We used specific versions of certain Python libraries. Most notably Tensorflow version 2.15.0
 If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yml, everything in this repository will work. 
 
 1. Install Anaconda Distribution GUI:
