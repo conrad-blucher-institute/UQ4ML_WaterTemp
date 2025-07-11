@@ -28,18 +28,18 @@ from evaluations.boxplot_figures import figure_5_plot, figure_6_7_plot, figure_1
 
 ######## Variables ########
 """
-This variable will be set to false to run the needed files for the aggregate table.
+This variable will be set to False to run the needed files for the aggregate table.
 If this variable is set to True and throwing an error, make sure you have 
-run this file with this variable set to False so that the tables can then be 
+ran this file with this variable set to False so that the tables can then be 
 created once these files are created.
 
 IMPORTANT:
 Set to False first to ensure the files are there, 
-this exists so you dont have to run the intensive functions again
+this exists so you dont have to run the intensive functions again.
 """
 runAggregateCode = False #True
 
-# Variable to save the plots will be set to True, otherwise false. 
+# Variable to save the plots will be set to True, otherwise False. 
 # Note: The plot files are not large, but I would keep this true so that you can look at your plots. 
 save = True
 
