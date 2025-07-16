@@ -48,14 +48,14 @@ No need to make an account.
  - Click Import
 
 3. Activate the Environment:
-After the environment finishes installing, press the green play button next to environment name, and select 'open terminal'
+After the environment finishes installing, press the green play button next to environment name, and select 'open terminal'.
 
- - If succeded near your shell prompt will be:
+ - If successful, your shell prompt will be:
 ```bash
 (UQ4ML_2025)
 ``` 
 
-Now you're ready to follow the rest of the guide! Dont forgot to change the directory into the folder containing the repo you downloaded
+Now you're ready to follow the rest of the guide! Dont forgot to change the directory into the folder containing the repo you downloaded.
 
 
 # Preparing Models for Training
