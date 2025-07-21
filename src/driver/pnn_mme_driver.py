@@ -73,50 +73,9 @@ def create_classifier_network_generic_probability(  input_shape=None,
 
     # create our custom loss function
     def mdn_cost(mu, sigma, y):
-        '''
-        
-        '''
-        # print('shape before converting a kerastensor to a tensor', mu.shape, sigma.shape)
-
-        # # mu = tf.convert_to_tensor(mu)
-        # # sigma = tf.convert_to_tensor(sigma)
-        
-        # # mu = tf.keras.backend.identity(mu)
-        # # sigma = tf.keras.backend.identity(sigma)
-
-        # print('shape after converting a kerastensor to a tensor', mu.shape, sigma.shape)
-
         dist = tfp.distributions.Normal(loc=mu, scale=sigma)
         return tf.reduce_mean(-dist.log_prob(y))
 
-    def loss_uq_normal(y_true, y_pred):
-        """
-        This is the log-probability loss to calculate uncertainty
-        with a normal distribution.
-        This form predicts the uncertainty mean and standard deviation
-        for a normal distribution.
-        From Barnes, Barnes, & Gordillo (2021).
-        """
-
-        y_pred64 = tf.cast(y_pred, tf.float64)
-        y_true64 = tf.cast(y_true, tf.float64)
-
-        # network prediction of the value
-        mu = y_pred64[..., 0]
-
-        # network prediction of uncertainty
-        print(f"y_pred64.shape: {y_pred64.shape}")
-        print(f"whats inside[0]: {y_pred64[0]}")
-        print(f"whats inside[1]: {y_pred64[1]}")
-        std = tf.math.exp(y_pred64[..., 1])
-
-        # normal distribution defined by N(mu,sigma)
-        norm_dist = tfp.distributions.Normal(mu, std)
-
-        # compute the log as -log(p)
-        loss = -norm_dist.log_prob(y_true64)
-
-        return tf.reduce_mean(loss)
 
     regularizer = tf.keras.regularizers.l2(lambda_l2) if lambda_l2 is not None else None
     genericInputLayer = keras.layers.Input(input_shape, name="generic_input_layer_w_shape")
@@ -191,89 +150,7 @@ def create_classifier_network_generic_probability(  input_shape=None,
                     #metrics=['categorical_accuracy'])
 
     return model
-def create_classifier_network_generic(  input_shape=None,
-                                
-                                nchannels=None, # for CNN ; conv layers
-                                num_output_neurons=None, 
-                                learning_rate=None, 
-                                lambda_l2=None, # None or a float
-                                loss_function=None,
 
-                                activation_function=None,
-
-                                p_dropout=None,
-                                p_spatial_dropout=None,
-                                n_filters=None,  #[10], # for CNN ; conv stack
-                                kernel_size=None, #[3], # for CNN ; conv stack
-                                pooling=None, #[1], # for CNN ; conv stack
-                                n_hidden=None, #[5]
-                                metrics=None): 
-
-
-
-    # if lambda_l2 is not None: regularizer = tf.keras.regularizers.l2(lambda_l2) else: regularizer = None # assume a float
-    regularizer = tf.keras.regularizers.l2(lambda_l2) if lambda_l2 is not None else None
-
-    # model = Sequential()
-    genericInputLayer = keras.layers.Input(input_shape)
-
-    '''####################'''
-    # in progress block of code to replace block below
-    if len(input_shape) == 1:
-        if args.verbose > 0: 
-            print("inside len == 1 mlp")
-        # how we did it in the lab before 
-        # layer1 = keras.layers.Dense(units=input_neurons, activation=activation_function, kernel_regularizer=regularizer, input_shape=input_shape)(genericInputLayer)
-        # model.add(Dense(units=input_neurons, activation=activation_function, kernel_regularizer=regularizer, input_shape=input_shape))
-        
-        
-        for i, v in enumerate(n_hidden):
-            x = keras.layers.Dense(units=v, activation=activation_function, kernel_regularizer=regularizer)(x)
-        
-
-        if p_dropout is not None:
-            layer1 = Dropout(p_dropout)(layer1)
-            # model.add(Dropout(p_dropout))
-    layer1 = x
-        
-    '''@@@@@@@@@@@@@@@@@@@'''
-    # Output
-    y_output = Dense(units=num_output_neurons, activation=activation_function, input_shape=input_shape)(layer1)
-    # y_output = Dense(units=num_output_neurons, activation=activation_function, input_shape=input_shape)(layerDropout) if p_dropout is not None else (Dense(units=num_output_neurons, activation=activation_function, input_shape=input_shape))(layer1)
-    # model.add(Dense(units=num_output_neurons, activation=activation_function, input_shape=input_shape))
-    '''@@@@@@@@@@@@@@@@@@@'''
-
-    model = keras.models.Model(inputs=[genericInputLayer], outputs=y_output)
-
-    # Optimizer
-    opt = tf.keras.optimizers.Adam(learning_rate = learning_rate,
-                                    amsgrad = False)
-    
-    if args.verbose >= 1:
-        model.summary()  # Print the summary of the neural network
-
-    # Bind the model to the optimizer
-    model.compile(loss=loss_function,
-                    optimizer=opt,
-                    metrics=metrics)
-                    #metrics=['categorical_accuracy'])
-
-    
-    # plot_model(
-    #                                 model,
-    #                                 to_file='model.png',
-    #                                 show_shapes=True,
-    #                                 show_dtype=False,
-    #                                 show_layer_names=True,
-    #                                 rankdir='TB',
-    #                                 expand_nested=False,
-    #                                 dpi=96,
-    #                                 layer_range=None,
-    #                                 show_layer_activations=False,
-    #                                 show_trainable=False
-    #                             )
-
-    return model
 def load_MLP_dataset(args):
     ins, outs, ins_validation, outs_validation, x_test, y_test, date_time, _, val_date_time = preparingData(input_hours_forecast=args.c_leadtime, 
                                                                                 atp_hours_back=args.atp_hours_back, 
@@ -283,120 +160,6 @@ def load_MLP_dataset(args):
                                                                                 date_time=True,
                                                                                 val_date_time=True)
     return ins, outs, ins_validation, outs_validation, x_test, y_test, date_time, val_date_time
-def create_classifier_network(  input_shape=None,
-
-                                
-                                nchannels=None, # for CNN ; conv layers
-                                num_output_neurons=None, 
-                                learning_rate=None, 
-                                lambda_l2=None, # None or a float
-                                loss_function=None,
-
-                                activation_function=None,
-
-
-                                p_dropout=None,
-                                p_spatial_dropout=None,
-                                n_filters=None,  #[10], # for CNN ; conv stack
-                                kernel_size=None, #[3], # for CNN ; conv stack
-                                pooling=None, #[1], # for CNN ; conv stack
-                                n_hidden=None, #[5]
-                                metrics=None): 
-
-
-
-    if lambda_l2 is not None:
-        # assume a float
-        regularizer = tf.keras.regularizers.l2(lambda_l2)
-    else:
-        regularizer = None
-
-
-    model = Sequential()
-
-    '''####################'''
-    # in progress block of code to replace block below
-    if len(input_shape) == 1:
-        if args.verbose > 0:
-            print("inside len == 1 mlp")
-        # how we did it in the lab before 
-        # model.add(Dense(units=input_neurons, activation=activation_function, kernel_regularizer=regularizer, input_shape=input_shape))
-        
-        for i, v in enumerate(n_hidden):
-            model.add(Dense(units=v, activation=activation_function, kernel_regularizer=regularizer, input_shape=input_shape))
-        
-
-        if p_dropout is not None:
-            model.add(Dropout(p_dropout))
-        # following Dr. Faggs example but changed to try and accomadate my mlp dataset
-        # model.add(InputLayer(input_shape=input_shape))
-        pass#mlp
-    elif len(input_shape) == 2:
-        if args.verbose > 0:
-            print("inside len == 2 cnn")
-        ## image_size and nchannels are needed for convolution (when the data are images)
-        model.add(InputLayer(input_shape=(input_shape[0], input_shape[1], nchannels)))
-
-
-    # convolutional layers
-    ## n_filters and kernel_size and pooling
-    if n_filters is not None:
-        for i, (n, s, p) in enumerate(zip(n_filters, kernel_size, pooling)):
-            model.add(Convolution2D(filters=n,
-                                kernel_size=s,
-                                padding='same',
-                                use_bias=True,
-                                kernel_regularizer=regularizer,
-                                name='C%d'%(i),
-                                activation='elu'))
-            
-            if p_spatial_dropout is not None:
-                model.add(SpatialDropout2D(p_spatial_dropout))
-                
-            if p > 1:
-                model.add(MaxPooling2D(pool_size=p,
-                                        strides=p,
-                                        name='MP%d'%(i)))
-            
-        
-        # Flatten
-        model.add(GlobalMaxPooling2D())
-    
-
-    if n_hidden is not None:
-        # Dense layers
-        for i,n in enumerate(n_hidden):
-            model.add(Dense(units=n,
-                        activation=activation_function,
-                        use_bias='True',
-                        kernel_regularizer=regularizer,
-                        name='D%d'%i))
-            
-            if p_dropout is not None:
-                model.add(Dropout(p_dropout))
-        
-    '''@@@@@@@@@@@@@@@@@@@'''
-    # Output
-    # model.add(Dense(units=num_output_neurons,
-    #                 activation='softmax',
-    #                 use_bias='True',
-    #                 kernel_regularizer=regularizer,
-    #                 name='output'))
-    
-    model.add(Dense(units=num_output_neurons, activation=activation_function, input_shape=input_shape))
-    '''@@@@@@@@@@@@@@@@@@@'''
-
-    # Optimizer
-    opt = tf.keras.optimizers.Adam(learning_rate = learning_rate,
-                                    amsgrad = False)
-    
-    # Bind the model to the optimizer
-    model.compile(loss=loss_function,
-                    optimizer=opt,
-                    metrics=metrics)
-                    #metrics=['categorical_accuracy'])
-
-    return model
 
 
 #fname functions needs to be updated
@@ -489,21 +252,6 @@ def execute_experiment(args):
     Path(folder_fbase).mkdir(parents=True, exist_ok=True)   # create path for results; so directory wont get flooded
 
 
-    if False: # this code was used only once to remove the ex num from the file and folder name of the existing results
-        # Loop through all files in the folder
-        for item in os.listdir(folder_fbase):
-            # Search for _EX_NUM_<number> pattern (e.g., _EX_NUM_20 or _EX_NUM_100)
-            match = re.search(r'_EX_NUM_(\d+)', item)
-            if match:
-                # Get the number part
-                ex_num = match.group(1)
-                # Remove the _EX_NUM_<number> part
-                new_item_name = item.replace(f'_EX_NUM_{ex_num}_', '')
-
-                # Rename the file (same name but without _EX_NUM_<number>)
-                os.rename(os.path.join(folder_fbase, item), os.path.join(folder_fbase, new_item_name))
-                print(f'Renamed: {item} -> {new_item_name}')
-
 
     # Check if the .pkl file and model folder already exists
     model_result_file = Path(folder_fbase + "%s_model" % fbase)
@@ -521,33 +269,8 @@ def execute_experiment(args):
     # Function call to the dataPreparation file to generate the inputs for the AI model
     ins, outs, ins_validation, outs_validation, x_test, y_test, testing_date_time, validation_date_time = load_MLP_dataset(args)
 
-    # for debugging
-    if args.verbose >= 2: 
-        print("")
-        print("checking ins.shape", ins.shape)
-        print("checking ins[0].shape", ins[0].shape)
-        print("checking outs.shape", outs.shape)
-        print("checking outs[0].shape", outs[0].shape)
-        print("")
-
-    ## hector, this is really inelegant, fix it later future_hector.
-    if args.model_type == 'mlp':
-        model = create_classifier_network_generic(
-                                            input_shape=ins[0].shape, 
-                                            
-                                            num_output_neurons=args.num_output_neurons, 
-                                            learning_rate=args.lrate,
-                                            loss_function=args.loss_function,
-                                            activation_function=args.activation_function,
-                                            p_spatial_dropout=args.spatial_dropout,
-                                            p_dropout=args.dropout_rate,
-                                            lambda_l2=args.l2,
-                                            
-                                            n_hidden=args.n_hidden,
-                                            metrics=args.metrics
-                                            )
-        
-    elif args.model_type == 'mlp_prob':
+    ## hector, this is really inelegant, fix it later future_hector.        
+    if args.model_type == 'mlp_prob':
         model = create_classifier_network_generic_probability(
                                             input_shape=ins[0].shape, 
 
@@ -572,22 +295,6 @@ def execute_experiment(args):
                                             mu_regularization_parameter=args.mu_regularization_parameter
                                             )
 
-    elif args.model_type == 'cnn':
-        model = create_classifier_network(
-                                            input_shape=(ins.shape[1], ins.shape[2]), 
-                                            nchannels=ins.shape[3], 
-                                            
-                                            num_output_neurons=args.num_output_neurons, 
-                                            learning_rate=args.lrate,
-                                            p_spatial_dropout=args.spatial_dropout,
-                                            p_dropout=args.dropout_rate,
-                                            lambda_l2=args.l2,
-                                            n_filters=args.n_filters,
-                                            kernel_size=args.kernel_sizes,
-                                            pooling=args.pooling,
-                                            n_hidden=args.n_hidden,
-                                            metrics=args.metrics
-                                            )
 
     if args.verbose > 0:
         model.summary()
@@ -624,20 +331,6 @@ def execute_experiment(args):
         # Assuming you want to use zeros as a dummy target for sigma
         dummy_sigma_train, dummy_sigma_val = np.zeros_like(outs), np.zeros_like(outs_validation)
         
-        # history = model.fit(x=ins, 
-        #                     y=outs,
-        #                     epochs=args.epochs, 
-        #                     verbose=args.verbose,
-        #                     validation_data=(ins_validation,
-        #                                      outs_validation), 
-        #                     callbacks=[early_stopping_cb])
-        # history = model.fit(x=[ins, ins], 
-        #                     y=[outs, dummy_sigma_train],
-        #                     epochs=args.epochs, 
-        #                     verbose=args.verbose,
-        #                     validation_data=([ins_validation, ins_validation],
-        #                                      [outs_validation, dummy_sigma_val]), 
-        #                     callbacks=[early_stopping_cb])
         if args.batch_size == 1:
             args.batch_size = ins.shape[0]
         history = model.fit(x=[ins, outs],
@@ -646,19 +339,10 @@ def execute_experiment(args):
                             validation_data=([ins_validation, outs_validation],), 
                             callbacks=[early_stopping_cb],
                             batch_size=args.batch_size)
-        # history = model.fit([(ins, outs)],
-        #                     epochs=args.epochs, 
-        #                     verbose=args.verbose,
-        #                     validation_data=([ins_validation, outs_validation],), 
-        #                     callbacks=[early_stopping_cb])
+        
         
         if args.verbose == 2:
             print("I am after model.fit.")
-
-    elif args.model_type == 'cnn':
-        pass 
-    '''will fill in if ever need to run a cnn'''
-
 
 
 
@@ -708,12 +392,21 @@ def execute_experiment(args):
         results['predict_y_val_sigma'] = sigma_pred
 
 
+    from src.helper.pnn_to_csv import loadmodel_test_on_year
     # Generate predictions for the year 2021
     if args.verbose > 0: 
         print('before predicted the year 2021')
-    # result_visualizer.loadmodel_test_on_year(results, model, year='2021', probability=True, filePath='cmd_ai_builder')
+    loadmodel_test_on_year(results, model, year='2021', probability=True, filePath='cmd_ai_builder')
     if args.verbose > 0: 
         print('successfully predicted the year 2021')
+
+
+    # Generate predictions for the year 2024
+    if args.verbose > 0: 
+        print('before predicted the year 2024')
+    loadmodel_test_on_year(results, model, year='2024', probability=True, filePath='cmd_ai_builder')
+    if args.verbose > 0: 
+        print('successfully predicted the year 2024')
 
 
 
@@ -808,38 +501,6 @@ if __name__ == "__main__":
     # Parse incoming command-line arguments
     parser = create_parser()
     args = parser.parse_args()
-    '''
-
-    def run_experiments(args, function):
-        """
-        Runs all experiments using multiprocessing (CPU parrallel execution approach). 
-        The experiments are distributed across multiple processes to run concurrently 
-        with a limit of 5 concurrent processes.
-
-        Args:
-        - args (Namespace): Arguments containing the parameters for the experiment.
-        """
-        num_of_total_experiments = len(args.cycle) * len(args.leadtime) * args.repetitions # Calculate the total number of experiments based on input parameters
-        
-        # Create a pool of 5 processes to run experiments concurrently
-        with mp.Pool(processes=args.pool) as pool:
-            # Submit tasks asynchronously
-            for i in range(num_of_total_experiments):
-                pool.apply_async(execute_experiment_wrapper, args=(i, args, function))
-
-            pool.close() # Close the pool to prevent any new tasks from being submitted
-            pool.join() # Wait for all tasks to complete before moving forward
-    '''
-
-    def catch_exceptions(func, arg_list):
-        try:
-            func(arg_list) # If running locally, use multiprocessing to run experiments
-
-        except KeyboardInterrupt:
-            sys.exit(0) # 0 means succesful exit
-        except Exception as e:
-            print(f"Unhandled Exception {e}")
-            sys.exit(1) # non 0 number means error/failure
 
 
     # Main code block to check environment and run experiments

@@ -44,7 +44,16 @@ def changeArrayDepthTo1(mu=None, sigma=None):
     elif sigma is not None:
         return list_sigma
 
-def loadmodel_test_on_year(results, modelPath, year=None, probability=False, filePath=None, verbose=0):
+def load_pnn_model(model=None):
+    # is model already loaded?
+    if model != None:
+        return model
+    
+    # load model
+
+    return model
+
+def loadmodel_test_on_year(results, modelPath, year=None, probability=False, filePath=None, verbose=0, model=None):
     if filePath == None: raise NameError("filePath inside loadmodel_test2021 is none")
     if year == None: raise NameError("year inside loadmodel_test2021 is none")
 
@@ -60,6 +69,7 @@ def loadmodel_test_on_year(results, modelPath, year=None, probability=False, fil
         print('\n\nChecking params in loadmodel test on year: LT', args.c_leadtime, '_atp_hb_', args.atp_hours_back, '_wtp_hb_', args.wtp_hours_back, 'year:',year, 'filePath:',filePath, '\n\n')
 
 
+    model = load_pnn_model()
 
     from src.driver.pnn_mme_driver import create_classifier_network_generic_probability
     model = create_classifier_network_generic_probability(
@@ -209,12 +219,18 @@ if __name__ == "__main__":
             
             Path(model_folder).mkdir(parents=True, exist_ok=True)   # create path for results; so directory wont get flooded
 
+            # Combo name block
             if model_args.c_leadtime == 12:
                 combo = 'combo2'
             if model_args.c_leadtime == 48:
                 combo = 'combo1'
             if model_args.c_leadtime == 96:
                 combo = 'combo1'
+            else:
+                combo = 'noCombo'
+
+            # I think we replace the above block with just leadtime, or remove combo from name altogether
+            # combo = str(model_args.c_leadtime)
 
 
             path_to_csv = f"UQ4ML_WaterTemp/src/results/pnn_results/{model_args.c_leadtime}h/pnn-{combo}-cycle_{model_args.c_cycle}-iteration_{model_args.c_repetitions+1}/"
