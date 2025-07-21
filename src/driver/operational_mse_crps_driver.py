@@ -370,10 +370,6 @@ if tune_train_test == "train":
                     train_vs_preds.insert(loc=1, column='target', value=y_train)
                     val_vs_preds.insert(loc=1, column='target', value=y_val)
                     test_vs_preds.insert(loc=1, column='target', value=y_test)
-
-                    train_vs_preds.to_csv(save_path / "train_datetime_obsv_predictions.csv")
-                    val_vs_preds.to_csv(save_path / "val_datetime_obsv_predictions.csv")
-                    test_vs_preds.to_csv(save_path / "test_datetime_obsv_predictions.csv")
                     
                     """TOTAL CYCLE MODEL COMPUTE TIME"""
                     cycle_time_end = datetime.now()
