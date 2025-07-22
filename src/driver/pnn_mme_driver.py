@@ -31,6 +31,9 @@ from src.helper.my_parser import create_parser
 from src.helper.utils_mse_crps import ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError
 
 
+import warnings
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning) # ignoring the performance warning that pandas throws because the method we are using to combine dataframes is causing de-fragmentation
+
 ################## Configure figure parameters
 FONTSIZE = 18
 FIGURE_SIZE = (10,4)
@@ -94,9 +97,14 @@ def create_classifier_network_generic_probability(  input_shape=None,
     layer1 = x
 
 
+    @keras.saving.register_keras_serializable(package="hector_pnn", name="sigma_activation")
+    def SigmaActivation(x):
+        return tf.nn.elu(x)+1.1
+
     # Output Nodes
     mu = Dense(1, name="mu", activation="linear")(layer1)
-    sigma = Dense(1, name="sigma", activation=lambda x: tf.nn.elu(x) + 1.1)(layer1) # added a .1 so that it will never be negative or zero, minimum will be 0.1
+    # sigma = Dense(1, name="sigma", activation=lambda x: tf.nn.elu(x) + 1.1)(layer1) # added a .1 so that it will never be negative or zero, minimum will be 0.1
+    sigma = Dense(1, name="sigma", activation=SigmaActivation)(layer1) # added a .1 so that it will never be negative or zero, minimum will be 0.1
 
     
     # Loss Function
@@ -150,6 +158,106 @@ def create_classifier_network_generic_probability(  input_shape=None,
                     #metrics=['categorical_accuracy'])
 
     return model
+
+# # create the PNN custom loss function
+# def mdn_cost(mu, sigma, y):
+#     dist = tfp.distributions.Normal(loc=mu, scale=sigma)
+#     return tf.reduce_mean(-dist.log_prob(y))
+
+# def create_PNN_model(  input_shape=None,
+                                
+#                                 num_output_neurons=None, 
+#                                 learning_rate=None, 
+#                                 lambda_l2=None, # None or a float
+#                                 loss_function=None,
+
+#                                 activation_function=None,
+
+#                                 p_dropout=None,
+#                                 p_spatial_dropout=None,
+#                                 n_filters=None,  #[10], # for CNN ; conv stack
+#                                 kernel_size=None, #[3], # for CNN ; conv stack
+#                                 pooling=None, #[1], # for CNN ; conv stack
+#                                 n_hidden=None, #[5]
+#                                 metrics=None,
+#                                 modify_sigma_loss=None,
+#                                 sigma_threshold=None,
+#                                 sigma_regularization_parameter=None,
+
+#                                 modify_mu_loss=None,
+#                                 mu_threshold=None,
+#                                 mu_regularization_parameter=None,
+                                
+#                                 path=None): 
+
+#     regularizer = tf.keras.regularizers.l2(lambda_l2) if lambda_l2 is not None else None
+#     genericInputLayer = keras.layers.Input(input_shape, name="generic_input_layer_w_shape")
+
+#     x = genericInputLayer
+#     if len(input_shape) == 1:
+#         print("inside len == 1 mlp")
+#         # how we did it in the lab before 
+
+#         for i, v in enumerate(n_hidden):
+#             x = keras.layers.Dense(units=v, activation=activation_function, kernel_regularizer=regularizer)(x)
+        
+#         if p_dropout is not None:
+#             layerDropout = Dropout(p_dropout)(x)
+    
+#     layer1 = x
+
+#     # Output Nodes
+#     mu = Dense(1, name="mu", activation="linear")(layer1)
+#     sigma = Dense(1, name="sigma", activation=lambda x: tf.nn.elu(x) + 1.1)(layer1) # added a .1 so that it will never be negative or zero, minimum will be 0.1
+
+    
+#     # Loss Function
+#     y_real = keras.layers.Input(shape=(1,), name="y_real_input") 
+#     lossF = mdn_cost(mu, sigma, y_real)
+
+#     # Build Model
+#     if path != None:
+#         model = tf.keras.models.load_model(path, compile=False)
+#     else:
+#         model = keras.models.Model(inputs=[genericInputLayer, y_real], outputs=[mu, sigma]) # btw keras.Model & keras.models.Model are equivalent
+    
+#     model.add_loss(lossF)
+
+#     '''new experiment'''
+#     if modify_sigma_loss:
+#         print("INSIDE MODIFY SIGMA")
+#         threshold = sigma_threshold
+#         regularization_parameter = sigma_regularization_parameter
+
+#         error = tf.reduce_mean(tf.math.maximum(threshold-sigma, 0)) # try 2, 1, 0.5, 0.25, 0.1
+#         model.add_loss(regularization_parameter * error) #0.1 = regularization parameter
+
+#     if modify_mu_loss:
+#         print("INSIDE MODIFY MU")
+#         threshold = mu_threshold
+#         regularization_parameter = mu_regularization_parameter
+
+#         penalty = tf.where(mu < threshold, tf.square(threshold - mu), 0.0) # Penalize predictions below 0.5
+#         model.add_loss(tf.reduce_mean(penalty) * regularization_parameter)
+
+
+
+#     # Optimizer
+#     opt = tf.keras.optimizers.Adam(learning_rate = learning_rate,
+#                                     amsgrad = False)
+    
+#     try:
+#         model.summary()  # Print the summary of the neural network
+#     except:
+#         pass
+
+#     # Bind the model to the optimizer
+
+#     # metrics_func = [ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError]
+
+#     model.compile(optimizer=opt, metrics=metrics)
+
+#     return model
 
 def load_MLP_dataset(args):
     ins, outs, ins_validation, outs_validation, x_test, y_test, date_time, _, val_date_time = preparingData(input_hours_forecast=args.c_leadtime, 
@@ -382,31 +490,39 @@ def execute_experiment(args):
         results['model.evaluate'] = model.evaluate(x_test,y_test) # this line (as is) is impossible to run for the PNN due to the 2 output nuerons
 
     elif args.model_type == 'mlp_prob':
+        
+        print("before test predict.")
         mu_pred, sigma_pred = model.predict(list((x_test, x_test))) 
         results['predict_y_test_mu'] = mu_pred
         results['predict_y_test_sigma'] = sigma_pred
+        
+        print("after test predict.")
         # results['model_eval_metrics'] = modelEvaluation(results['predict_y_test_mu'], y_test)
 
+        
+        print("before val predict.")
         mu_pred, sigma_pred = model.predict(list((ins_validation, ins_validation))) 
         results['predict_y_val_mu'] = mu_pred
         results['predict_y_val_sigma'] = sigma_pred
+        
+        print("after val predict.")
 
 
-    from src.helper.pnn_to_csv import loadmodel_test_on_year
-    # Generate predictions for the year 2021
-    if args.verbose > 0: 
-        print('before predicted the year 2021')
-    loadmodel_test_on_year(results, model, year='2021', probability=True, filePath='cmd_ai_builder')
-    if args.verbose > 0: 
-        print('successfully predicted the year 2021')
+    # from src.helper.pnn_to_csv import loadmodel_test_on_year
+    # # Generate predictions for the year 2021
+    # if args.verbose > 0: 
+    #     print('before predicted the year 2021')
+    # loadmodel_test_on_year(results, model, year='2021', probability=True, filePath='cmd_ai_builder')
+    # if args.verbose > 0: 
+    #     print('successfully predicted the year 2021')
 
 
-    # Generate predictions for the year 2024
-    if args.verbose > 0: 
-        print('before predicted the year 2024')
-    loadmodel_test_on_year(results, model, year='2024', probability=True, filePath='cmd_ai_builder')
-    if args.verbose > 0: 
-        print('successfully predicted the year 2024')
+    # # Generate predictions for the year 2024
+    # if args.verbose > 0: 
+    #     print('before predicted the year 2024')
+    # loadmodel_test_on_year(results, model, year='2024', probability=True, filePath='cmd_ai_builder')
+    # if args.verbose > 0: 
+    #     print('successfully predicted the year 2024')
 
 
 
@@ -417,9 +533,12 @@ def execute_experiment(args):
     # model.save(args.results_folder + "%s_model"%(fbase))
     # model.save(folder_fbase + "%s_model"%(fbase)) # this method to save the models has been deprecated
     model.save(folder_fbase + "%s_model.keras"%(fbase))
+    if args.verbose > 0: 
+        print("Model .keras saved successfully.")
+
     model.save(folder_fbase + "%s_model.h5"%(fbase)) # added since the rest of the Cool Turtles team (and the Operational team) use a .h5 file to save the model
     if args.verbose > 0: 
-        print("Model saved successfully.")
+        print("Model .h5 saved successfully.")
 
     '''Save results dictionary'''
     with open(folder_fbase + "%s_results.pkl"%(fbase), "wb") as fp:

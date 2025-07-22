@@ -19,6 +19,9 @@ from src.helper.utils import readingData
 from src.helper.my_parser import create_parser
 from src.helper.utils import load_for_testing
 
+import warnings
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning) # ignoring the performance warning that pandas throws because the method we are using to combine dataframes is causing de-fragmentation
+
 ## THE COLOR
 
 # THECOLOR = '#E7C65D'
@@ -49,9 +52,8 @@ def load_pnn_model(model=None):
     if model != None:
         return model
     
-    # load model
-
     return model
+
 
 def loadmodel_test_on_year(results, modelPath, year=None, probability=False, filePath=None, verbose=0, model=None):
     if filePath == None: raise NameError("filePath inside loadmodel_test2021 is none")
@@ -69,33 +71,60 @@ def loadmodel_test_on_year(results, modelPath, year=None, probability=False, fil
         print('\n\nChecking params in loadmodel test on year: LT', args.c_leadtime, '_atp_hb_', args.atp_hours_back, '_wtp_hb_', args.wtp_hours_back, 'year:',year, 'filePath:',filePath, '\n\n')
 
 
-    model = load_pnn_model()
+    # model = load_pnn_model()
 
-    from src.driver.pnn_mme_driver import create_classifier_network_generic_probability
-    model = create_classifier_network_generic_probability(
-                        input_shape=year__data[0].shape, 
+    
+    # Build Model
+    
+    # load model - need to load model during inference
+    from keras.utils import get_custom_objects
 
-                        num_output_neurons=args.num_output_neurons, 
-                        learning_rate=args.lrate,
-                        loss_function=args.loss_function,
-                        activation_function=args.activation_function,
-                        p_spatial_dropout=args.spatial_dropout,
-                        p_dropout=args.dropout_rate,
-                        lambda_l2=args.l2,
+    # create our custom loss function
+    import tensorflow_probability as tfp
+    def mdn_cost(mu, sigma, y):
+        dist = tfp.distributions.Normal(loc=mu, scale=sigma)
+        return tf.reduce_mean(-dist.log_prob(y))
+
+    # get_custom_objects().update({'custom_loss': mdn_cost})
+    get_custom_objects().update({'mdn_cost': mdn_cost})
+    # model = tf.keras.models.load_model("path/to/model.h5", compile=False)
+    # model = tf.keras.models.load_model(modelPath, compile=False, safe_mode=False)
+
+
+    import keras
+    @keras.saving.register_keras_serializable(package="hector_pnn", name="sigma_activation")
+    def SigmaActivation(x):
+        return tf.nn.elu(x)+1.1
+
+    name = modelPath[:-2] + 'keras'
+    model = tf.keras.models.load_model(name, compile=False, safe_mode=False)
+    # model = tf.keras.models.load_model(modelPath, compile=False, safe_mode=False)
+
+    # from src.driver.pnn_mme_driver import create_classifier_network_generic_probability
+    # model = create_classifier_network_generic_probability(
+    #                     input_shape=year__data[0].shape, 
+
+    #                     num_output_neurons=args.num_output_neurons, 
+    #                     learning_rate=args.lrate,
+    #                     loss_function=args.loss_function,
+    #                     activation_function=args.activation_function,
+    #                     p_spatial_dropout=args.spatial_dropout,
+    #                     p_dropout=args.dropout_rate,
+    #                     lambda_l2=args.l2,
 
                         
-                        n_hidden=args.n_hidden,
-                        metrics=args.metrics,
+    #                     n_hidden=args.n_hidden,
+    #                     metrics=args.metrics,
 
-                        modify_sigma_loss=args.modify_sigma_loss,
-                        sigma_threshold=args.sigma_threshold,
-                        sigma_regularization_parameter=args.sigma_regularization_parameter,
+    #                     modify_sigma_loss=args.modify_sigma_loss,
+    #                     sigma_threshold=args.sigma_threshold,
+    #                     sigma_regularization_parameter=args.sigma_regularization_parameter,
 
-                        modify_mu_loss=args.modify_mu_loss,
-                        mu_threshold=args.mu_threshold,
-                        mu_regularization_parameter=args.mu_regularization_parameter,
+    #                     modify_mu_loss=args.modify_mu_loss,
+    #                     mu_threshold=args.mu_threshold,
+    #                     mu_regularization_parameter=args.mu_regularization_parameter,
 
-                        path=modelPath)
+    #                     path=modelPath)
 
 
     results[year + '_testing_data_dateAndTime'] = date_time
@@ -244,7 +273,7 @@ if __name__ == "__main__":
             r['test_data_dateAndTime'] = r['testing_data_dateAndTime']
             r['val_data_dateAndTime'] = r['validation_data_dateAndTime']
 
-            for item in ['val', 'test']:
+            for item in ['val', 'test', '2021', '2024']:
 
                 mu_pred = r[f"predict_y_{item}_mu"]
                 sigma_pred = r[f"predict_y_{item}_sigma"]
