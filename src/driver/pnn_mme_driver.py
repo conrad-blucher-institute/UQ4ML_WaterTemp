@@ -103,7 +103,6 @@ def create_classifier_network_generic_probability(  input_shape=None,
 
     # Output Nodes
     mu = Dense(1, name="mu", activation="linear")(layer1)
-    # sigma = Dense(1, name="sigma", activation=lambda x: tf.nn.elu(x) + 1.1)(layer1) # added a .1 so that it will never be negative or zero, minimum will be 0.1
     sigma = Dense(1, name="sigma", activation=SigmaActivation)(layer1) # added a .1 so that it will never be negative or zero, minimum will be 0.1
 
     
@@ -409,7 +408,7 @@ def execute_experiment(args):
         #
         #
 
-        
+
         
         year = '2021'
         # year__data, year__target, date_time = load_for_testing(args.c_leadtime, args.atp_hours_back, args.wtp_hours_back, year=year, dataset='Full')

@@ -22,10 +22,6 @@ from src.helper.utils import load_for_testing
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning) # ignoring the performance warning that pandas throws because the method we are using to combine dataframes is causing de-fragmentation
 
-## THE COLOR
-
-# THECOLOR = '#E7C65D'
-
 # helper function
 def changeArrayDepthTo1(mu=None, sigma=None):
     if mu is not None:
@@ -165,7 +161,6 @@ if __name__ == "__main__":
     '''move below 2 lines to a notebook "testing" enviroment, should not be in this file, this file should be the "finished" enviroment'''
     
     
-    # need to load in the data_set, save the x and y val to pickle, run predict on the x and y val and save it, then create the cvs's jarett needs.
     print('len of pickles:',len(pickles))
     for j in range(1):
         for index_of_pickles, r in enumerate(pickles): # go through all the models in the experiment

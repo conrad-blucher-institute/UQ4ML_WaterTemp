@@ -22,8 +22,6 @@ def create_parser():
 
     parser.add_argument('--jobid',                              type=int,           default=None,                       help="Slurms Job Id; for debugging")
 
-    
-    parser.add_argument('-I',                                   action='store_true',                                    help="Should we run the independent testing years? (2021 & 2024 as of April 9th 2025)")
 
     # Naming / Experiment Parameters
 
