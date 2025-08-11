@@ -406,6 +406,53 @@ def execute_experiment(args):
         
         print("after val predict.")
 
+        #
+        #
+
+        
+        
+        year = '2021'
+        # year__data, year__target, date_time = load_for_testing(args.c_leadtime, args.atp_hours_back, args.wtp_hours_back, year=year, dataset='Full')
+        ins, outs, ins_validation, outs_validation, x_test, y_test, date_time, _, val_date_time = preparingData(input_hours_forecast=args.c_leadtime, 
+                                                                                atp_hours_back=args.atp_hours_back, 
+                                                                                wtp_hours_back=args.wtp_hours_back,
+                                                                                cycle=args.c_cycle,
+                                                                                path_to_data=args.data_set,
+                                                                                date_time=True,
+                                                                                val_date_time=True,
+                                                                                ind=year)
+
+        results[f"{year}_data_dateAndTime"] = date_time
+        results[f"x_{year}"] = x_test
+        results[f"y_{year}"] = y_test
+
+        year__predictions_mu, year__predictions_sigma = model.predict(list((x_test, x_test)))
+
+        results[f"predict_y_{year}_mu"] = year__predictions_mu
+        results[f"predict_y_{year}_sigma"] = year__predictions_sigma
+        #--------------------------
+        year = '2024'
+        # year__data, year__target, date_time = load_for_testing(args.c_leadtime, args.atp_hours_back, args.wtp_hours_back, year=year, dataset='Full')
+        ins, outs, ins_validation, outs_validation, x_test, y_test, date_time, _, val_date_time = preparingData(input_hours_forecast=args.c_leadtime, 
+                                                                                atp_hours_back=args.atp_hours_back, 
+                                                                                wtp_hours_back=args.wtp_hours_back,
+                                                                                cycle=args.c_cycle,
+                                                                                path_to_data=args.data_set,
+                                                                                date_time=True,
+                                                                                val_date_time=True,
+                                                                                ind=year)
+
+        results[f"{year}_data_dateAndTime"] = date_time
+        results[f"x_{year}"] = x_test
+        results[f"y_{year}"] = y_test
+
+        year__predictions_mu, year__predictions_sigma = model.predict(list((x_test, x_test)))
+
+        results[f"predict_y_{year}_mu"] = year__predictions_mu
+        results[f"predict_y_{year}_sigma"] = year__predictions_sigma
+
+
+
 
     '''Save model'''
     #if args.save_model:

@@ -135,13 +135,6 @@ python -m src.helper.pnn_to_csv @configs/pnn_48h.txt
 python -m src.helper.pnn_to_csv @configs/pnn_96h.txt
 ```
 
-**If you want to run the independent testing years as well, both 2021 and 2024, you run the command like so:**
-```bash
-python -m src.helper.pnn_to_csv @configs/pnn_12h.txt -I
-python -m src.helper.pnn_to_csv @configs/pnn_48h.txt -I
-python -m src.helper.pnn_to_csv @configs/pnn_96h.txt -I
-```
-
 
 # Model Evaluation and Visualization Creation
 **How to Evaluate and Visualize the Results**<br>

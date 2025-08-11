@@ -1,7 +1,7 @@
 '''
 Example usage of this script:
 $ python result_visualizer.py @models/PNN_customLoss-Mu.txt -e -v
-$ python result_visualizer.py @models/PNN_customLoss-Mu.txt -e --repetitions=5 --test_only
+$ python result_visualizer.py @models/PNN_customLoss-Mu.txt -e --repetitions=5
 '''
 # r = results[] (dictionary with results)
 
@@ -155,16 +155,7 @@ if __name__ == "__main__":
     # Parse incoming command-line arguments (same one as in cmd_ai_builder.py)
     parser = create_parser()
     
-    parser.add_argument('--histogram',              action='store_true',                help="should results_visualizer draw histograms--default=false")
-    parser.add_argument('--everything',     '-e',   action='store_true', default=False, help="should results_visualizer draw everything--default=true")
-    parser.add_argument('--sigma_sum',              action='store_true',                help="should results_visualizer draw sigma_sumation--default=false")
-    parser.add_argument('--test_only',      '-t',   action='store_true',                help="should results_visualizer execute a test--default=false")
-    parser.add_argument('--csv_for_jarett', '-c',   action='store_true',                help="run a loop that creates csvs to send to jarett, that have metric and obsVsPreds for the Validation years")
-    parser.add_argument('--calc_percent_in_range',  action='store_true',                help="should results_visualizer execute calc_percent_in_range function--default=false")
-    parser.add_argument('--predict2021',    '-p',   action='store_true', default=False, help="should results_visualizer load and run predictions for independent testing year 2021--default=false")
-    parser.add_argument('--skip_reg_j',             action='store_true',                help="should results_visualizer skip regular testing years--default=false")
-    parser.add_argument('--skip_2021_j',            action='store_true',                help="should results_visualizer skip independent testing year 2021--default=false")
-    parser.add_argument(                    '-I',   action='store_true',                help="Should we run the independent testing years? (2021 & 2024 as of April 9th 2025)")
+    parser.add_argument('-I', action='store_false', default=True, help="Should we run the independent testing years? (2021 & 2024 as of April 9th 2025)")
 
     args = parser.parse_args()
     
@@ -176,7 +167,6 @@ if __name__ == "__main__":
     
     # need to load in the data_set, save the x and y val to pickle, run predict on the x and y val and save it, then create the cvs's jarett needs.
     print('len of pickles:',len(pickles))
-    '''this test_only was used to create csv files for jarett to visualize, task was originally due by the cool turtle meeting on jan 31 2025'''
     for j in range(1):
         for index_of_pickles, r in enumerate(pickles): # go through all the models in the experiment
             model_args = r['args'] # sets this models args to a variable for easier access
