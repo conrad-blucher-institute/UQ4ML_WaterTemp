@@ -59,18 +59,8 @@ def create_classifier_network_generic_probability(  input_shape=None,
 
                                 p_dropout=None,
                                 p_spatial_dropout=None,
-                                n_filters=None,  #[10], # for CNN ; conv stack
-                                kernel_size=None, #[3], # for CNN ; conv stack
-                                pooling=None, #[1], # for CNN ; conv stack
                                 n_hidden=None, #[5]
                                 metrics=None,
-                                modify_sigma_loss=None,
-                                sigma_threshold=None,
-                                sigma_regularization_parameter=None,
-
-                                modify_mu_loss=None,
-                                mu_threshold=None,
-                                mu_regularization_parameter=None,
                                 
                                 path=None): 
 
@@ -78,7 +68,6 @@ def create_classifier_network_generic_probability(  input_shape=None,
     def mdn_cost(mu, sigma, y):
         dist = tfp.distributions.Normal(loc=mu, scale=sigma)
         return tf.reduce_mean(-dist.log_prob(y))
-
 
     regularizer = tf.keras.regularizers.l2(lambda_l2) if lambda_l2 is not None else None
     genericInputLayer = keras.layers.Input(input_shape, name="generic_input_layer_w_shape")
@@ -96,10 +85,9 @@ def create_classifier_network_generic_probability(  input_shape=None,
     
     layer1 = x
 
-
     @keras.saving.register_keras_serializable(package="hector_pnn", name="sigma_activation")
     def SigmaActivation(x):
-        return tf.nn.elu(x)+1.1
+        return tf.nn.elu(x)+1.1 # added a .1 so that it will never be negative or zero, minimum will be 0.1
 
     # Output Nodes
     mu = Dense(1, name="mu", activation="linear")(layer1)
@@ -118,29 +106,6 @@ def create_classifier_network_generic_probability(  input_shape=None,
     
     model.add_loss(lossF)
 
-    '''new experiment'''
-    if modify_sigma_loss:
-        print("INSIDE MODIFY SIGMA")
-        # threshold = 2
-        # regularization_parameter = 0.1
-        threshold = sigma_threshold
-        regularization_parameter = sigma_regularization_parameter
-
-        error = tf.reduce_mean(tf.math.maximum(threshold-sigma, 0)) # try 2, 1, 0.5, 0.25, 0.1
-        model.add_loss(regularization_parameter * error) #0.1 = regularization parameter
-
-    if modify_mu_loss:
-        print("INSIDE MODIFY MU")
-        # threshold = 0.5
-        # regularization_parameter = 0.2
-        threshold = mu_threshold
-        regularization_parameter = mu_regularization_parameter
-
-        penalty = tf.where(mu < threshold, tf.square(threshold - mu), 0.0) # Penalize predictions below 0.5
-        model.add_loss(tf.reduce_mean(penalty) * regularization_parameter)
-
-
-
     # Optimizer
     opt = tf.keras.optimizers.Adam(learning_rate = learning_rate,
                                     amsgrad = False)
@@ -148,13 +113,9 @@ def create_classifier_network_generic_probability(  input_shape=None,
     model.summary()  # Print the summary of the neural network
 
     # Bind the model to the optimizer
-
-    metrics_func = [ryan_ssrel, ssrat_avg, pitd, mae, mse, mae12, me12, me, errorBelow12c, max10PercentError]
-
     model.compile(  
                     optimizer=opt,
                     metrics=metrics)
-                    #metrics=['categorical_accuracy'])
 
     return model
 
@@ -389,21 +350,27 @@ def execute_experiment(args):
 
     elif args.model_type == 'mlp_prob':
         
-        print("before test predict.")
+        if args.verbose > 1:
+            print("before test predict.")
+        
         mu_pred, sigma_pred = model.predict(list((x_test, x_test))) 
         results['predict_y_test_mu'] = mu_pred
         results['predict_y_test_sigma'] = sigma_pred
         
-        print("after test predict.")
-        # results['model_eval_metrics'] = modelEvaluation(results['predict_y_test_mu'], y_test)
+        if args.verbose > 1:
+            print("after test predict.")
 
         
-        print("before val predict.")
+
+        if args.verbose > 1:
+            print("before val predict.")
+        
         mu_pred, sigma_pred = model.predict(list((ins_validation, ins_validation))) 
         results['predict_y_val_mu'] = mu_pred
-        results['predict_y_val_sigma'] = sigma_pred
-        
-        print("after val predict.")
+        results['predict_y_val_sigma'] = sigma_pred        
+
+        if args.verbose > 1:
+            print("after val predict.")
 
         #
         #
@@ -452,11 +419,12 @@ def execute_experiment(args):
 
 
 
+        if args.verbose > 1:
+            print("after val predict.")
 
     '''Save model'''
     #if args.save_model:
-    # model.save(args.results_folder + "%s_model"%(fbase))
-    # model.save(folder_fbase + "%s_model"%(fbase)) # this method to save the models has been deprecated
+    # model.save(args.results_folder + "%s_model"%(fbase)) # not using this method anymore 
     model.save(folder_fbase + "%s_model.keras"%(fbase))
     if args.verbose > 0: 
         print("Model .keras saved successfully.")
