@@ -474,7 +474,6 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
         testing_data_before = pd.read_csv(f"data\June_May_Datasets\june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
         testing_data = creatingAdditionalColumns(testing_data_before, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     
-
     if verbose > 0:
         print('finished splitting the data')
     #print(training_data)

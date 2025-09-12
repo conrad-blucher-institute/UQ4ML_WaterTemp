@@ -50,8 +50,8 @@ def loadmodel_test_on_year(results, modelPath, year=None, probability=False, fil
 
     args = results['args']
 
+    # Load data needed for prediction
     year__data, year__target, date_time = load_for_testing(args.c_leadtime, args.atp_hours_back, args.wtp_hours_back, year=year, dataset='Full')
-
 
     if verbose > 0:
         '''for testing purposes'''
@@ -59,13 +59,12 @@ def loadmodel_test_on_year(results, modelPath, year=None, probability=False, fil
         print("Input shape year__data:", year__data[0].shape)
         print('\n\nChecking params in loadmodel test on year: LT', args.c_leadtime, '_atp_hb_', args.atp_hours_back, '_wtp_hb_', args.wtp_hours_back, 'year:',year, 'filePath:',filePath, '\n\n')
 
-
     import keras
     @keras.saving.register_keras_serializable(package="hector_pnn", name="sigma_activation")
     def SigmaActivation(x):
         return tf.nn.elu(x)+1.1
 
-    name = modelPath[:-2] + 'keras' # this removes the .h5 and replaces it with .keras
+    name = modelPath[:-3] + '.keras' # remove .h5 and add .keras # load_model only works for .keras currently 
     model = tf.keras.models.load_model(name, compile=False, safe_mode=False)
     
 
@@ -89,8 +88,6 @@ def loadmodel_test_on_year(results, modelPath, year=None, probability=False, fil
         return
     with open(filePath, "wb") as fp:
         pickle.dump(results, fp)
-            # return year_2021_predictions
-        # new_model_prob = tf.keras.models.load_model("old_results/results_beforeJuly11/amsSM_prob___/_LT_120_/_cycle_6_/results_LT_120__cycle_6__rep_num_0__EX_NUM_30__LR_0.000100_L2_0.010000_model/")
 
 def looper(leadtime, cycle, directory, numTrials, verbose=0, independent=False):#, myFunction, myFunction_args):
     pickles = []
@@ -136,11 +133,17 @@ def looper(leadtime, cycle, directory, numTrials, verbose=0, independent=False):
                     if independent:
                         # loadmodel_test_on_year(r, model, year='2021', probability=True, filePath='cmd_ai_builder', verbose=0)
                         # loadmodel_test_on_year(r, model, year='2024', probability=True, filePath='cmd_ai_builder', verbose=0)
+                        
                         loadmodel_test_on_year(r, modelPath=folder+modelPath, year='2021', probability=True, filePath=folder + filePath, verbose=0)
+                        # loadmodel_test_on_year does a pickle.dump so we need to reload it
+                        r = pickle.load(fp)
+
                         loadmodel_test_on_year(r, modelPath=folder+modelPath, year='2024', probability=True, filePath=folder + filePath, verbose=0)
+                        # loadmodel_test_on_year does a pickle.dump so we need to reload it
+                        r = pickle.load(fp)
 
                     pickles.append(r)
-                    # myFunction(myFunction_args)
+                    
     if verbose == 2:
         print("\ndone loading pickles\n")
     return pickles
