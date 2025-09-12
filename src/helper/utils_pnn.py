@@ -422,7 +422,7 @@ def load_for_testing(input_hours_forecast, atp_hours_back, wtp_hours_back, datas
 
 
 # I added a default value for pred_atp_interval of 1 -hector (12/21/2024)
-def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval=1, IPPOffset = 0.0, cycle = 0, model="MLP", date_time=False, verbose=0, val_date_time=False):
+def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval=1, IPPOffset = 0.0, cycle = 0, model="MLP", date_time=False, verbose=0, val_date_time=False, ind=False):
     '''preparingData() is the driver function'''
     # Importing libraries
     from datetime import datetime
@@ -461,6 +461,20 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
 
     # training_data, testing_data, validation_data = splittingData(IPPYear1, IPPYear2, IPPYear3, IPPYear4, IPPYear5, IPPYear6, IPPYear7, IPPYear8, IPPYear9, IPPYear10, cycle)
     training_data, testing_data, validation_data = splittingData(year1,   year2,   year3,   year4,   year5,   year6,   year7,   year8,   year9,   year10, cycle)
+
+
+    
+    import pandas as pd
+    if ind=='2021': 
+        testing_data_before = pd.read_csv(f"data\June_May_Datasets\june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
+        testing_data = creatingAdditionalColumns(testing_data_before, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+
+            
+    if ind=='2024':
+        testing_data_before = pd.read_csv(f"data\June_May_Datasets\june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
+        testing_data = creatingAdditionalColumns(testing_data_before, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+    
+
     if verbose > 0:
         print('finished splitting the data')
     #print(training_data)
