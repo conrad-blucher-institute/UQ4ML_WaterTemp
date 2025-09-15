@@ -1,4 +1,4 @@
---results_folder=PNN_96_combo1
+--results_folder=PNN_96_noCombo
 -vv
 --pool=8
 --enviroment=local

@@ -1,7 +1,7 @@
 '''
 Example usage of this script:
 $ python result_visualizer.py @models/PNN_customLoss-Mu.txt -e -v
-$ python result_visualizer.py @models/PNN_customLoss-Mu.txt -e --repetitions=5 --test_only
+$ python result_visualizer.py @models/PNN_customLoss-Mu.txt -e --repetitions=5
 '''
 # r = results[] (dictionary with results)
 
@@ -19,9 +19,8 @@ from src.helper.utils import readingData
 from src.helper.my_parser import create_parser
 from src.helper.utils import load_for_testing
 
-## THE COLOR
-
-# THECOLOR = '#E7C65D'
+import warnings
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning) # ignoring the performance warning that pandas throws because the method we are using to combine dataframes is causing de-fragmentation
 
 # helper function
 def changeArrayDepthTo1(mu=None, sigma=None):
@@ -44,14 +43,15 @@ def changeArrayDepthTo1(mu=None, sigma=None):
     elif sigma is not None:
         return list_sigma
 
-def loadmodel_test_on_year(results, modelPath, year=None, probability=False, filePath=None, verbose=0):
+
+def loadmodel_test_on_year(results, modelPath, year=None, probability=False, filePath=None, verbose=0, model=None):
     if filePath == None: raise NameError("filePath inside loadmodel_test2021 is none")
     if year == None: raise NameError("year inside loadmodel_test2021 is none")
 
     args = results['args']
 
+    # Load data needed for prediction
     year__data, year__target, date_time = load_for_testing(args.c_leadtime, args.atp_hours_back, args.wtp_hours_back, year=year, dataset='Full')
-
 
     if verbose > 0:
         '''for testing purposes'''
@@ -59,34 +59,14 @@ def loadmodel_test_on_year(results, modelPath, year=None, probability=False, fil
         print("Input shape year__data:", year__data[0].shape)
         print('\n\nChecking params in loadmodel test on year: LT', args.c_leadtime, '_atp_hb_', args.atp_hours_back, '_wtp_hb_', args.wtp_hours_back, 'year:',year, 'filePath:',filePath, '\n\n')
 
+    import keras
+    @keras.saving.register_keras_serializable(package="hector_pnn", name="sigma_activation")
+    def SigmaActivation(x):
+        return tf.nn.elu(x)+1.1
 
-
-    from src.driver.pnn_mme_driver import create_classifier_network_generic_probability
-    model = create_classifier_network_generic_probability(
-                        input_shape=year__data[0].shape, 
-
-                        num_output_neurons=args.num_output_neurons, 
-                        learning_rate=args.lrate,
-                        loss_function=args.loss_function,
-                        activation_function=args.activation_function,
-                        p_spatial_dropout=args.spatial_dropout,
-                        p_dropout=args.dropout_rate,
-                        lambda_l2=args.l2,
-
-                        
-                        n_hidden=args.n_hidden,
-                        metrics=args.metrics,
-
-                        modify_sigma_loss=args.modify_sigma_loss,
-                        sigma_threshold=args.sigma_threshold,
-                        sigma_regularization_parameter=args.sigma_regularization_parameter,
-
-                        modify_mu_loss=args.modify_mu_loss,
-                        mu_threshold=args.mu_threshold,
-                        mu_regularization_parameter=args.mu_regularization_parameter,
-
-                        path=modelPath)
-
+    name = modelPath[:-3] + '.keras' # remove .h5 and add .keras # load_model only works for .keras currently 
+    model = tf.keras.models.load_model(name, compile=False, safe_mode=False)
+    
 
     results[year + '_testing_data_dateAndTime'] = date_time
     results[year + '_x_test'] = year__data
@@ -108,8 +88,6 @@ def loadmodel_test_on_year(results, modelPath, year=None, probability=False, fil
         return
     with open(filePath, "wb") as fp:
         pickle.dump(results, fp)
-            # return year_2021_predictions
-        # new_model_prob = tf.keras.models.load_model("old_results/results_beforeJuly11/amsSM_prob___/_LT_120_/_cycle_6_/results_LT_120__cycle_6__rep_num_0__EX_NUM_30__LR_0.000100_L2_0.010000_model/")
 
 def looper(leadtime, cycle, directory, numTrials, verbose=0, independent=False):#, myFunction, myFunction_args):
     pickles = []
@@ -151,15 +129,24 @@ def looper(leadtime, cycle, directory, numTrials, verbose=0, independent=False):
 
                 with open(folder + filePath, "rb") as fp:
                     r = pickle.load(fp)
-
+                    r['keras_folder_path_looper'] = 'results/' + directory + '/_LT_' + str(lt) + '_/' # folder
+                    r['keras_model_path_looper'] = f"results_LT_{lt:03d}__cycle_{c}__rep_num_{i:03d}__/results_LT_{lt:03d}__cycle_{c}__rep_num_{i:03d}__model.keras" # modelPath
+                    
+                    # independent is False by default, because we run 2021 and 2024 independent test sets in the PNN driver function
                     if independent:
                         # loadmodel_test_on_year(r, model, year='2021', probability=True, filePath='cmd_ai_builder', verbose=0)
                         # loadmodel_test_on_year(r, model, year='2024', probability=True, filePath='cmd_ai_builder', verbose=0)
+                        
                         loadmodel_test_on_year(r, modelPath=folder+modelPath, year='2021', probability=True, filePath=folder + filePath, verbose=0)
+                        # loadmodel_test_on_year does a pickle.dump so we need to reload it
+                        r = pickle.load(fp)
+
                         loadmodel_test_on_year(r, modelPath=folder+modelPath, year='2024', probability=True, filePath=folder + filePath, verbose=0)
+                        # loadmodel_test_on_year does a pickle.dump so we need to reload it
+                        r = pickle.load(fp)
 
                     pickles.append(r)
-                    # myFunction(myFunction_args)
+                    
     if verbose == 2:
         print("\ndone loading pickles\n")
     return pickles
@@ -170,16 +157,7 @@ if __name__ == "__main__":
     # Parse incoming command-line arguments (same one as in cmd_ai_builder.py)
     parser = create_parser()
     
-    parser.add_argument('--histogram',              action='store_true',                help="should results_visualizer draw histograms--default=false")
-    parser.add_argument('--everything',     '-e',   action='store_true', default=False, help="should results_visualizer draw everything--default=true")
-    parser.add_argument('--sigma_sum',              action='store_true',                help="should results_visualizer draw sigma_sumation--default=false")
-    parser.add_argument('--test_only',      '-t',   action='store_true',                help="should results_visualizer execute a test--default=false")
-    parser.add_argument('--csv_for_jarett', '-c',   action='store_true',                help="run a loop that creates csvs to send to jarett, that have metric and obsVsPreds for the Validation years")
-    parser.add_argument('--calc_percent_in_range',  action='store_true',                help="should results_visualizer execute calc_percent_in_range function--default=false")
-    parser.add_argument('--predict2021',    '-p',   action='store_true', default=False, help="should results_visualizer load and run predictions for independent testing year 2021--default=false")
-    parser.add_argument('--skip_reg_j',             action='store_true',                help="should results_visualizer skip regular testing years--default=false")
-    parser.add_argument('--skip_2021_j',            action='store_true',                help="should results_visualizer skip independent testing year 2021--default=false")
-    parser.add_argument(                    '-I',   action='store_true',                help="Should we run the independent testing years? (2021 & 2024 as of April 9th 2025)")
+    parser.add_argument('-I', action='store_true', default=False, help="Should we run the independent testing years? (2021 & 2024 as of April 9th 2025)")
 
     args = parser.parse_args()
     
@@ -187,16 +165,9 @@ if __name__ == "__main__":
     pickles = looper(leadtime=args.leadtime, cycle=args.cycle, directory=args.results_folder, numTrials=args.repetitions, verbose=args.verbose, independent=args.I)
     
     '''move below 2 lines to a notebook "testing" enviroment, should not be in this file, this file should be the "finished" enviroment'''
-    # graph_a_season("Cold")
-    # graph_a_season("Full")
-
-    # a,b,c,d,e,f,g,h,i,j = readingData(args.data_set) # loads all 10 years of our dataset
-    # allYears = [a,b,c,d,e,f,g,h,i,j] # creates a list for ease of use
-
     
-    # need to load in the data_set, save the x and y val to pickle, run predict on the x and y val and save it, then create the cvs's jarett needs.
+    
     print('len of pickles:',len(pickles))
-    '''this test_only was used to create csv files for jarett to visualize, task was originally due by the cool turtle meeting on jan 31 2025'''
     for j in range(1):
         for index_of_pickles, r in enumerate(pickles): # go through all the models in the experiment
             model_args = r['args'] # sets this models args to a variable for easier access
@@ -209,16 +180,37 @@ if __name__ == "__main__":
             
             Path(model_folder).mkdir(parents=True, exist_ok=True)   # create path for results; so directory wont get flooded
 
-            if model_args.c_leadtime == 12:
-                combo = 'combo2'
-            if model_args.c_leadtime == 48:
-                combo = 'combo1'
-            if model_args.c_leadtime == 96:
-                combo = 'combo1'
+            # Combo name has been "noCombo" since final hyperparameters were selected at end of tuning process
+            combo = 'noCombo'
+
+            # I think we replace the above block with just leadtime, or remove combo from name altogether
+            # combo = str(model_args.c_leadtime)
 
 
             path_to_csv = f"UQ4ML_WaterTemp/src/results/pnn_results/{model_args.c_leadtime}h/pnn-{combo}-cycle_{model_args.c_cycle}-iteration_{model_args.c_repetitions+1}/"
             Path(path_to_csv).mkdir(parents=True, exist_ok=True)
+
+
+
+        
+            '''some code to copy the .keras'''
+            import shutil
+            import os
+
+            # Inside your loop, after defining `model_folder`:
+            keras_model_path = 'UQ4ML_WaterTemp/src/results/pnn_results/' + r['keras_folder_path_looper'] + r['keras_model_path_looper']
+
+            if os.path.exists(keras_model_path):
+                # keras_new_path = model_folder + 'model.keras'
+                keras_new_path = path_to_csv + 'model.keras'
+                shutil.copy(keras_model_path, keras_new_path)
+                print(f"Copied model to: {model_folder}")
+            else:
+                print(f"Model file not found at: {keras_model_path}")
+                print(f"Failed to save .keras file to new location.")
+            '''-------------------------------------'''
+                
+
 
             # Path to where model is saved 
             # modelPath = model_folder + model_name
@@ -228,7 +220,7 @@ if __name__ == "__main__":
             r['test_data_dateAndTime'] = r['testing_data_dateAndTime']
             r['val_data_dateAndTime'] = r['validation_data_dateAndTime']
 
-            for item in ['val', 'test']:
+            for item in ['val', 'test', '2021', '2024']:
 
                 mu_pred = r[f"predict_y_{item}_mu"]
                 sigma_pred = r[f"predict_y_{item}_sigma"]

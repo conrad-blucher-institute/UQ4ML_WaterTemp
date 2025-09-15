@@ -131,5 +131,10 @@ dmypy.json
 # custom
 *.pyc 
 results/
+UQ4ML_WaterTemp
+src/setup/setup_custom_env.py
 
 src/driver/run*
+configs/*debug.txt
+configs/*visuals.txt
+local_work_in_progress/
