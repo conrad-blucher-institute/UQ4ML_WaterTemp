@@ -253,13 +253,6 @@ def execute_experiment(args):
                                             n_hidden=args.n_hidden,
                                             metrics=args.metrics,
 
-                                            modify_sigma_loss=args.modify_sigma_loss,
-                                            sigma_threshold=args.sigma_threshold,
-                                            sigma_regularization_parameter=args.sigma_regularization_parameter,
-
-                                            modify_mu_loss=args.modify_mu_loss,
-                                            mu_threshold=args.mu_threshold,
-                                            mu_regularization_parameter=args.mu_regularization_parameter
                                             )
 
 

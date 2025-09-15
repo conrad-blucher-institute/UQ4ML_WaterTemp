@@ -129,7 +129,10 @@ def looper(leadtime, cycle, directory, numTrials, verbose=0, independent=False):
 
                 with open(folder + filePath, "rb") as fp:
                     r = pickle.load(fp)
-
+                    r['keras_folder_path_looper'] = 'results/' + directory + '/_LT_' + str(lt) + '_/' # folder
+                    r['keras_model_path_looper'] = f"results_LT_{lt:03d}__cycle_{c}__rep_num_{i:03d}__/results_LT_{lt:03d}__cycle_{c}__rep_num_{i:03d}__model.keras" # modelPath
+                    
+                    # independent is False by default, because we run 2021 and 2024 independent test sets in the PNN driver function
                     if independent:
                         # loadmodel_test_on_year(r, model, year='2021', probability=True, filePath='cmd_ai_builder', verbose=0)
                         # loadmodel_test_on_year(r, model, year='2024', probability=True, filePath='cmd_ai_builder', verbose=0)
@@ -154,7 +157,7 @@ if __name__ == "__main__":
     # Parse incoming command-line arguments (same one as in cmd_ai_builder.py)
     parser = create_parser()
     
-    parser.add_argument('-I', action='store_false', default=True, help="Should we run the independent testing years? (2021 & 2024 as of April 9th 2025)")
+    parser.add_argument('-I', action='store_true', default=False, help="Should we run the independent testing years? (2021 & 2024 as of April 9th 2025)")
 
     args = parser.parse_args()
     
@@ -177,15 +180,8 @@ if __name__ == "__main__":
             
             Path(model_folder).mkdir(parents=True, exist_ok=True)   # create path for results; so directory wont get flooded
 
-            # Combo name block
-            if model_args.c_leadtime == 12:
-                combo = 'combo2'
-            if model_args.c_leadtime == 48:
-                combo = 'combo1'
-            if model_args.c_leadtime == 96:
-                combo = 'combo1'
-            else:
-                combo = 'noCombo'
+            # Combo name has been "noCombo" since final hyperparameters were selected at end of tuning process
+            combo = 'noCombo'
 
             # I think we replace the above block with just leadtime, or remove combo from name altogether
             # combo = str(model_args.c_leadtime)
@@ -193,6 +189,28 @@ if __name__ == "__main__":
 
             path_to_csv = f"UQ4ML_WaterTemp/src/results/pnn_results/{model_args.c_leadtime}h/pnn-{combo}-cycle_{model_args.c_cycle}-iteration_{model_args.c_repetitions+1}/"
             Path(path_to_csv).mkdir(parents=True, exist_ok=True)
+
+
+
+        
+            '''some code to copy the .keras'''
+            import shutil
+            import os
+
+            # Inside your loop, after defining `model_folder`:
+            keras_model_path = 'UQ4ML_WaterTemp/src/results/pnn_results/' + r['keras_folder_path_looper'] + r['keras_model_path_looper']
+
+            if os.path.exists(keras_model_path):
+                # keras_new_path = model_folder + 'model.keras'
+                keras_new_path = path_to_csv + 'model.keras'
+                shutil.copy(keras_model_path, keras_new_path)
+                print(f"Copied model to: {model_folder}")
+            else:
+                print(f"Model file not found at: {keras_model_path}")
+                print(f"Failed to save .keras file to new location.")
+            '''-------------------------------------'''
+                
+
 
             # Path to where model is saved 
             # modelPath = model_folder + model_name
