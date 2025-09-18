@@ -24,25 +24,41 @@ from tensorflow.keras.models import load_model
 # Then your custom module import should work
 from src.helper.utils_mse_crps import creatingAdditionalColumns, dateTimeRetriever, crps_loss, crps
 
+
+import warnings
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+
+
 # important variables
-TWC_VARIABLE = r"C:\Users\woody\Work\twc-sbirdisland\IBM"
+# TWC_VARIABLE = r"C:\Users\woody\Work\twc-sbirdisland\IBM"
+TWC_VARIABLE = r"C:\Users\hmarrero\Downloads\cool-turtle-data-drop\twc-sbirdisland\IBM"  
 
-NDFD_VARIABLE = r"C:\Users\woody\Work\ndfd-sbirdisland\NDFD"
+# NDFD_VARIABLE = r"C:\Users\woody\Work\ndfd-sbirdisland\NDFD"
+NDFD_VARIABLE = r"C:\Users\hmarrero\Downloads\cool-turtle-data-drop\ndfd-sbirdisland\NDFD"
 
-repo_project_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
+# repo_project_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
+repo_project_path = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\UQ4ML_WaterTemp"
 
-model = 'CRPS'#'CRPS'
+# model = 'CRPS'#'CRPS'
+model = 'PNN'#'CRPS'
 start = '01/16/2024 06:00'
 end = '01/21/2024 15:00'
-leadTimes = [12, 48, 96, 120]
+# leadTimes = [12, 48, 96, 120]
+leadTimes = [12, 48]
 padding = 48
+# was hard coded to descending causing a 62 vs 60 descrepency in the PNN runs
+ascend_or_descend = 'ascending' #descending
+
+verbose = 1 #0
 
 uncertainty_test_list = ['Median', 'min','max', 1, 5, 25, 75, 95, 99]
 start_iteration = 1
-end_iteration = 10
+# end_iteration = 10
+end_iteration = 2
 cycle = 8 #Purely for naming purposes, it just denotes the cycle the model was trained on.
 TWC = True
-allModels = True
+# allModels = True
+allModels = False
 
 # --------Helper Functions----------
 
@@ -53,7 +69,9 @@ def dataframe_retriever(dt, percentile, origin=TWC_VARIABLE):
 
     # Offset timestamp
     dt_offset = dt + timedelta(minutes=10)
-    print(f"Init Time: {dt_offset}")
+    
+    if verbose >= 2:
+        print(f"Init Time: {dt_offset}")
 
     # Time components
     year = dt_offset.strftime("%Y")
@@ -87,16 +105,20 @@ def dataframe_retriever(dt, percentile, origin=TWC_VARIABLE):
     df.set_index('forecast_date_time', inplace=True)
 
     if percentile == "Median":
-        print("Median Running")
+        if verbose >= 2:
+            print("Median Running")
         df['Median'] = df.median(axis=1)
     elif percentile == "max":
-        print('Max running')
+        if verbose >= 2:
+            print('Max running')
         df['max'] = df.max(axis=1)
     elif percentile == "min":
-        print('Min running')
+        if verbose >= 2:
+            print('Min running')
         df['min'] = df.min(axis=1)
     elif isinstance(percentile, int) and 1 <= percentile <= 99:
-        print("Percentiles running")
+        if verbose >= 2:
+            print("Percentiles running")
         q = percentile / 100
         df[percentile] = round(df.quantile(q, axis=1), 2)
 
@@ -112,7 +134,8 @@ def dataframe_retriever_NDFD(dt, origin=NDFD_VARIABLE):
     
     # Offset timestamp
     dt_offset = dt + timedelta(minutes=10)
-    print(f"Init Time: {dt_offset}")
+    if verbose >= 2:
+        print(f"Init Time: {dt_offset}")
 
     # Time components
     year = dt_offset.strftime("%Y")
@@ -123,7 +146,8 @@ def dataframe_retriever_NDFD(dt, origin=NDFD_VARIABLE):
     # File path construction
     fName = os.path.join(origin, 'sbirdisland', year, f"ndfd-predictions.{year}{month}{day}-{time}.json")
 
-    print(fName)
+    if verbose >= 2:
+        print(fName)
     # Load JSON
     with open(fName, "r") as data:
         dataretrieve = json.load(data)
@@ -131,9 +155,11 @@ def dataframe_retriever_NDFD(dt, origin=NDFD_VARIABLE):
     # Create DataFrame
     df = pd.DataFrame(dataretrieve, columns=['timestamp_ms', 'Median'])
 
-    print(df['timestamp_ms'])
+    if verbose >= 2:
+        print(df['timestamp_ms'])
 
-    print(df.head())
+    if verbose >= 2:
+        print(df.head())
 
     def convert_epoch_ms_to_datetime(epoch_ms):
         """Convert epoch time in milliseconds to a readable naive UTC datetime."""
@@ -142,17 +168,20 @@ def dataframe_retriever_NDFD(dt, origin=NDFD_VARIABLE):
 
     df['forecast_date_time'] = df['timestamp_ms'].apply(convert_epoch_ms_to_datetime)
 
-    print(df.head())
+    if verbose >= 2:
+        print(df.head())
     # Optional: set datetime as index
     #df.set_index('forecast_date_time', inplace=True)
 
     #df = df.drop('timestamp_ms', axis=1)
 
     readable_dt = pd.to_datetime(1670846400000, unit='ms', utc=True)
-    print(readable_dt)
+    if verbose >= 2:
+        print(readable_dt)
 
     # Display the result
-    print(df.head())
+    if verbose >= 2:
+        print(df.head())
 
     df.to_csv('testAirNDFD.csv', index=True)
 
@@ -322,14 +351,16 @@ def data_retriever_TWC_combiner(startTime='12/23/2022 16:00', endTime='12/27/202
     end_offset_reference = parsed_end_date - timedelta(hours=leadTime)
 
     current_year = start_offset_reference.year
-    print(f"Current Year: {current_year}")
+    if verbose >= 2:
+        print(f"Current Year: {current_year}")
     extraColsFullDf = additional_columns_retriever(start_offset_reference, leadTime)
 
     current_time = start_offset_reference
     combined_df = pd.DataFrame()
 
     while current_time <= end_offset_reference:
-        print(f"Current Time: {current_time}")
+        if verbose >= 2:
+            print(f"Current Time: {current_time}")
 
         if TWC:
             airTempsdf = dataframe_retriever(current_time, percentile)[0]
@@ -344,18 +375,25 @@ def data_retriever_TWC_combiner(startTime='12/23/2022 16:00', endTime='12/27/202
         time_key = pd.to_datetime(current_time) - pd.Timedelta(hours=1)
         if time_key in extraColsFullDf.index:
             extraColsDf = extraColsFullDf.loc[[time_key]].reset_index(drop=True)
-            print(f"Found extra columns for {current_time}")
+            if verbose >= 2:
+                print(f"Found extra columns for {current_time}")
         else:
             extraColsDf = pd.DataFrame(columns=extraColsFullDf.columns)
-            print(f"Warning: No extra columns found for {current_time}, using empty row.")
+            if verbose >= 2:
+                print(f"Warning: No extra columns found for {current_time}, using empty row.")
 
         # Ensure both DataFrames have one row
-        print("Build Median Forecast Row:")
-        print(new_forecast_df)
-        print("Extra Columns Dataframe:")
-        print(extraColsDf)
+        if verbose >= 2:
+            print("Build Median Forecast Row:")
+        if verbose >= 2:
+            print(new_forecast_df)
+        if verbose >= 2:
+            print("Extra Columns Dataframe:")
+        if verbose >= 2:
+            print(extraColsDf)
         if len(new_forecast_df) != 1 or len(extraColsDf) != 1:
-            print(f"Warning: Skipping {current_time} due to unexpected row count.")
+            if verbose >= 2:
+                print(f"Warning: Skipping {current_time} due to unexpected row count.")
             current_time += timedelta(hours=1)
             continue
 
@@ -381,7 +419,8 @@ def data_retriever_TWC_combiner(startTime='12/23/2022 16:00', endTime='12/27/202
             )
             combined_row = combined_row.reindex(columns=new_order)
         else:
-            print(f"Warning: '{target_col}' not found at {current_time}, skipping reorder.")
+            if verbose >= 2:
+                print(f"Warning: '{target_col}' not found at {current_time}, skipping reorder.")
 
         combined_df = pd.concat([combined_df, combined_row], axis=0, ignore_index=True)
         current_time += timedelta(hours=1)
@@ -396,12 +435,15 @@ def model_loader_tester(model_name, startTime, endTime, lead_times, start_iterat
 
     start_time = time.time()
 
-    for lead_time in lead_times:
+    for lead_time_index, lead_time in enumerate(lead_times):
         if all_models == True:
-
+            if verbose >= 1:
+                print(f"\n\n\n\n\n\n ALL MODELS TRUE \n\n\n\n\n\n")
             percentiles = [f"member_{i}" for i in range(0, 100)]
 
-        for percentile in percentiles:
+        
+        for percentile_index, percentile in enumerate(percentiles):
+            
 
             testDf = data_retriever_TWC_combiner(startTime, endTime, lead_time, padding, TWC, percentile)
 
@@ -411,7 +453,8 @@ def model_loader_tester(model_name, startTime, endTime, lead_times, start_iterat
 
             testingAirTemps = testDf['packeryATP_lighthouse'].tolist()
 
-            x_test, y_test = reshape_testing_only("descending", testDf, model_name)
+            # x_test, y_test = reshape_testing_only("descending", testDf, model_name)
+            x_test, y_test = reshape_testing_only(ascend_or_descend, testDf, model_name)
 
             if model_name == "CRPS":
                 output_units = 100    
@@ -423,6 +466,14 @@ def model_loader_tester(model_name, startTime, endTime, lead_times, start_iterat
                 prediction_column_names.append(f'pred_{k+1}')   
 
             for iteration in range(start_iteration, end_iteration + 1, 1):
+
+                
+                if verbose >= 1:
+                    print(f"\n\n\n\n\n\n ")
+                    print(f"index {lead_time_index}, lead_time : {lead_time}, in lead_times out of : {len(lead_times)}")
+                    print(f"index {percentile_index}, percentile : {percentile}, in percentiles out of : {len(percentiles)}")
+                    print(f"index {iteration}, in iteration start : {start_iteration} out of end : {end_iteration}")
+                    print(f"\n\n\n\n\n\n ")
 
                 num_layers, act_func, neurons = select_hyperparams(model_name=model_name, lead_time=lead_time) # select the hyperparameters based on model_name and lead_time 
                     
@@ -448,7 +499,8 @@ def model_loader_tester(model_name, startTime, endTime, lead_times, start_iterat
 
                 if model_name == 'CRPS':
 
-                    print(x_test.shape)
+                    if verbose >= 2:
+                        print(x_test.shape)
                     test_predictions = model.predict(x_test)
                 elif model_name == 'PNN':
                     test_predictions, test_predictions_sigma = model.predict(list((x_test, x_test)))
@@ -466,14 +518,20 @@ def model_loader_tester(model_name, startTime, endTime, lead_times, start_iterat
                 #Creates a column with the initialization times for reference
                 test_vs_preds.insert(loc=3, column='init_time', value=initTimes)
 
+                # add
+                if model_name == 'PNN':
+                    test_vs_preds.insert(loc=4, column='sigma_1', value=test_predictions_sigma)
+
                 test_path = save_path / f"{percentile}_datetime_obsv_predictions.csv"
 
-                print(test_path)
+                if verbose >= 2:
+                    print(test_path)
                 test_vs_preds.to_csv(test_path)
 
     
     end_time = time.time()
-    print(f"Execution time: {end_time - start_time:.4f} seconds")
+    if verbose >= 2:
+        print(f"Execution time: {end_time - start_time:.4f} seconds")
 
 #END: def model_loader_tester()
 
@@ -490,15 +548,18 @@ def find_and_load_keras_model_crps(base_path, leadTime, iteration, cycle, combo_
     model_path = model_lowered + '_results'
     target_dir = base / 'src' / 'results' / model_path / leadTime / f"{combo_name}-cycle_{cycle}-iteration_{iteration}"
 
-    print(target_dir)
+    if verbose >= 2:
+        print(target_dir)
 
     # Search for any file ending in "_keras" with no extension
     model_path = next((f for f in target_dir.iterdir() if f.name.endswith('.keras') and f.is_file()), None)
 
     if model_path:
-        print(f"Loading model from: {model_path}")
+        if verbose >= 2:
+            print(f"Loading model from: {model_path}")
         model = load_model(model_path)
-        print("Model loaded successfully.")
+        if verbose >= 2:
+            print("Model loaded successfully.")
         return model
     else:
         raise FileNotFoundError(f"No matching Keras model file found in {leadTime} directory.")
@@ -507,14 +568,16 @@ def find_and_load_keras_model_pnn(base_path, leadTime, iteration, cycle, combo_n
     
     from pathlib import Path
 
-    base_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
+    # base_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
+    base_path = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\UQ4ML_WaterTemp"
     leadTime_str = f"{leadTime}h"
     model_dir = f"pnn-{combo_name}-cycle_{cycle}-iteration_{iteration}"
 
     path_to_csv = Path(base_path) / "src" / "results" / "pnn_results" / leadTime_str / model_dir / "model.keras"
     
     if path_to_csv:
-        print(f"Loading model from: {path_to_csv}")
+        if verbose >= 1:
+            print(f"Loading model from: {path_to_csv}")
 
         import keras
         import tensorflow as tf
@@ -525,7 +588,8 @@ def find_and_load_keras_model_pnn(base_path, leadTime, iteration, cycle, combo_n
         # model = tf.keras.models.load_model(model_path)
 
         model = load_model(path_to_csv)
-        print("Model loaded successfully.")
+        if verbose >= 1:
+            print("Model loaded successfully.")
         return model
     else:
         raise FileNotFoundError(f"No matching Keras model file found in {leadTime} directory.")
@@ -541,7 +605,8 @@ def reshape_testing_only(input_structure, testing, model):
     else:
         raise ValueError("input_structure must be 'ascending' or 'descending'")
 
-    #print(testing.columns)
+    #if verbose >= 2:
+        print(testing.columns)
 
     all_columns = testing.columns.tolist()
 
@@ -549,13 +614,25 @@ def reshape_testing_only(input_structure, testing, model):
 
     removed_columns = [col for col in all_columns if col not in selected_columns]
     
-    print("Removed columns:")
-    print(removed_columns)
+    if verbose >= 2:
+        print("Removed columns:")
+    if verbose >= 2:
+        print(removed_columns)
 
     # Extract inputs and target from testing set
+    if verbose >= 2:
+        print("\n\n\n\n")
+    if verbose >= 2:
+        print(testing)
+    if verbose >= 2:
+        print(testing.shape)
+    if verbose >= 2:
+        print(testing.columns)
+
     testingData = testing.iloc[:, input_column_start:-1].values.astype(float)
 
-    #print(testingData.columns)
+    if verbose >= 2:
+        print(testingData.columns)
     testingTarget = testing.iloc[:, -1].values.astype(float)
 
     # Reshape based on model type
@@ -570,8 +647,9 @@ def reshape_testing_only(input_structure, testing, model):
 #END: def reshape_testing_only()
 
 def file_retrieval(target_date):
-    target_dir = r"C:\Users\woody\Work\UQ4ML_WaterTemp\data\June_May_Datasets"
-
+    # target_dir = r"C:\Users\woody\Work\UQ4ML_WaterTemp\data\June_May_Datasets"
+    target_dir = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\data\June_May_Datasets"
+    
     # Ensure target_date is a datetime object
     if isinstance(target_date, str):
         target_date = datetime.strptime(target_date, "%Y-%m")  # e.g., "2021-02"
@@ -592,12 +670,15 @@ def file_retrieval(target_date):
             match = pattern.search(filename)
             if match and int(match.group(1)) == target_year:
                 file_path = os.path.join(target_dir, filename)
-                print("Found file:", file_path)
+                if verbose >= 2:
+                    print("Found file:", file_path)
                 df = pd.read_csv(file_path)
-                print("Loaded:", df.shape[0], "rows ×", df.shape[1], "columns")
+                if verbose >= 2:
+                    print("Loaded:", df.shape[0], "rows ×", df.shape[1], "columns")
                 return df
 
-    print(f"No file found in {target_dir} containing year pair starting with '{target_year}'")
+    if verbose >= 2:
+        print(f"No file found in {target_dir} containing year pair starting with '{target_year}'")
     return None
 
 def additional_columns_retriever(time, leadtime):
@@ -609,8 +690,10 @@ def additional_columns_retriever(time, leadtime):
     df = file_retrieval(time)
     df = creatingAdditionalColumns(df, 'descending', leadtime, 24, 24, 1, 0.0)
 
-    print(df.columns)
-    print(len(df))
+    if verbose >= 2:
+        print(df.columns)
+    if verbose >= 2:
+        print(len(df))
     #exit()
     df["dateAndTime"] = pd.to_datetime(df["dateAndTime"])
     df.set_index("dateAndTime", inplace=True)
@@ -706,7 +789,8 @@ def data_retriever_TWC_combiner_old(startTime='12/23/2022 16:00', endTime='12/27
 
     while current_time <= end_offset_reference:
 
-        print(f"Current Time: {current_time}")
+        if verbose >= 2:
+            print(f"Current Time: {current_time}")
         airTempsdf = dataframe_retriever(current_time)[0]
         new_forecast_df = build_median_forecast_row(airTempsdf, leadTime)
 
@@ -748,15 +832,18 @@ def find_and_load_keras_model_old(base_path, leadTime, iteration, cycle, combo_n
     model_path = model_lowered + '_results'
     target_dir = base / 'src' / 'results' / model_path / leadTime / f"{combo_name}-cycle_{cycle}-iteration_{iteration}"
 
-    print(target_dir)
+    if verbose >= 2:
+        print(target_dir)
 
     # Search for any file ending in "_keras" with no extension
     model_path = next((f for f in target_dir.iterdir() if f.name.endswith('.keras') and f.is_file()), None)
 
     if model_path:
-        print(f"Loading model from: {model_path}")
+        if verbose >= 2:
+            print(f"Loading model from: {model_path}")
         model = load_model(model_path)
-        print("Model loaded successfully.")
+        if verbose >= 2:
+            print("Model loaded successfully.")
         return model
     else:
         raise FileNotFoundError(f"No matching Keras model file found in {leadTime} directory.")
@@ -774,14 +861,18 @@ def file_retrieval_old(year):
             match = pattern.search(filename)
             if match and match.group(1) == year:
                 file_path = os.path.join(target_dir, filename)
-                print("Found file:", file_path)
+                if verbose >= 2:
+                    print("Found file:", file_path)
 
-                print(file_path)
+                if verbose >= 2:
+                    print(file_path)
                 df = pd.read_csv(file_path)
-                print("Loaded:", df.shape[0], "rows ×", df.shape[1], "columns")
+                if verbose >= 2:
+                    print("Loaded:", df.shape[0], "rows ×", df.shape[1], "columns")
                 return df
 
-    print(f"No file found in {target_dir} containing year pair starting with '{year}'")
+    if verbose >= 2:
+        print(f"No file found in {target_dir} containing year pair starting with '{year}'")
 #END: def file_retrieval(year)
 # Runs the code to test the model with the TWC air temperature data
 model_loader_tester(model, start, end, leadTimes, start_iteration, end_iteration, cycle, padding, TWC, 

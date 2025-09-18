@@ -511,6 +511,12 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
     if verbose > 0:
         print()
     
+    
+        
+    print(testing)
+    print(testing.shape)
+    print(testing.columns)
+    
     # Function call to reshpe the dataset and prepare it to be used as in input for the neural network
     x_train, y_train, x_val, y_val, x_test, y_test = reshaping(training, testing, validation, model) 
 
