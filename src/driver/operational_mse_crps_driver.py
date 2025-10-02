@@ -51,21 +51,21 @@ independent_year = "cycle"
 
 """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
 # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
-cycle_list = [0,1,2,3,4,5,6,7,8,9]
+cycle_list = [0,1]
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1
-end_iteration = 100
+end_iteration = 2
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [12,48,96]
+lead_time_list = [12,48]
 hours_back = 24  
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
 temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
 
 # number of epochs
-epochs = 2000
+epochs = 2
 
 
 input_structure = "descending"
@@ -218,6 +218,7 @@ if tune_train_test == "train":
                     # computation graph, causing corruption; throwing an error
                     K.clear_session()
 
+                    # this is where i'm gonna fuc
                     """ Manipulating data for AI Model """
                     x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(path_to_data,
                                                                                                                                 input_structure,
