@@ -21,6 +21,8 @@ from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian
 
 from evaluations.cross_validation_visuals_paper import model_selection_conditional
 
+from evaluations.utils_visuals import file_retriever
+
 ######## Table Code and Data Retrieval Function ########
 def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, URI=False, padding = 24):
     
@@ -275,6 +277,163 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
     
 # END: def aggregateTable()
 
+
+def aggregateTableOpsTest(leadTimes, cycles, architectures, threshold, byCycle, obsVsPredList, start, end, composite, padding = 24):
+    
+    """
+    This function creates byCycle and byUQMethod tables displaying 
+    performance and evaludation metrics.
+    
+    Inputs:
+        
+        leadTimes: list of ints,
+        cycles: list of ints,
+        architectures: list of strings,
+        threshold: int or float representing temperature,
+        byCycle: boolean to swap between byCycle and byUQMethod,
+        obsVsPred: string denoting whether or not val, testing, 2021, or 2024 data is being used,
+        URI: boolean to run additional calculations if 2021 independent year is present,
+        padding: int (set to 24, user can determine how many hours before and after Winter Storm URI the user can include in calculations)
+        
+    Output: 
+        Aggregate tables in csv format. 
+    """
+
+    # Initialize list to store results
+    resultsCsvWhole = []
+        
+    for cycle in cycles:
+    
+        for leadTime in leadTimes:
+            
+            for architecture in architectures:
+            
+                model_list = model_selection_conditional(leadTime, architecture)
+                        
+                for model in model_list:
+                                        # Initializes dictionary for storage for dataframes
+                    dfDict = {}
+
+                    for obsVsPred in obsVsPredList:
+            
+                        # If-structure to retrieve relevant file
+                        if byCycle == True:
+                            
+                            if composite == True:
+                                fileLocation = "TWC_composite_UQ_Files"
+                                saveIdentifier = "Composite"
+                            else:
+                                fileLocation = "TWC_hourly_UQ_Files"
+                                saveIdentifier = "Hourly"
+                            # Path creation
+                            df = file_retriever(leadTime, cycle, architecture, obsVsPred, start, end, fileLocation)
+                            
+                            # Adds whole Df to the dictionary 
+                            dfDict[obsVsPred] = df
+                                                
+                    #######################################################
+                    # Looping structure for dataframe dictionary.
+                    for key in dfDict:
+                        
+                        # Retrieves the dataframe
+                        modDf = dfDict[key]
+                        
+                        # Print statements to give the user an idea of where the calculations are currently at.
+                        print(cycle)
+                        print(leadTime)
+                        print(architecture)
+                        print(key)
+                    
+                        # Data Preparation for Evaluation
+                        # Numpy
+                        actualShaped = modDf['target'].values.astype(float)
+                        averageReshaped = modDf["Mean"].values.astype(float)
+                        stdReshaped = modDf["Stdev"].values.astype(float)
+                        
+                        # Reshaped to Tensors
+                        actualReshaped = modDf['target'].values.astype(float).reshape(-1, 1)
+                        averageShapedTens =  averageReshaped.reshape(-1, 1)
+    
+                        # Reshapes for CRPS Calculations
+                        actualReshapedTens = modDf['target'].values.astype(np.float32).reshape(-1, 1)
+                        averageReshapedTens = modDf["Mean"].values.astype(np.float32).reshape(-1, 1)
+                        stdReshapedTens = modDf["Stdev"].values.astype(np.float32).reshape(-1, 1)
+                        
+                        # Evaluation Calculations
+                        pitAverageCalc = get_pit_points(actualShaped, averageReshaped, stdReshaped)
+                        print("Pit Calculated")
+                        
+                        ssrelCalcAVG = get_spread_skill_points(actualShaped, averageReshaped, stdReshaped)
+                        print("SSREL Calculated")
+                        
+                        crpsCalc_gauss = crps_gaussian_tf(averageReshapedTens, stdReshapedTens, actualReshapedTens).numpy()
+                        print("CRPS Calculated")
+                        
+                        ssratAverage = ssrat_avg(actualShaped, averageReshaped, stdReshaped)
+                        print("SSRAT Calculated")
+                        
+                        meCalc = me(actualReshaped, averageShapedTens)
+                        print("ME Calculated")
+                        
+                        mae12Calc = mae12(actualReshaped, averageShapedTens)
+                        print('MAE12 Calculated')
+                        
+                        me12Calc = me12(actualReshaped, averageShapedTens)
+                        print("ME12 Calculated")
+                        
+                        maeCalc = mae(actualReshaped, averageShapedTens)
+                        print('MAE calculated')
+        
+                        rmseCalc = rmse_avg(actualReshaped, averageShapedTens)
+                        print("RMSE Calculated")
+        
+                        mseCalc = mse(actualReshaped, averageShapedTens)
+                        print("MSE Calculated")
+                        
+                        row = {
+                        'architecture': architecture,
+                        'selection': key,
+                        'leadTime': leadTime,
+                        'cycle': cycle,
+                        'model': model,
+                        'pit' : pitAverageCalc,
+                        'ssrel': ssrelCalcAVG,
+                        'crps': crpsCalc_gauss,
+                        'ssrat' : ssratAverage,
+                        'me': meCalc,
+                        'mae12': mae12Calc,
+                        'me12' : me12Calc,
+                        'mae': maeCalc,
+                        'rmse': rmseCalc,
+                        'mse': mseCalc
+                        }
+                        
+                        # Structure to append the rows to their corresponding containers
+                        resultsCsvWhole.append(row)
+                            
+                    # Line of code to help ensure memory is being freed up. Necessary when the files have all of the predictions.
+                    #del df, coldDf, filtered_df, dfDict
+
+    # Convert the results list into a DataFrame
+    whole_results_df = pd.DataFrame(resultsCsvWhole)
+
+    # Ensure start and end are datetime objects
+    start = pd.to_datetime(start, format='%m/%d/%Y %H:%M')
+    end = pd.to_datetime(end, format='%m/%d/%Y %H:%M')
+
+    # Convert and format timestamps
+    time_folder = f"{start.strftime('%Y%m%d_%H%M')}_to_{end.strftime('%Y%m%d_%H%M')}"
+    plot_type = "Aggregate_Tables"
+
+    # Create folder path
+    base_dir = Path("TWC_Experiments") / time_folder / plot_type 
+    base_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Save the DataFrame to a CSV file
+    whole_results_df.to_csv(base_dir /f'metrics_results_performance_{saveIdentifier}AggregateTable.csv', index=False)
+
+
+#END: def aggregateTable_OpsTest()
 def pre_aggregate_byUQMethod_file(leadTimes, cycles, architectures, obsVsPred):
     
     """

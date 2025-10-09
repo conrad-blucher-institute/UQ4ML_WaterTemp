@@ -22,7 +22,7 @@ import plotly.graph_objects as go
 
 from pathlib import Path
 
-from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian_tf
+from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian_tf, me
 
 ########### Data Retrieval Code ############
 
@@ -43,6 +43,11 @@ def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cyc
     """ 
     # Creates empty dataframe
     mainDf = pd.DataFrame()
+
+    if architecture == "CRPS":
+        iterations = 10
+    elif architecture == "PNN":
+        iterations = 30
     
     # Loop for parsing data and grabbing data
     for i in range(iterations):
@@ -57,6 +62,7 @@ def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cyc
             
             mainDf["target"] = df['target']
             mainDf['date_time'] = df['date_time']
+            mainDf['init_time'] = df['init_time']
             mainDf.set_index('date_time', inplace=True)
             
         # Sets index
@@ -64,9 +70,11 @@ def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cyc
             
         # Drops target and date_time
         df.drop(['target'], axis=1, inplace=True)
+
+        df.drop(['init_time'], axis=1, inplace=True)
         
         #Adds string identifiers to the end
-        df = df.add_suffix('_iteration_' + str(i))
+        df = df.add_suffix('_iteration_' + str(i) + '_' + str(obsVsPred))
         
         # Combine data
         mainDf = pd.concat([mainDf, df], axis=1)
@@ -118,18 +126,26 @@ def model_selection_conditional(leadTime, architecture):
     elif leadTime == 96 and architecture == "CRPS":
         
         model_names = ['3_layers-relu-100_neurons']
+
+    elif leadTime == 120 and architecture == "CRPS":
+        
+        model_names = ['3_layers-relu-100_neurons']
     
     elif leadTime == 12 and architecture == "PNN":
 
-        model_names = ['combo2']  
+        model_names = ['noCombo']  
 
     elif leadTime == 48 and architecture == "PNN":
         
-        model_names = ['combo1']  
+        model_names = ['noCombo']  
 
     elif leadTime == 96 and architecture == "PNN":
         
-        model_names = ['combo1']  
+        model_names = ['noCombo']  
+
+    elif leadTime == 120 and architecture == "PNN":
+    
+        model_names = ['noCombo']  
         
     else:
         model_names = []
@@ -177,7 +193,7 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
         for architecture in architectures:
             
             # Grabs the corresponding directory where training information was stored
-            MAIN_DIRECTORY = 'results/' + str(architecture.lower()) + "_results"
+            MAIN_DIRECTORY = 'TWC_results/' + str(architecture.lower()) + "_results"
 
             # For every lead time, grab data for each hyperparameter combo.
             for leadTime in leadTimes:
@@ -312,6 +328,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
     # Storage for traces for effective layering
     fan_traces = []
     mean_traces = []
+    SD1_fan_traces = []
 
     # Sorts the Keys in an Effective Manner
     sorted_keys = sorted(dfDict.keys(), key=lambda x: ('mse' not in x, 'CRPS' not in x, 'PNN' not in x))
@@ -329,15 +346,23 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
         # Hover Text Templates and Colors
         if 'CRPS' in key:
             color = "#4B0082"
-            customda = df[['target', 'central_mae', 'central_mae<12', 'crps_gauss']]
+            customda = df[['target', 'central_mae', 'mean_error', 'crps_gauss', 'init_time', 'P5', 'P95', "Median",  'BelowStd', 'AboveStd', 'Below2Std', 'Above2Std']]
             hovertemp = "<br>".join([
-                "date_time: %{x}",
+                "Valid date_time: %{x}",
+                "Initialization time: %{customdata[4]}",
+                'Lower Prediction Limit (P5): %{customdata[5]}',
+                'Upper Prediction Limit (P95): %{customdata[6]}',
+                '1SD Below: %{customdata[8]}',
+                '1SD Above: %{customdata[9]}',
+                '2SD Below: %{customdata[10]}',
+                '2SD Above: %{customdata[11]}',
                 f"Model: {model_name}",
                 "Mean Predicted Temperature (°C): %{y}",
+                'Median Predicted Temperature (°C): %{customdata[7]}',
                 "Actual temperature (°C): %{customdata[0]}",
                 "CRPS (°C): %{customdata[3]}",
                 "Central_MAE (°C): %{customdata[1]}",
-                "Central_MAE<12 (°C): %{customdata[2]}"
+                "ME (°C):%{customdata[2]}"
             ])
             
         elif 'PNN' in key:
@@ -374,7 +399,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             line=dict(color=color, width=2),
             showlegend=False,
             legendgroup=model_name,
-            opacity=1,
+            opacity=0.3,
             connectgaps=False
         ))
         fan_traces.append(go.Scatter(
@@ -385,6 +410,30 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             fill='tonexty',
             #fillcolor=fill_rgba,
             name=f"{model_name} ±2SD",
+            showlegend=True,
+            legendgroup=model_name,
+            legendrank=1,
+            opacity=0.3,
+            connectgaps=False
+        ))
+        SD1_fan_traces.append(go.Scatter(
+            x=df.index,
+            y=df['BelowStd'],
+            mode='lines',
+            line=dict(color=color, width=2),
+            showlegend=False,
+            legendgroup=model_name,
+            opacity=1,
+            connectgaps=False
+        ))
+        SD1_fan_traces.append(go.Scatter(
+            x=df.index,
+            y=df['AboveStd'],
+            mode='lines',
+            line=dict(color=color, width=2),
+            fill='tonexty',
+            #fillcolor=fill_rgba,
+            name=f"{model_name} ±1SD",
             showlegend=True,
             legendgroup=model_name,
             legendrank=1,
@@ -412,6 +461,8 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
 
     # Code to add Traces to the Plot in an order to clearly see the differentiation
     for trace in fan_traces:
+        fig.add_trace(trace)
+    for trace in SD1_fan_traces:
         fig.add_trace(trace)
     for trace in mean_traces:
         fig.add_trace(trace)
@@ -548,6 +599,15 @@ def visualization_metric_calcs(df, architecture, expanded):
             df['Mean'] = muCombined
 
             df['Stdev'] = sigmaCombined
+        
+        # Creates new dataframe
+        newDf = df[desired_columns]
+
+        # Median Calculation to create hourly median values for the predictions
+        df['Median'] = round(newDf.apply(np.median, axis=1), 2)
+        # Grabs 5th and 95th percentiles
+        df['P5'] = round(newDf.quantile(0.05, axis=1), 2)
+        df['P95'] = round(newDf.quantile(0.95, axis=1), 2)
 
         # 2 * standard error
         df['2Stdev'] = round(df['Stdev'] * 2, 2)
@@ -562,20 +622,27 @@ def visualization_metric_calcs(df, architecture, expanded):
     else:
         # Filters out columns that do not contain pred
         desired_columns = [x for x in df.columns if x.startswith("pred")]
+        #print(df.columns)
 
         # Creates new dataframe
         newDf = df[desired_columns]
         
         # Mean Calculation to create hourly mean values for predictions
         df['Mean'] = round(newDf.apply(np.mean, axis=1), 2) 
+
+        # Median Calculation to create hourly median values for the predictions
+        df['Median'] = round(newDf.apply(np.median, axis=1), 2)
         
         # Standard Deviation Calculation to create hourly stdev values for the predictions
         df['Stdev'] = round(newDf.apply(np.std, axis=1), 2) 
             
-        
+        # Grabs 5th and 95th percentiles
+        df['P5'] = round(newDf.quantile(0.05, axis=1), 2)
+        df['P95'] = round(newDf.quantile(0.95, axis=1), 2)
+
         # 2 * standard error
         df['2Stdev'] = round(df['Stdev'] * 2, 2)
-        
+
         # 1 Standard Deviation 
         df['BelowStd'] = round(df['Mean'] - df['Stdev'], 2)
         df['AboveStd'] = round(df['Mean'] + df['Stdev'], 2)
@@ -590,7 +657,7 @@ def visualization_metric_calcs(df, architecture, expanded):
         
         return df
     else:
-        summary_df = df[['Mean', 'Stdev', '2Stdev', 'BelowStd', 'AboveStd', 'Below2Std', 'Above2Std', 'target']].copy()
+        summary_df = df[['Mean', 'Stdev', '2Stdev', 'BelowStd', 'AboveStd', 'Below2Std', 'Above2Std', 'target', 'Median', 'P5', 'P95', 'init_time']].copy()
         
         return summary_df
     
@@ -612,6 +679,7 @@ def crps_metrics(df):
     crpsGauss = []
     maeSingular = []
     mae12Singular = []
+    meSingular = []
     
     for index, row in df.iterrows():
 
@@ -641,14 +709,18 @@ def crps_metrics(df):
         # Singular metrics.
         maeSingular_val = mae(actualSingleTensor, predsSingleTensor)
         maeSingular.append(round(maeSingular_val, 3))
+
+        meSingular_val = me(actualSingleTensor, predsSingleTensor)
+        meSingular.append(round(meSingular_val, 3))
         
-        mae12Singular_val = mae12(actualSingleTensor, predsSingleTensor)
-        mae12Singular.append(round(mae12Singular_val, 3))
+        #mae12Singular_val = mae12(actualSingleTensor, predsSingleTensor)
+        #mae12Singular.append(round(mae12Singular_val, 3))
         
     # Append computed metrics as new columns to the dataframe.
     df['crps_gauss'] = crpsGauss
     df['central_mae'] = maeSingular
-    df['central_mae<12'] = mae12Singular
+    df['mean_error'] = meSingular
+    #df['central_mae<12'] = mae12Singular
         
     return df
 
@@ -713,7 +785,7 @@ def pnn_metrics(df):
     
     crpsList = []
     maeSingular = []
-    mae12Singular = []
+    meSingular = []
     
     for index, row in df.iterrows():
         
@@ -746,11 +818,13 @@ def pnn_metrics(df):
 
         #Grabs values and appends them to a list to be placed into dataframe
         maeSingular.append(round(mae(actualSingleTensor, predsSingleTensor), 3))
-        mae12Singular.append(round(mae12(actualSingleTensor, predsSingleTensor), 3))
+
+        meSingular_val = me(actualSingleTensor, predsSingleTensor)
+        meSingular.append(round(meSingular_val, 3))
                 
-    df['crps'] = crpsList
+    df['crps_gauss'] = crpsList
     df['central_mae'] = maeSingular
-    df['central_mae<12'] = mae12Singular
+    df['mean_error'] = meSingular
         
     return df
 

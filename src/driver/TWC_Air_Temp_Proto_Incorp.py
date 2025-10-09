@@ -24,44 +24,47 @@ from tensorflow.keras.models import load_model
 # Then your custom module import should work
 from src.helper.utils_mse_crps import creatingAdditionalColumns, dateTimeRetriever, crps_loss, crps
 
-
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
 
 # important variables
-# TWC_VARIABLE = r"C:\Users\woody\Work\twc-sbirdisland\IBM"
-TWC_VARIABLE = r"C:\Users\hmarrero\Downloads\cool-turtle-data-drop\twc-sbirdisland\IBM"  
+TWC_VARIABLE = r"C:\Users\woody\Work\twc-sbirdisland\IBM"
+#TWC_VARIABLE = r"C:\Users\hmarrero\Downloads\cool-turtle-data-drop\twc-sbirdisland\IBM"  
 
-# NDFD_VARIABLE = r"C:\Users\woody\Work\ndfd-sbirdisland\NDFD"
-NDFD_VARIABLE = r"C:\Users\hmarrero\Downloads\cool-turtle-data-drop\ndfd-sbirdisland\NDFD"
+NDFD_VARIABLE = r"C:\Users\woody\Work\ndfd-sbirdisland\NDFD"
+#NDFD_VARIABLE = r"C:\Users\hmarrero\Downloads\cool-turtle-data-drop\ndfd-sbirdisland\NDFD"
 
-# repo_project_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
-repo_project_path = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\UQ4ML_WaterTemp"
+repo_project_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
+#repo_project_path = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\UQ4ML_WaterTemp"
 
 # model = 'CRPS'#'CRPS'
 model = 'PNN'#'CRPS'
-start = '01/16/2024 06:00'
-end = '01/21/2024 15:00'
+#start = '01/16/2024 06:00'
+#end = '01/21/2024 15:00'
+
+start = '02/14/2021 06:00'
+end = '02/19/2021 22:00'
 # leadTimes = [12, 48, 96, 120]
-leadTimes = [12, 48]
+leadTimes = [12, 48, 96, 120]
 padding = 48
 # was hard coded to descending causing a 62 vs 60 descrepency in the PNN runs
-ascend_or_descend = 'descending' #'ascending' #descending
+ascend_or_descend = 'descending' #descending
 
 verbose = 1 #0
 
 uncertainty_test_list = ['Median', 'min','max', 1, 5, 25, 75, 95, 99]
 start_iteration = 1
-# end_iteration = 10
-end_iteration = 2
+end_iteration = 30
 cycle = 8 #Purely for naming purposes, it just denotes the cycle the model was trained on.
+
+# Stays true unitl NDFD is cleaned and needed to be used
 TWC = True
-# allModels = True
-allModels = False
+
+# For uncertainty visual code to work as expected, you must run this file with the mode variable set to each of these settings
+mode = 'all' # 'all', 'prog', or '' for normal TWC ('' runs using the uncertaint_test_list)
 
 # --------Helper Functions----------
-
 
 # NEED to use the itensive way of testing every single model :(
 # Weather Company Data Specific Function
@@ -337,6 +340,28 @@ def select_hyperparams(model_name, lead_time):
 
     return num_layers, act_func, neurons
 
+def data_retriever_perfect_prog(startTime='12/23/2022 16:00', endTime='12/27/2022 17:00', leadTime=12, padding = 48):
+    # Applies padding hours to the start and end of the event to ensure we have enough data before and after the event.
+    parsed_start_date = datetime.strptime(startTime, '%m/%d/%Y %H:%M') - timedelta(hours=padding)
+    parsed_end_date = datetime.strptime(endTime, '%m/%d/%Y %H:%M') + timedelta(hours=padding)
+
+    # This accounts for the relevant offset time needed for data in predictions
+    start_offset_reference = parsed_start_date - timedelta(hours=leadTime)
+    end_offset_reference = parsed_end_date - timedelta(hours=leadTime)
+
+    current_year = start_offset_reference.year
+    if verbose >= 2:
+        print(f"Current Year: {current_year}")
+    extraColsFullDf = additional_columns_retriever_prog(start_offset_reference, leadTime)
+
+    # Filter using datetime index
+    df_segment = extraColsFullDf.loc[start_offset_reference:end_offset_reference]
+
+    print(df_segment.head())
+
+    df_segment = df_segment.reset_index()
+    return df_segment
+
 def data_retriever_TWC_combiner(startTime='12/23/2022 16:00', endTime='12/27/2022 17:00', leadTime=12, padding = 48, TWC = True, percentile = "Median"):
     """
     Aligns TWC and model data based on forecast datetime intervals.
@@ -372,7 +397,7 @@ def data_retriever_TWC_combiner(startTime='12/23/2022 16:00', endTime='12/27/202
         # Ensure forecast data is a single row
         new_forecast_df = new_forecast_df.reset_index(drop=True)
 
-        time_key = pd.to_datetime(current_time) - pd.Timedelta(hours=1)
+        time_key = pd.to_datetime(current_time) #- pd.Timedelta(hours=1)
         if time_key in extraColsFullDf.index:
             extraColsDf = extraColsFullDf.loc[[time_key]].reset_index(drop=True)
             if verbose >= 2:
@@ -429,23 +454,30 @@ def data_retriever_TWC_combiner(startTime='12/23/2022 16:00', endTime='12/27/202
     return combined_df
 # End: def data_retriever_TWC_combiner()
 
-def model_loader_tester(model_name, startTime, endTime, lead_times, start_iteration, end_iteration, cycle, padding, TWC, percentiles, all_models = False, base_path=repo_project_path):
+def model_loader_tester(model_name, startTime, endTime, lead_times, start_iteration, end_iteration, cycle, padding, TWC, percentiles, mode = '', base_path=repo_project_path):
 
     import time
 
     start_time = time.time()
 
     for lead_time_index, lead_time in enumerate(lead_times):
-        if all_models == True:
+        if mode == 'all':
             if verbose >= 1:
                 print(f"\n\n\n\n\n\n ALL MODELS TRUE \n\n\n\n\n\n")
             percentiles = [f"member_{i}" for i in range(0, 100)]
 
+        elif mode == 'prog':
+            if verbose >= 1:
+                print(f"\n\n\n\n\n\n PROG MODE TRUE \n\n\n\n\n\n")
+            percentiles = ['pprog']
+
         
         for percentile_index, percentile in enumerate(percentiles):
             
-
-            testDf = data_retriever_TWC_combiner(startTime, endTime, lead_time, padding, TWC, percentile)
+            if mode != 'prog':
+                testDf = data_retriever_TWC_combiner(startTime, endTime, lead_time, padding, TWC, percentile)
+            else:
+                testDf = data_retriever_perfect_prog(startTime, endTime, lead_time, padding)
 
             initTimes = testDf['dateAndTime'].tolist()
 
@@ -481,8 +513,7 @@ def model_loader_tester(model_name, startTime, endTime, lead_times, start_iterat
                     
                 combo_name = f"{model_name.lower()}-{num_layers}_layers-{act_func}-{neurons}_neurons"
                 if model_name == "PNN":
-                    combo_name = 'noCombo'
-
+                    combo_name = f"{model_name.lower()}-noCombo"
                 # Path to folder for visualization results
                 if TWC == True:
                     start_dt = datetime.strptime(start, '%m/%d/%Y %H:%M')
@@ -570,10 +601,10 @@ def find_and_load_keras_model_pnn(base_path, leadTime, iteration, cycle, combo_n
     
     from pathlib import Path
 
-    # base_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
-    base_path = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\UQ4ML_WaterTemp"
+    base_path = r"C:\Users\woody\Work\UQ4ML_WaterTemp"
+    #base_path = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\UQ4ML_WaterTemp"
     leadTime_str = f"{leadTime}h"
-    model_dir = f"pnn-{combo_name}-cycle_{cycle}-iteration_{iteration}"
+    model_dir = f"{combo_name}-cycle_{cycle}-iteration_{iteration}"
 
     path_to_csv = Path(base_path) / "src" / "results" / "pnn_results" / leadTime_str / model_dir / "model.keras"
     
@@ -649,8 +680,8 @@ def reshape_testing_only(input_structure, testing, model):
 #END: def reshape_testing_only()
 
 def file_retrieval(target_date):
-    # target_dir = r"C:\Users\woody\Work\UQ4ML_WaterTemp\data\June_May_Datasets"
-    target_dir = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\data\June_May_Datasets"
+    target_dir = r"C:\Users\woody\Work\UQ4ML_WaterTemp\data\June_May_Datasets"
+    #target_dir = r"C:\Users\hmarrero\Documents\GitHub_Repos\UQ4ML_WaterTemp\data\June_May_Datasets"
     
     # Ensure target_date is a datetime object
     if isinstance(target_date, str):
@@ -705,6 +736,25 @@ def additional_columns_retriever(time, leadtime):
 
     return df
 #END: def additional_columns_retriever()
+
+def additional_columns_retriever_prog(time, leadtime):
+    """
+    Retrieves the full additional columns dataframe for a given year and lead time.
+    Filters out unnecessary columns and sets datetime index.
+    """
+    df = file_retrieval(time)
+    df = creatingAdditionalColumns(df, 'descending', leadtime, 24, 24, 1, 0.0)
+
+    if verbose >= 2:
+        print(df.columns)
+    if verbose >= 2:
+        print(len(df))
+    #exit()
+    df["dateAndTime"] = pd.to_datetime(df["dateAndTime"])
+    df.set_index("dateAndTime", inplace=True)
+
+    return df
+
 
 def build_median_forecast_row(source_df, leadtime, percentile):
     """
@@ -878,4 +928,4 @@ def file_retrieval_old(year):
 #END: def file_retrieval(year)
 # Runs the code to test the model with the TWC air temperature data
 model_loader_tester(model, start, end, leadTimes, start_iteration, end_iteration, cycle, padding, TWC, 
-uncertainty_test_list, allModels)
+uncertainty_test_list, mode)
