@@ -15,9 +15,8 @@ import pandas as pd
 
 from pathlib import Path
 
-from src.helper.utils import readingData
 from src.helper.my_parser import create_parser
-from src.helper.utils import load_for_testing
+from src.helper.utils_pnn import load_for_testing
 
 import warnings
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning) # ignoring the performance warning that pandas throws because the method we are using to combine dataframes is causing de-fragmentation
@@ -227,12 +226,12 @@ if __name__ == "__main__":
                 
                 mu_pred, sigma_pred = changeArrayDepthTo1(mu=mu_pred, sigma=sigma_pred)
 
-                from src.helper.utils import mae # need mae
+                from src.helper.utils_pnn import mae # need mae
                 mae = tf.reduce_mean(tf.abs(tf.subtract(r[f"y_{item}"], mu_pred))).numpy()
                 print('mae:',mae)                
                 r[f"metric_{item}_mae"] = mae
 
-                from src.helper.utils import mae12 # need mae<12
+                from src.helper.utils_pnn import mae12 # need mae<12
                 mae12 = mae12(r[f"y_{item}"], mu_pred)
                 print('mae12:',mae12)
                 r[f"metric_{item}_mae12"] = mae12

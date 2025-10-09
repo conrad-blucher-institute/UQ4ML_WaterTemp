@@ -47,7 +47,7 @@ end = '01/21/2024 15:00'
 leadTimes = [12, 48]
 padding = 48
 # was hard coded to descending causing a 62 vs 60 descrepency in the PNN runs
-ascend_or_descend = 'ascending' #descending
+ascend_or_descend = 'descending' #'ascending' #descending
 
 verbose = 1 #0
 
@@ -452,6 +452,8 @@ def model_loader_tester(model_name, startTime, endTime, lead_times, start_iterat
             testingDates = dateTimeRetriever(testDf, lead_time)
 
             testingAirTemps = testDf['packeryATP_lighthouse'].tolist()
+
+            testDf.to_csv('checking_column_order_in_TWC_Incorp.csv')
 
             # x_test, y_test = reshape_testing_only("descending", testDf, model_name)
             x_test, y_test = reshape_testing_only(ascend_or_descend, testDf, model_name)

@@ -1,4 +1,35 @@
 
+def mae(y_true, y_pred):
+    import tensorflow as tf
+
+    return tf.reduce_mean(tf.abs(tf.subtract(y_true, y_pred)), axis=-1)
+
+
+"""
+Andrew's MAE (below) 12 (degress Celsuis) function'
+"""
+def mae12(y_true, y_pred):
+    import tensorflow as tf
+
+    # Ensure consistent data types
+    y_true = tf.cast(y_true, tf.float32)
+    y_pred = tf.cast(y_pred, tf.float32)
+        
+    # Create mask for values <= 12
+    mask = tf.less_equal(y_true, 12)
+        
+    try: 
+        # Apply mask
+        filtered_true = tf.boolean_mask(y_true, mask)
+        filtered_pred = tf.boolean_mask(y_pred, mask)
+        
+        # Compute MAE
+        return tf.reduce_mean(tf.abs(filtered_pred - filtered_true)).numpy()
+        
+    except ValueError:
+        return -999
+
+
 ''' 
 Data Preparation Begin
 
