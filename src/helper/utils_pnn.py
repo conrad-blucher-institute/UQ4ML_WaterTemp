@@ -75,7 +75,8 @@ def readingData(path_to_data):
     return data_year1, data_year2, data_year3, data_year4, data_year5, data_year6, data_year7, data_year8, data_year9, data_year10
 
 # I added a default value for pred_atp_interval of 1 -hector (12/21/2024)
-def creatingAdditionalColumns(df, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval=1, IPPOffset=0.0):
+# 10/10/2025 hector - added a parameter called input_structure based on code christian wrote a while back that changes the order of the columns to what the Semaphore team needs, gave it a default value of descending to always activate from now on
+def creatingAdditionalColumns(df, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval=1, IPPOffset=0.0, input_structure="descending", verbose=0):
     '''creatingAdditionalColumns() creating columns for the past and future (perfect prog) hours'''
     
     interval = pred_atp_interval
@@ -182,10 +183,59 @@ def creatingAdditionalColumns(df, input_hours_forecast, atp_hours_back, wtp_hour
     # Delecting extra rows from the end
     df = df.iloc[:-120] 
     
+    if verbose == 4:
+        print("Inside creatingAdditionalColumns: checking df shape and columns before changing order of columns.")
+        print(df.shape)
+        print(df.columns)    
+        return 0
     
-    #df.to_csv('datasetTest.csv', encoding='utf-8', index=False)
-    
-    return df
+    if input_structure == "descending":
+        print("Inside input_structure == 'descending'.")
+        
+        # begining of changing the order of the input vector 
+        # we want the input vector to look like this below
+        # wtp_3h_ago, wtp_2h_ago, wtp_1h_ago, current_wtp, atp_3h_ago, atp_2h_ago, atp_1h_ago, current_atp, atp_1h_forecast, atp_2h_forecast, atp_3h_forecast, target_wtp_3h_forecast
+
+        # separating the columns (water temperature xh_ago, air temperature xh_ago, and air temperature xh_forecast)
+        water_temp_columns = [col for col in df.columns if "waterTemperature__" in col]
+        air_temp_columns = [col for col in df.columns if "airTemperature__" in col and "_ago" in col]
+        forecast_columns = [col for col in df.columns if "forecast" in col]
+
+        
+        # the datetime, current wtp and current atp
+        other_columns = [col for col in df.columns if col not in water_temp_columns + air_temp_columns + forecast_columns]
+        # removing current wtp and atp from list to be added back in the appropriate location
+
+        if "npsbiWTP_lighthouse" in other_columns:
+            other_columns.remove("npsbiWTP_lighthouse")  
+        if "packeryATP_lighthouse" in other_columns:
+            other_columns.remove("packeryATP_lighthouse")  
+
+        # Reorder columns
+        reordered_columns = (
+            other_columns
+            + water_temp_columns[::-1]
+            + ["npsbiWTP_lighthouse"]
+            + air_temp_columns[::-1]
+            + ["packeryATP_lighthouse"]
+            + forecast_columns
+        )
+
+        df = df[reordered_columns]
+
+        if verbose == 5:
+            print("Inside creatingAdditionalColumns: checking df shape and columns after changing order of columns.")
+            print(df.shape)
+            print(df.columns)    
+            return 0
+
+
+        return df
+
+    # elif input_structure == "ascending": # 10/10/2025 hector - instead of checking for "ascending" we just treat it as the else case
+    else:
+        return df
+
 
 def splittingData(year1, year2, year3, year4, year5, year6, year7, year8, year9, year10, cycle):
     '''splittingData() groups the data into training, testing, and validation
@@ -253,17 +303,19 @@ def reshaping(training, testing, validation, model):
     able to use them as an input for the AI model'''
     import numpy as np
 
-    rangeValues = len(training.columns) - 1 # for marina, why is this variable here? -hector
-    
+    # sets how many columns we delete starting from the left, used to be 3 deleting dateTime, current WTP (WTP at now), & current ATP (ATP at now)
+    # now is 1 to only delete dateTime and leave the current (or now) WTP & ATP measurements
+    columnsToDelete = 1
+
     #print(testing['dateAndTime', 'packeryATP_lighthouse', 'npsbiWTP_lighthouse'].head(125))
     # Dividing the datasets between the inputs and the target
-    trainingData = training.iloc[:,3:-1].values.astype(float) 
+    trainingData = training.iloc[:,columnsToDelete:-1].values.astype(float) 
     trainingTarget = training.iloc[:,-1].values.astype(float)
     
-    testingData = testing.iloc[:,3:-1].values.astype(float) 
+    testingData = testing.iloc[:,columnsToDelete:-1].values.astype(float) 
     testingTarget = testing.iloc[:,-1].values.astype(float) 
     
-    validationData = validation.iloc[:,3:-1].values.astype(float) 
+    validationData = validation.iloc[:,columnsToDelete:-1].values.astype(float) 
     validationTarget = validation.iloc[:,-1].values.astype(float) 
     
     if(model == "LSTM"):
@@ -301,52 +353,6 @@ def DateTimeRetriever(df, input_hours_forecast):
     return Dates
 
 
-'''if there is no issue known, delete the deprecated functions (2 of them) below, and use the 1 above -hector Feb 5'''
-# def testingDateTimeRetriever(testing, input_hours_forecast):
-#     '''This function is designed to grab the date times from the testing data set for computations.'''
-
-#     import pandas as pd
-
-#     testingDates = [] # holds date times
-
-#     #print(testing.head())import pandas as pd
-#     #print(testing.head())import pandas as pd
-    
-#     # Loop to add date times for future calculations
-#     testing['dateAndTime'] = pd.to_datetime(testing['dateAndTime'], format='%m-%d-%Y %H%M', yearfirst=False) + pd.DateOffset(hours=input_hours_forecast)
-    
-#     #print(testing['dateAndTime'].head())
-    
-#     # Ask if an offset is needed for the air temps
-    
-#     #Converts series into a list
-#     testingDates  = testing['dateAndTime'].tolist()    
-            
-#     return testingDates
-
-# def validationDateTimeRetriever(validation, input_hours_forecast):
-#     import pandas as pd
-#     '''This function is designed to grab the date times from the testing data set for computations.'''
-
-#     import pandas as pd
-#     import pandas as pd
-#     # holds date times
-#     validationDates = []
-    
-#     #print(testing.head())import pandas as pd
-#     #print(testing.head())import pandas as pd
-    
-#     # Loop to add date times for future calculations
-#     validation['dateAndTime'] = pd.to_datetime(validation['dateAndTime'], format='%m-%d-%Y %H%M', yearfirst=False) + pd.DateOffset(hours=input_hours_forecast)
-    
-#     #print(testing['dateAndTime'].head())
-    
-#     # Ask if an offset is needed for the air temps
-    
-#     #Converts series into a list
-#     validationDates  = validation['dateAndTime'].tolist()    
-            
-#     return validationDates
 
 def offSetCreator(dataYear, IPPOffset, input_hours_forecast):
     '''This function will be in charge of creating offsets for the given dataset and 
@@ -457,6 +463,7 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
     '''preparingData() is the driver function'''
     # Importing libraries
     from datetime import datetime
+    import pandas as pd
 
     # Function call to read the data
     data_year1, data_year2, data_year3, data_year4, data_year5, data_year6, data_year7, data_year8, data_year9, data_year10 = readingData(path_to_data)
@@ -468,8 +475,12 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
 
     # Function call to create additional columns
     start_time = datetime.now()
-    year1 = creatingAdditionalColumns(data_year1, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+    year1 = creatingAdditionalColumns(data_year1, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset, verbose=verbose)
     
+    # check that year1 is not a dataframe or else the comparison will break
+    # if creatingAdditionalColumns returns a 0 that means we are debugging and want to return immediately
+    if not isinstance(year1, pd.DataFrame) and year1 == 0:
+        return 0
     
     #for col in year1.columns: 
     #    print(col)
@@ -495,7 +506,6 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
 
 
     
-    import pandas as pd
     if ind=='2021': 
         testing_data_before = pd.read_csv(f"data\June_May_Datasets\june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
         testing_data = creatingAdditionalColumns(testing_data_before, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
@@ -543,13 +553,21 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
         print()
     
     
-        
-    print(testing)
-    print(testing.shape)
-    print(testing.columns)
+    if verbose == 6:
+        print("Inside preparingData: checking testing df shape and columns before reshaping.")
+        print(testing.shape)
+        print(testing.columns)    
     
     # Function call to reshpe the dataset and prepare it to be used as in input for the neural network
     x_train, y_train, x_val, y_val, x_test, y_test = reshaping(training, testing, validation, model) 
+
+    
+    if verbose == 7:
+        print("Inside preparingData: checking x_test df shape and columns after reshaping.")
+        print("testing df becomes renamed to x_test df and y_test df, here we are interesting in x_test.")
+        print(x_test.shape)
+        print(x_test[0])    
+        return 0
 
     if val_date_time==True:
         validationDates = DateTimeRetriever(validation, input_hours_forecast)
@@ -559,3 +577,65 @@ def preparingData(path_to_data, input_hours_forecast, atp_hours_back, wtp_hours_
 
 
 ''' Data Preparation End'''
+
+
+if __name__ == "__main__":
+    print("Inside utils_pnn __name__=='__main__': code block: ")
+
+    print()
+    print()
+    print()
+    print("Testing verbose=4")
+    debug = preparingData(input_hours_forecast=12, 
+                            atp_hours_back=24, 
+                            wtp_hours_back=24,
+                            cycle=8,
+                            path_to_data="data/June_May_Datasets",
+                            date_time=True,
+                            val_date_time=True, 
+                            verbose=4) # verbose activates different debug conditions depending on value 
+    
+    
+    print()
+    print()
+    print()
+    print("Testing verbose=5")
+    debug = preparingData(input_hours_forecast=12, 
+                            atp_hours_back=24, 
+                            wtp_hours_back=24,
+                            cycle=8,
+                            path_to_data="data/June_May_Datasets",
+                            date_time=True,
+                            val_date_time=True, 
+                            verbose=5) # verbose activates different debug conditions depending on value
+    
+    
+    print()
+    print()
+    print()
+    print("Testing verbose=6")
+    debug = preparingData(input_hours_forecast=12, 
+                            atp_hours_back=24, 
+                            wtp_hours_back=24,
+                            cycle=8,
+                            path_to_data="data/June_May_Datasets",
+                            date_time=True,
+                            val_date_time=True, 
+                            verbose=6) # verbose activates different debug conditions depending on value
+    
+    
+    print()
+    print()
+    print()
+    print("Testing verbose=7")
+    debug = preparingData(input_hours_forecast=12, 
+                            atp_hours_back=24, 
+                            wtp_hours_back=24,
+                            cycle=8,
+                            path_to_data="data/June_May_Datasets",
+                            date_time=True,
+                            val_date_time=True, 
+                            verbose=7) # verbose activates different debug conditions depending on value
+    
+
+    
