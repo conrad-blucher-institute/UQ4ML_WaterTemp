@@ -215,13 +215,13 @@ def readingData(path_to_data):
     data_year3 = pd.read_csv(csvs[2])
     data_year4 = pd.read_csv(csvs[3])
     data_year5 = pd.read_csv(csvs[4])
-    data_year6 = pd.read_csv(csvs[5])
-    data_year7 = pd.read_csv(csvs[6])
-    data_year8 = pd.read_csv(csvs[7])
-    data_year9 = pd.read_csv(csvs[8])
-    data_year10 = pd.read_csv(csvs[10])
+    # data_year6 = pd.read_csv(csvs[5])
+    # data_year7 = pd.read_csv(csvs[6])
+    # data_year8 = pd.read_csv(csvs[7])
+    # data_year9 = pd.read_csv(csvs[8])
+    # data_year10 = pd.read_csv(csvs[10])
     
-    return data_year1, data_year2, data_year3, data_year4, data_year5, data_year6, data_year7, data_year8, data_year9, data_year10
+    return data_year1, data_year2, data_year3, data_year4, data_year5
 
 # I added a default value for pred_atp_interval of 1 -hector (12/21/2024)
 def creatingAdditionalColumns(df, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval=1, IPPOffset=0.0):

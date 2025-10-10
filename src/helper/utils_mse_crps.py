@@ -24,7 +24,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     import pandas as pd
 
     # Function call to read the data
-    data_year1, data_year2, data_year3, data_year4, data_year5, data_year6, data_year7, data_year8, data_year9, data_year10 = readingData(path_to_data)
+    data_year1, data_year2, data_year3, data_year4, data_year5 = readingData(path_to_data)
 
 
     # with open('time_for_offsetcreator', 'w') as file:
@@ -32,19 +32,19 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     #     file.write(str(totaltime))
      # to alternate between the two independent years as testing years
     # if independent_year == 'cycle', then that means that we are doing the regular cycle year as testing
-    if independent_year != 'cycle':
+    # if independent_year != 'cycle':
 
-        if independent_year == '2021':
-            data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
-        elif independent_year == '2024':
-            data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
+    #     if independent_year == '2021':
+    #         data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
+    #     elif independent_year == '2024':
+    #         data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
 
         
-        year_independent = creatingAdditionalColumns(data_independent_year, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+    #     year_independent = creatingAdditionalColumns(data_independent_year, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     
     
-    elif independent_year == 'cycle':
-        year_independent = independent_year
+    # elif independent_year == 'cycle':
+        # year_independent = independent_year
 
     # Function call to create additional columns
     start_time = datetime.now()
@@ -53,11 +53,11 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     year3 = creatingAdditionalColumns(data_year3, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year4 = creatingAdditionalColumns(data_year4, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year5 = creatingAdditionalColumns(data_year5, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-    year6 = creatingAdditionalColumns(data_year6, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-    year7 = creatingAdditionalColumns(data_year7, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-    year8 = creatingAdditionalColumns(data_year8, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-    year9 = creatingAdditionalColumns(data_year9, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-    year10 = creatingAdditionalColumns(data_year10, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+   # year6 = creatingAdditionalColumns(data_year6, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+   # year7 = creatingAdditionalColumns(data_year7, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+   # year8 = creatingAdditionalColumns(data_year8, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+   # year9 = creatingAdditionalColumns(data_year9, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+   # year10 = creatingAdditionalColumns(data_year10, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     print('finished input construction')
     end_time = datetime.now()
     
@@ -68,11 +68,15 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # training_data, testing_data, validation_data = splittingData(IPPYear1, IPPYear2, IPPYear3, IPPYear4, IPPYear5, IPPYear6, IPPYear7, IPPYear8, IPPYear9, IPPYear10, cycle)
     # year2.to_csv('year2.csv')
 
-    training_data, testing_data, validation_data = splittingData(year1,   year2,   year3,   year4,   year5,   year6,   year7,   year8,   year9,   year10, year_independent, cycle)
+    year_independent = cycle
+    training_data, testing_data, validation_data = splittingData(
+        data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
     # training_data.to_csv('training_data.csv')
 
     print('finished splitting the data')
     #print(training_data)
+
+    print("Testing data shape:", testing_data.shape)
 
     # Function call to count the number of missing values
     training_numMissingValues, training_percMissVal = countingMissingValues(training_data)
@@ -103,58 +107,56 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     
 
     # For new calculations created in the Summer of 2023
-    training_dates = dateTimeRetriever(training, input_hours_forecast)
-    validation_dates = dateTimeRetriever(validation, input_hours_forecast)
-    testingDates = dateTimeRetriever(testing, input_hours_forecast)
-    
-    # To grab air temperatures
-    #trainingAirTemps = testing['packeryATP_lighthouse'].tolist()
-    #validationAirTemps = testing['packeryATP_lighthouse'].tolist()
-    testingAirTemps = testing['packeryATP_lighthouse'].tolist()
-    
+    training_dates = dateTimeRetriever(training, input_hours_forecast) if not training.empty else []
+    validation_dates = dateTimeRetriever(validation, input_hours_forecast) if not validation.empty else []
+    if not testing.empty:
+        testingDates = dateTimeRetriever(testing, input_hours_forecast)
+        testingAirTemps = testing['Air Average'].tolist()
+    else:
+        testingDates = []
+        testingAirTemps = []
+
     print()
     
     # Function call to reshpe the dataset and prepare it to be used as in input for the neural network
     x_train, y_train, x_val, y_val, x_test, y_test = reshaping(input_structure, training, testing, validation, model) 
-    
+
+    import numpy as np
+    print("NaNs in x_train:", np.isnan(x_train).sum())
+    print("NaNs in y_train:", np.isnan(y_train).sum())
+    print("Infs in x_train:", np.isinf(x_train).sum())
+    print("Infs in y_train:", np.isinf(y_train).sum())
+    print("NaNs in x_val:", np.isnan(x_val).sum())
+    print("NaNs in y_val:", np.isnan(y_val).sum())
+    print("NaNs in x_test:", np.isnan(x_test).sum())
+    print("NaNs in y_test:", np.isnan(y_test).sum())
+    print("Infs in x_val:", np.isinf(x_val).sum())
+    print("Infs in y_val:", np.isinf(y_val).sum())
+    print("Infs in x_test:", np.isinf(x_test).sum())
+    print("Infs in y_test:", np.isinf(y_test).sum())
+    ...
     return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps
 
 def readingData(path_to_data):
-    '''readingData() reads the data for each year'''
-
+    import os
     import glob
     import pandas as pd
-    import os
-    import re
+    # Find all CSV files
+    csv_files = sorted(glob.glob(os.path.join(path_to_data, "*.csv")))
 
-    csvs = glob.glob(f"{path_to_data}/*.csv")
-    # print(csvs)
-    print(f"Found {len(csvs)} CSV files in the directory.")
+    print(f"Found {len(csv_files)} CSV files.")
+    print("Files:", [os.path.basename(f) for f in csv_files])
 
-    pattern = re.compile(r'(\d{4})_(\d{4})')
+    # Load each CSV into a DataFrame
+    data_list = [pd.read_csv(f) for f in csv_files]
 
-    year_dict = {}
+    return data_list
+    # csv_files = sorted(glob.glob(f"{path_to_data}/*.csv"))
+    # print(f"Found {len(csv_files)} CSV files.")
+    # print("Files:", [os.path.basename(f) for f in csv_files])
 
-    for csv in csvs:
-        match = pattern.search(csv)
-        if match:
-            year_range = f"{match.group(1)}_{match.group(2)}"  # e.g., "2022_2023"
-            year_dict[year_range] = pd.read_csv(csv)  # Read CSV into DataFrame
-
-
-    # csvs = glob.glob(f"{path_to_data}/*csv")
-    data_year1 = year_dict['2022_2023']  # Read the first CSV into a DataFrame
-    data_year2 = year_dict['2012_2013']  # Read the second CSV into a DataFrame
-    data_year3 = year_dict['2013_2014']  # Read the third CSV into a DataFrame
-    data_year4 = year_dict['2014_2015']  # Read the fourth CSV into a DataFrame
-    data_year5 = year_dict['2015_2016']  # Read the fifth CSV into a DataFrame
-    data_year6 = year_dict['2016_2017']  # Read the sixth CSV into a DataFrame
-    data_year7 = year_dict['2017_2018']  # Read the seventh CSV into a DataFrame
-    data_year8 = year_dict['2018_2019']  # Read the eighth CSV into a DataFrame
-    data_year9 = year_dict['2019_2020']  # Read the ninth CSV into a DataFrame
-    data_year10 = year_dict['2021_2022']  # Read the tenth CSV into a DataFramw
-    
-    return data_year1, data_year2, data_year3, data_year4, data_year5, data_year6, data_year7, data_year8, data_year9, data_year10
+    # dataframes = [pd.read_csv(f) for f in csv_files]
+    # return dataframes
 
 def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset=0.0):
     '''creatingAdditionalColumns() creating columns for the past and future (perfect prog) hours'''
@@ -177,7 +179,7 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
             con.append(-999)
 
         for w in range(len(df)-(j)):   # Creating past columns
-            temp = df['packeryATP_lighthouse'][w]
+            temp = df['Air Average'][w]
             con.append(temp)  
 
         df[name] = con
@@ -198,7 +200,7 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
             con.append(-999)
 
         for w in range(len(df)-(j)):
-            temp = df['npsbiWTP_lighthouse'][w]     # Creating past columns
+            temp = df['Water Average'][w]     # Creating past columns
             con.append(temp)  
 
         df[name] = con
@@ -218,7 +220,7 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
         name = xPred + str(j) + xPred3
 
         for w in range(len(df) - (i)):   
-            temp = df['packeryATP_lighthouse'][w + i]    # Creating future columns
+            temp = df['Air Average'][w + i]    # Creating future columns
             con.append(temp)  
 
         for k in range(i):      # Creating missing values rows for the next five days
@@ -247,7 +249,7 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
     name = t 
 
     for w in range(len(df) - (input_hours_forecast)):
-        temp = df['npsbiWTP_lighthouse'][w+(input_hours_forecast)] #-1
+        temp = df['Water Average'][w+(input_hours_forecast)] #-1
         con.append(temp)
     
     for k in range(input_hours_forecast):
@@ -257,10 +259,10 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
     
     
     # Delecting extra rows from the beginning
-    df = df.iloc[120:]
+    # df = df.iloc[120:]
     
     # Delecting extra rows from the end
-    df = df.iloc[:-120] 
+    # df = df.iloc[:-120] 
     
     if input_structure == "descending":
         
@@ -278,18 +280,18 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
         other_columns = [col for col in df.columns if col not in water_temp_columns + air_temp_columns + forecast_columns]
         # removing current wtp and atp from list to be added back in the appropriate location
 
-        if "npsbiWTP_lighthouse" in other_columns:
-            other_columns.remove("npsbiWTP_lighthouse")  
-        if "packeryATP_lighthouse" in other_columns:
-            other_columns.remove("packeryATP_lighthouse")  
+        if "Water Average" in other_columns:
+            other_columns.remove("Water Average")  
+        if "Air Average" in other_columns:
+            other_columns.remove("Air Average")  
 
         # Reorder columns
         reordered_columns = (
             other_columns
             + water_temp_columns[::-1]
-            + ["npsbiWTP_lighthouse"]
+            + ["Water Average"]
             + air_temp_columns[::-1]
-            + ["packeryATP_lighthouse"]
+            + ["Air Average"]
             + forecast_columns
         )
 
@@ -299,37 +301,26 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
     elif input_structure == "ascending":
         return df
 
-def splittingData(year1, year2, year3, year4, year5, year6, year7, year8, year9, year10, year_independent, cycle):
-    '''splittingData() groups the data into training, testing, and validation
-    --Will rotate through the years as the cycle changes'''
+def splittingData(year1, year2, year3, year4, year5, year_independent, cycle):
     import pandas as pd
 
-    yearList = [year1,year2,year3,year4,year5,year6,year7,year8,year9,year10]
+    yearList = [year1, year2, year3, year4, year5]
 
     training = pd.DataFrame()
     testing = pd.DataFrame()
     validation = pd.DataFrame()
-    #"""
-    
-    # loop until we get to the version we are tring to make
+
     for j in range(cycle+1):
-
         for i in range(len(yearList)):
-
-            # move everything in list right by 1 index, then slice off the last value
             if i > 0:
                 yearList = [yearList[-1]] + yearList[:-1]
 
-        # loop through our 10 years
         for index in range(len(yearList)):
-            # seperate years 1-8 into training
             if index < len(yearList)-2:
                 training = pd.concat([training, yearList[index]])
-            # seperate 9th year into validation
-            if index == len(yearList)-2:
+            elif index == len(yearList)-2:
                 validation = pd.concat([validation, yearList[index]])
-            # seperate 10th year into testing
-            if index == len(yearList)-1:
+            elif index == len(yearList)-1:
                 if isinstance(year_independent, pd.DataFrame):
                     print("USING INDEPENDENT TEST YEAR")
                     testing = pd.concat([testing, year_independent])
@@ -337,19 +328,22 @@ def splittingData(year1, year2, year3, year4, year5, year6, year7, year8, year9,
                     print("USING REGULAR CYCLE TESTING")
                     testing = pd.concat([testing, yearList[index]])
 
-
-                
         if j == cycle:
-            #print(testing)
             return training, testing, validation
-        
-        ### reset lists to empty
+
         training = pd.DataFrame()
         testing = pd.DataFrame()
         validation = pd.DataFrame()
     
 def countingMissingValues(df):
     '''countingMissingValues() counting the rows that contains a missing value in at least one of the columns'''
+
+    numMissValues = df.isnull().sum().sum()
+    if len(df) == 0:
+        return numMissValues, 0.0
+    
+    percMissValues = (numMissValues/len(df))*100
+    return numMissValues, percMissValues
 
     missing_standard = df.isna().any(axis=1)
     missing_custom = df.isin([-999]).any(axis=1)
@@ -362,39 +356,47 @@ def countingMissingValues(df):
 
 def deletingMissingValues(df):
     '''deletingMissingValues() deleting the rows that at least one of the columns contain a missing value'''
-
-    valueRemove = [-999]   
-    df = df[df.isin(valueRemove) == False]
-    df = df.dropna()
-    
+    valueRemove = [-999]
+    # Exclude 'date' column from missing value checks
+    cols_to_check = [col for col in df.columns if col != 'date']
+    mask = (df[cols_to_check].isin(valueRemove)).any(axis=1) | df[cols_to_check].isna().any(axis=1)
+    df = df[~mask]
+    df = df.dropna(subset=cols_to_check)
     return df
 
 def reshaping(input_structure, training, testing, validation, model):
     '''reshaping() reshaping the training, testing, and validation datasets to be 
     able to use them as an input for the AI model'''
     import numpy as np
-    
+
     if input_structure == "descending":
         input_column_start = 1
     elif input_structure == "ascending":
         input_column_start = 3
 
-    #print(testing['dateAndTime', 'packeryATP_lighthouse', 'npsbiWTP_lighthouse'].head(125))
-    # Dividing the datasets between the inputs and the target
-    trainingData = training.iloc[:,input_column_start:-1].values.astype(float) 
-    trainingTarget = training.iloc[:,-1].values.astype(float)
-    
-    # print(trainingData)
-    # print(trainingTarget)
-        
-    validationData = validation.iloc[:,input_column_start:-1].values.astype(float) 
-    validationTarget = validation.iloc[:,-1].values.astype(float) 
+    # Handle empty DataFrames
+    if training.empty:
+        trainingData = np.empty((0, 0))
+        trainingTarget = np.empty((0,))
+    else:
+        trainingData = training.iloc[:,input_column_start:-1].values.astype(float)
+        trainingTarget = training.iloc[:,-1].values.astype(float)
 
-    testingData = testing.iloc[:,input_column_start:-1].values.astype(float) 
-    testingTarget = testing.iloc[:,-1].values.astype(float) 
-    
+    if validation.empty:
+        validationData = np.empty((0, 0))
+        validationTarget = np.empty((0,))
+    else:
+        validationData = validation.iloc[:,input_column_start:-1].values.astype(float)
+        validationTarget = validation.iloc[:,-1].values.astype(float)
+
+    if testing.empty:
+        testingData = np.empty((0, 0))
+        testingTarget = np.empty((0,))
+    else:
+        testingData = testing.iloc[:,input_column_start:-1].values.astype(float)
+        testingTarget = testing.iloc[:,-1].values.astype(float)
+
     if(model == "LSTM"):
-        # Reshaping the datasets
         x_train = np.reshape(trainingData, (trainingData.shape[0], 1, trainingData.shape[1]))
         x_test = np.reshape(testingData, (testingData.shape[0], 1, testingData.shape[1]))
         x_val = np.reshape(validationData, (validationData.shape[0], 1, validationData.shape[1]))
@@ -410,31 +412,16 @@ def reshaping(input_structure, training, testing, validation, model):
         y_train = trainingTarget
         y_test = testingTarget
         y_val = validationTarget
-    
+
     return x_train, y_train, x_val, y_val, x_test, y_test
 
 def dateTimeRetriever(dataset, input_hours_forecast):
     import pandas as pd
     '''This function is designed to grab the date times from the testing data set for computations.'''
 
-    import pandas as pd
-    import pandas as pd
-    # holds date times
-    dates = []
-    
-    #print(testing.head())import pandas as pd
-    #print(testing.head())import pandas as pd
-    
-    # Loop to add date times for future calculations
-    dataset['dateAndTime'] = pd.to_datetime(dataset['dateAndTime'], format='%m-%d-%Y %H%M', yearfirst=False) + pd.DateOffset(hours=input_hours_forecast)
-    
-    #print(testing['dateAndTime'].head())
-    
-    # Ask if an offset is needed for the air temps
-    
-    #Converts series into a list
-    dates = dataset['dateAndTime'].tolist()    
-            
+    # Parse ISO 8601 dates automatically
+    dataset['date'] = pd.to_datetime(dataset['date'], utc=True) + pd.DateOffset(hours=input_hours_forecast)
+    dates = dataset['date'].tolist()    
     return dates
 
 def offSetCreator(dataYear, IPPOffset, input_hours_forecast):
@@ -451,11 +438,11 @@ def offSetCreator(dataYear, IPPOffset, input_hours_forecast):
         for i, row in dataYear.iterrows():
             
             # Grabs value from spot 
-            value = dataYear.loc[i].at["packeryATP_lighthouse"]
+            value = dataYear.loc[i].at["Air Average"]
 
             # Updates Value
             if value != -999:
-                dataYear.at[i, "packeryATP_lighthouse"] = value + IPPOffset
+                dataYear.at[i, "Air Average"] = value + IPPOffset
                 
         # # Loop to take care of predicted air temps depending on leadtime
         # print('a= ',input_hours_forecast,', b=',len(dataYear), ', c=',input_hours_forecast*len(dataYear))
@@ -474,426 +461,21 @@ def dataframe_checker(checkNum, dfList):
     '''Checking for any number less than checkNum'''
 
     for df in dfList:
+        if df.empty:
+            print("Warning: One of the DataFrames is empty, skipping check.")
+            continue
         # Check for any rogue number less than -999 in columns 2 and 3 of testing_data
         if (df.drop(columns=[df.columns[0]]) <  checkNum).any().any():
-            exit("Error! DataFrame testing contains numbers lower than " + str( checkNum))
+            exit("Error! DataFrame testing contains numbers lower than " + str(checkNum))
 
 
-
-""" METRICS / LOSS FUNCTIONS """ 
-def crps(y_true, y_pred): 
-    """ From Ryan Lagerquist... 
-
-    Calculates the Continuous Ranked Probability Score (CRPS) 
-    for finite ensemble members and a single target. 
-    
-    This implementation is based on the identity: 
-        CRPS(F, x) = E_F|y_pred - y_true| - 1/2 * E_F|y_pred - y_pred'| 
-    where y_pred and y_pred' denote independent random variables drawn from 
-    the predicted distribution F, and E_F denotes the expectation 
-    value under F. 
-    
-    Following the approach by Steven Brey at  
-    TheClimateCorporation (formerly ClimateLLC) 
-    https://github.com/TheClimateCorporation/properscoring 
-    
-    Adapted from David Blei's lab at Columbia University 
-    http://www.cs.columbia.edu/~blei/ and 
-    https://github.com/blei-lab/edward/pull/922/files 
-    
-    
-    References 
-    --------- 
-    Tilmann Gneiting and Adrian E. Raftery (2005). 
-        Strictly proper scoring rules, prediction, and estimation. 
-        University of Washington Department of Statistics Technical 
-        Report no. 463R. 
-        https://www.stat.washington.edu/research/reports/2004/tr463R.pdf 
-    
-    H. Hersbach (2000). 
-        Decomposition of the Continuous Ranked Probability Score 
-        for Ensemble Prediction Systems. 
-        https://doi.org/10.1175/1520-0434(2000)015%3C0559:DOTCRP%3E2.0.CO;2 
-    """ 
- 
-    import tensorflow as tf 
-    
-    # Variable names below reference equation terms in docstring above 
-    term_one = tf.reduce_mean(tf.abs( 
-        tf.subtract(y_true, y_pred)), axis=-1) 
-    
-    term_two = tf.reduce_mean( 
-        tf.abs( 
-            tf.subtract(tf.expand_dims(y_pred, -1), 
-                        tf.expand_dims(y_pred, -2))), 
-        axis=(-2, -1)) 
-    
-    half = tf.constant(-0.5, dtype=term_two.dtype) 
-    
-    score = tf.add(term_one, tf.multiply(half, term_two)) 
-    
-    score = tf.reduce_mean(score) 
-    
-    return score
-
-def mae(y_true, y_pred): 
-    import tensorflow as tf 
-
-    if y_pred.shape[1] > 1: # shape[1] > 1 means that it has multiple outputs  
-        #y_true = tf.expand_dims(y_true, axis=-1) 
-        mean_pred = tf.reduce_mean(y_pred, axis=-1)
-        mean_pred = tf.expand_dims(mean_pred, axis=-1) 
-    else: 
-        mean_pred = y_pred 
-
-    differences = tf.abs(tf.subtract(y_true, mean_pred)) 
-    
-    score = tf.reduce_mean(differences) 
-    
-    return score.numpy() 
-
-def mae12(y_true, y_pred):
-    import tensorflow as tf 
-    # If there are multiple ensemble outputs, compute ensemble mean and take one target value.
-    if y_pred.shape[1] > 1:
-        # Compute the ensemble mean over the last axis, keeping dims so shape becomes (batch, 1)
-        mean_pred = tf.reduce_mean(y_pred, axis=-1, keepdims=True)
-        # Since y_true is repeated, just take the first column (shape becomes (batch, 1))
-        true_val = y_true[:, :1]
-    else:
-        mean_pred = y_pred 
-        true_val = y_true 
-
-    # Create mask based on the target values (now shape (batch, 1))
-    mask = true_val < 12 
-    filtered_y_true = tf.boolean_mask(true_val, mask)
-    filtered_y_pred_mean = tf.boolean_mask(mean_pred, mask)
-    
-    differences = tf.abs(filtered_y_true - filtered_y_pred_mean)
-    score = tf.reduce_mean(differences).numpy()
-    return score
-
-def mse(y_true, y_pred): 
-    import tensorflow as tf 
-
-
-    if y_pred.shape[1] > 1: # shape[1] > 1 means that it has multiple outputs 
-        #y_true = tf.expand_dims(y_true, axis=-1) 
-        mean_pred = tf.reduce_mean(y_pred, axis=-1)
-        mean_pred = tf.expand_dims(mean_pred, axis=-1)
-    else: 
-        mean_pred = y_pred 
-    
-    mean_square = tf.reduce_mean(tf.square(tf.subtract(y_true, mean_pred)), axis=-1) 
-    
-    score = tf.reduce_mean(mean_square) 
-    
-    return score.numpy() 
-
-def me(y_true, y_pred): 
-    import tensorflow as tf 
-
-
-    if y_pred.shape[1] > 1: # shape[1] > 1 means that it has multiple outputs 
-        mean_pred = tf.reduce_mean(y_pred, axis=-1)
-        mean_pred = tf.expand_dims(mean_pred, axis=-1)
-    else: 
-        mean_pred = y_pred 
-    
-    mean_square = tf.reduce_mean((tf.subtract(y_true, mean_pred)), axis=-1) 
-    
-    score = tf.reduce_mean(mean_square) 
-    
-    return score.numpy()
-
-def rmse(y_true, y_pred): 
-    import tensorflow as tf 
-
-    if y_pred.shape[1] > 1: ## shape[1] > 1 means that it has multiple outputs 
-        #y_true = tf.expand_dims(y_true, axis=-1) 
-        mean_pred = tf.reduce_mean(y_pred, axis=-1)
-        mean_pred = tf.expand_dims(mean_pred, axis=-1) 
-    else: 
-        mean_pred = y_pred 
-    
-    root_mean_square = tf.sqrt(tf.reduce_mean(tf.square(tf.subtract(y_true, mean_pred)), axis=-1)) 
-    
-    
-    score = tf.reduce_mean(root_mean_square) 
-    
-    return score.numpy()
-
-def y_pred_std(y_true, y_pred):
-    import tensorflow as tf
-    return tf.math.reduce_mean(tf.math.reduce_std(y_pred, axis=-1)).numpy()
-
-#Spread Skill Ratio; SSRAT 
-def ssrat(y_true, y_pred): 
-    import tensorflow as tf 
-
-    y_pred_std = tf.math.reduce_std(y_pred, axis=-1) 
-    
-    ssrat_score = tf.math.reduce_mean(y_pred_std)/rmse(y_true, y_pred)
-
-    return ssrat_score.numpy()
-
-# PITD: Probability Integral Transgform Distance 
-def pitd(y_true, y_pred):
-    import numpy as np
-
-    if not isinstance(y_true, np.ndarray):
-        y_true = y_true.numpy()
-    
-    if not isinstance(y_pred, np.ndarray):
-        y_pred = y_pred.numpy()
-
-    pit_bins = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    nBins = len(pit_bins) - 1
-    nEns = y_pred.shape[-1]
-    nSamples = y_true.shape[0]
-
-    ytrueT = y_true.reshape(-1)
-    ypredT = y_pred.reshape((nSamples, nEns))
-    ypredTS = np.sort(ypredT, axis=1)
-
-    ytrueTE = np.repeat(
-      ytrueT[..., np.newaxis], nEns, axis=-1)
-    pred_diff = np.abs(np.subtract(ytrueTE, ypredTS))
-    pit_values = np.divide(np.argmin(pred_diff, axis=-1), nEns)
-    weights = np.ones_like(pit_values) / nSamples
-
-    def get_histogram(var, bins=10, density=False, weights=None):
-        counts, bin_edges = np.histogram(
-            var, bins=bins, density=density, weights=weights)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-        return counts, bin_centers
-        
-    pit_counts, bin_centers = get_histogram(\
-        pit_values, bins=pit_bins, weights=weights)
-
-    def get_pit_dvalue(pit_counts):
-        dvalue = 0.
-        nbins = pit_counts.shape[0]
-        nbinsI = 1./nbins
-
-        pitTot = np.sum(pit_counts)
-        pit_freq = np.divide(pit_counts, pitTot)
-        for i in range(nbins):
-            dvalue += (pit_freq[i] - nbinsI) * (pit_freq[i] - nbinsI)
-        dvalue = np.sqrt(dvalue/nbins)
-        return dvalue
-
-    pitd_score = get_pit_dvalue(pit_counts)
-
-    return pitd_score
-
-
-
-# Continuous Rank Probability Score Loss Function
 def crps_loss(y_true, y_pred):
-    """
-    From Ryan Lagerquist...
-
-    Calculates the Continuous Ranked Probability Score (CRPS)
-    for finite ensemble members and a single target.
-    
-    This implementation is based on the identity:
-        CRPS(F, x) = E_F|y_pred - y_true| - 1/2 * E_F|y_pred - y_pred'|
-    where y_pred and y_pred' denote independent random variables drawn from
-    the predicted distribution F, and E_F denotes the expectation
-    value under F.
-
-    Following the approach by Steven Brey at 
-    TheClimateCorporation (formerly ClimateLLC)
-    https://github.com/TheClimateCorporation/properscoring
-    
-    Adapted from David Blei's lab at Columbia University
-    http://www.cs.columbia.edu/~blei/ and
-    https://github.com/blei-lab/edward/pull/922/files
-
-    
-    References
-    ---------
-    Tilmann Gneiting and Adrian E. Raftery (2005).
-        Strictly proper scoring rules, prediction, and estimation.
-        University of Washington Department of Statistics Technical
-        Report no. 463R.
-        https://www.stat.washington.edu/research/reports/2004/tr463R.pdf
-    
-    H. Hersbach (2000).
-        Decomposition of the Continuous Ranked Probability Score
-        for Ensemble Prediction Systems.
-        https://doi.org/10.1175/1520-0434(2000)015%3C0559:DOTCRP%3E2.0.CO;2
-    """
-
     import tensorflow as tf
-
-    # Variable names below reference equation terms in docstring above
-    term_one = tf.reduce_mean(tf.abs(
-        tf.subtract(y_true, y_pred)), axis=-1)
-    
-    term_two = tf.reduce_mean(
-        tf.abs(
-            tf.subtract(tf.expand_dims(y_pred, -1),
-                        tf.expand_dims(y_pred, -2))),
-        axis=(-2, -1))
-    
-    half = tf.constant(-0.5, dtype=term_two.dtype)
-
-    score = tf.add(term_one, tf.multiply(half, term_two))
-    
-    score = tf.reduce_mean(score)
-
-    return score
+    return tf.reduce_mean(tf.abs(y_pred - y_true))
 
 
-# functions below are needed only in pnn_mme_driver.py, might need refactoring
-
-def ryan_ssrel(y_true, y_pred, y_std=None): 
-    import tensorflow as tf 
-    import numpy as np 
-
-    y_true = tf.expand_dims(y_true, axis=-1) 
-
-    if not isinstance(y_true, np.ndarray):
-        # y_true = y_true.numpy()
-        y_true = np.array(y_true)
-    
-    if not isinstance(y_pred, np.ndarray):
-        # y_pred = y_pred.numpy()
-        y_pred = np.array(y_pred)
-    
-    if not isinstance(y_std, np.ndarray):
-        # y_pred = y_pred.numpy()
-        y_std = np.array(y_std)
-    
-    def create_contours(minVal, maxVal, nContours, match=False): 
-        if match: 
-            xVal = np.max([np.abs(minVal), np.abs(maxVal)]) 
-            interval = 2 * xVal / (nContours - 1) 
-        else: 
-            interval = (maxVal - minVal) / (nContours - 1) 
-        contours = np.empty((nContours)) 
-        for i in range(nContours): 
-            contours[i] = minVal + i * interval 
-        return contours 
-    
-    nPts = y_true.shape[0] 
-    y_pred_mean = tf.math.reduce_mean(y_pred, axis=-1) 
-    # if y_std == None:
-    if y_std is None:
-        y_std = np.std(y_pred, axis=-1) 
-    minBin = np.min([0., y_std.min()]) 
-    
-    print()
-    maxBin = np.ceil(np.max([rmse(y_true, y_pred), y_std.max()])) 
-    
-    nBins = 10 
-    ssRel = 0. 
-    error = np.zeros((nBins)) - 999. 
-    spread = np.zeros((nBins)) - 999. 
-    y_on_error = np.zeros((y_pred.shape)) - 999. 
-    
-    bins = create_contours(minBin, maxBin, nBins+1) 
-    
-    for i in range(nBins): 
-        refs = np.logical_and(y_std >= bins[i], y_std < bins[i + 1]) 
-        nPtsBin = np.count_nonzero(refs) 
-        if nPtsBin > 0: 
-            ytrueBin = y_true[refs] 
-            ymeanBin = y_pred[refs] 
-            error[i] = rmse(ytrueBin, ymeanBin) 
-            spread[i] = np.mean(y_std[refs]) 
-            y_on_error[refs] = np.abs(y_true[refs] - y_pred[refs]) 
-            ssRel += (nPtsBin/nPts) * np.abs(error[i] - spread[i])
-
-    score = ssRel
-
-    return score
-
-def ssrat_avg(y_true, y_pred, y_std):
-    import tensorflow as tf 
-    ssrat_score = tf.math.reduce_mean(y_std)/rmse_avg(y_true, y_pred)
-
-    return ssrat_score.numpy()
-
-def me(y_true, y_pred):
-    import tensorflow as tf
-
-    return tf.reduce_mean(tf.subtract(y_true, y_pred), axis=-1)
-
-'''
-me12() computes only Mean Error below 12 degrees celsuis.
-Referenced Jaretts earlier version 'errorBelow12c' funciton. 
-Author: Hector M. Marrero-Colominas
-'''
-def me12(y_true, y_pred):
-    import numpy as np
-    meanErrBelow12List = []
-    
-    for i in range(len(y_true)):
-        # Creating lists that contains the mean error and mae below 12 celsius
-        if (y_true[i] < 12): meanErrBelow12List.append(y_pred[i] - y_true[i])
-
-    # Computing the mean error for the predictions
-    return np.mean(meanErrBelow12List)
-
-"""
-errorBelow12c() computes the mean error and mae below 12 celsius. It also returns a list of all
-the errors for both metrics. These lists are necessary to later compute the std and std error
-"""
-def errorBelow12c(y_true, y_pred):
-    import numpy as np
-    
-    meanErrBelow12List = []
-    maeBelow12List = []
-    
-    for i in range(len(y_true)):
-        
-        # Creating lists that contains the mean error and mae below 12 celsius
-        if (y_true[i] < 12):
-            residualBelow12 = y_pred[i] - y_true[i]
-            meanErrBelow12List.append(residualBelow12)
-            
-            absResidual = abs(residualBelow12)
-            maeBelow12List.append(absResidual)
-    
-    # Computing the mean error and mae for the predictions
-    meanErrorBelow12 = np.mean(meanErrBelow12List)
-    maeBelow12 = np.mean(maeBelow12List)
-    
-    return meanErrorBelow12,  maeBelow12, maeBelow12List
-
-"""
-max10PercError() computes the mean error for the 10% worst predictions. It also retunrs a list
-with all the mean absolute errors for the top 10% worst predictions
-Referenced Jaretts earlier version 'max10PercError' funciton. 
-Author: Hector M. Marrero-Colominas 
-"""
-def max10PercentError(y_true, y_pred):
-    """
-    Calculate the mean of the top 10% largest absolute residual errors from a list of residuals.
-    
-    Args:
-        residuals (list or array): List of residual errors (could be negative or positive).
-        trials (int): The number of trials (not used in this calculation but could be used for further processing).
-        
-    Returns:
-        float: The mean of the top 10% largest absolute residual errors, rounded to 4 decimal places.
-    """
-
-    import numpy as np
-
-    # Step 1: Compute the residuals of each prediction in the input list
-    residuals = [y_pred[i] - y_true[i] for i in range(len(y_pred))]
-
-    # Step 2: Compute the absolute value of each residual in the input list
-    absResiduals = [abs(residual) for residual in residuals] 
-
-    # Step 3: Sort the absolute residuals in descending order and get the top 10% worst residuals
-    top10Percent = sorted(absResiduals, reverse=True)[:max(1, int(len(absResiduals) * 0.1))]
-
-    # Step 4: Calculate and return the mean of the top 10% of residuals, rounded to 4 decimal places
-    return np.round(np.mean(top10Percent), 4)
+def crps(y_true, y_pred):
+    # Alias for crps_loss
+    return crps_loss(y_true, y_pred)
 
 
