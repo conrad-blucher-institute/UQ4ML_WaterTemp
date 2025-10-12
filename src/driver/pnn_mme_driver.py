@@ -369,11 +369,6 @@ def execute_experiment(args):
         #
 
 
-        # some debugging code written 9-15-2025 to debug an issue with Proto Incorp, some of jaretts code
-        # can get rid off once bug is fixed
-        for df in [x_test, y_test]:
-            df.columns.to_series().to_csv(f"pnn_{df}_debugging_Proto_Incorp_columns.csv", index=False)
-            df.to_csv(f"pnn_{df}_debugging_Proto_Incorp.csv", index=False)
         
         year = '2021'
         # year__data, year__target, date_time = load_for_testing(args.c_leadtime, args.atp_hours_back, args.wtp_hours_back, year=year, dataset='Full')
