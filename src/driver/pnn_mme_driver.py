@@ -385,11 +385,6 @@ def execute_experiment(args):
         results[f"x_{year}"] = x_test
         results[f"y_{year}"] = y_test
 
-        # some debugging code written 9-15-2025 to debug an issue with Proto Incorp, some of jaretts code
-        # can get rid off once bug is fixed
-        for df in [x_test, y_test]:
-            df.columns.to_series().to_csv(f"pnn_{df}_debugging_Proto_Incorp_columns_2021.csv", index=False)
-            df.to_csv(f"pnn_{df}_debugging_Proto_Incorp_2021.csv", index=False)
 
         year__predictions_mu, year__predictions_sigma = model.predict(list((x_test, x_test)))
 
