@@ -17,15 +17,19 @@ class TrainingLogger(tf.keras.callbacks.Callback):
 
 """ CREATING INPUT VECTOR """
 # MAIN function to create the input vector for the ml model
-def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP"):
+def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0):
     '''preparingData() is the driver function'''
     # Importing libraries
     from datetime import datetime
     import pandas as pd
+    import numpy as np
 
     # Function call to read the data
     data_year1, data_year2, data_year3, data_year4, data_year5 = readingData(path_to_data)
 
+    if verbose == 3:
+        for i, v in enumerate([data_year1, data_year2, data_year3, data_year4, data_year5]):
+            print(v.columns)
 
     # with open('time_for_offsetcreator', 'w') as file:
     #     totaltime = end_time - start_time
@@ -60,6 +64,11 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
    # year10 = creatingAdditionalColumns(data_year10, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     print('finished input construction')
     end_time = datetime.now()
+
+    
+    if verbose == 3:
+        for i, v in enumerate([year1, year2, year3, year4, year5]):
+            print(v.columns)
     
     #with open('time_for_inputconstruction', 'w') as file:
     #    totaltime = end_time - start_time
@@ -69,14 +78,16 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # year2.to_csv('year2.csv')
 
     year_independent = cycle
-    training_data, testing_data, validation_data = splittingData(
-        data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
+    # training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
+    training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, cycle)
     # training_data.to_csv('training_data.csv')
 
     print('finished splitting the data')
     #print(training_data)
 
     print("Testing data shape:", testing_data.shape)
+    print("train data shape:", training_data.shape)
+    print("val data shape:", validation_data.shape)
 
     # Function call to count the number of missing values
     training_numMissingValues, training_percMissVal = countingMissingValues(training_data)
@@ -94,7 +105,6 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     print('Validation Missing Values: ', validation_numMissingValues)
     print('Validation Percentatge of Missing Values: ', round(validation_percMissVal,4), ' %')
     print()
-    
     
     dataframe_checker(-999, [training_data, testing_data, validation_data]) # checking for any rogue number less than -999
 
@@ -121,20 +131,20 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # Function call to reshpe the dataset and prepare it to be used as in input for the neural network
     x_train, y_train, x_val, y_val, x_test, y_test = reshaping(input_structure, training, testing, validation, model) 
 
-    import numpy as np
-    print("NaNs in x_train:", np.isnan(x_train).sum())
-    print("NaNs in y_train:", np.isnan(y_train).sum())
-    print("Infs in x_train:", np.isinf(x_train).sum())
-    print("Infs in y_train:", np.isinf(y_train).sum())
-    print("NaNs in x_val:", np.isnan(x_val).sum())
-    print("NaNs in y_val:", np.isnan(y_val).sum())
-    print("NaNs in x_test:", np.isnan(x_test).sum())
-    print("NaNs in y_test:", np.isnan(y_test).sum())
-    print("Infs in x_val:", np.isinf(x_val).sum())
-    print("Infs in y_val:", np.isinf(y_val).sum())
-    print("Infs in x_test:", np.isinf(x_test).sum())
-    print("Infs in y_test:", np.isinf(y_test).sum())
-    ...
+    if verbose == 3:
+        print("NaNs in x_train:", np.isnan(x_train).sum())
+        print("NaNs in y_train:", np.isnan(y_train).sum())
+        print("Infs in x_train:", np.isinf(x_train).sum())
+        print("Infs in y_train:", np.isinf(y_train).sum())
+        print("NaNs in x_val:", np.isnan(x_val).sum())
+        print("NaNs in y_val:", np.isnan(y_val).sum())
+        print("NaNs in x_test:", np.isnan(x_test).sum())
+        print("NaNs in y_test:", np.isnan(y_test).sum())
+        print("Infs in x_val:", np.isinf(x_val).sum())
+        print("Infs in y_val:", np.isinf(y_val).sum())
+        print("Infs in x_test:", np.isinf(x_test).sum())
+        print("Infs in y_test:", np.isinf(y_test).sum())
+
     return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps
 
 def readingData(path_to_data):
@@ -301,7 +311,81 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
     elif input_structure == "ascending":
         return df
 
-def splittingData(year1, year2, year3, year4, year5, year_independent, cycle):
+import pandas as pd
+from typing import Union, Tuple
+
+def splittingData(year1, year2, year3, year4, year5, cycle):
+    '''splittingData() groups the data into training, testing, and validation
+    --Will rotate through the years as the cycle changes'''
+    import pandas as pd
+
+    yearList = [year1,year2,year3,year4,year5]
+
+    training = pd.DataFrame()
+    testing = pd.DataFrame()
+    validation = pd.DataFrame()
+    #"""
+    
+    # loop until we get to the version we are tring to make
+    for j in range(cycle+1):
+
+        for i in range(len(yearList)):
+
+            # move everything in list right by 1 index, then slice off the last value
+            if i > 0:
+                yearList = [yearList[-1]] + yearList[:-1]
+
+        # loop through our 10 years
+        for index in range(len(yearList)):
+            # seperate years 1-8 into training
+            if index < len(yearList)-2:
+                training = pd.concat([training, yearList[index]])
+            # seperate 9th year into validation
+            if index == len(yearList)-2:
+                validation = pd.concat([validation, yearList[index]])
+            # seperate 10th year into testing
+            if index == len(yearList)-1:
+                testing = pd.concat([testing, yearList[index]])
+
+                
+        if j == cycle:
+            return training, testing, validation
+        
+        ### reset lists to empty
+        training = pd.DataFrame()
+        testing = pd.DataFrame()
+        validation = pd.DataFrame()
+    
+
+def caht_splittingData(year1, year2, year3, year4, year5, year_independent, cycle) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    
+    yearList = [year1, year2, year3, year4, year5]
+
+    for j in range(cycle + 1):
+        # Rotate list by one position
+        rotated = yearList[-1:] + yearList[:-1]
+
+        # Split data
+        training = pd.concat(rotated[:3])
+        validation = rotated[3]
+
+        if isinstance(year_independent, pd.DataFrame):
+            print("USING INDEPENDENT TEST YEAR")
+            testing = year_independent
+        elif year_independent == "cycle":
+            print("USING REGULAR CYCLE TESTING")
+            testing = rotated[4]
+        else:
+            raise ValueError("Invalid value for 'year_independent'. Must be 'cycle' or a DataFrame.")
+
+        if j == cycle:
+            return training, testing, validation
+
+    # fallback in case return not hit (shouldn’t happen)
+    return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+
+def og_splittingData(year1, year2, year3, year4, year5, year_independent, cycle):
     import pandas as pd
 
     yearList = [year1, year2, year3, year4, year5]
@@ -479,3 +563,16 @@ def crps(y_true, y_pred):
     return crps_loss(y_true, y_pred)
 
 
+if __name__ == "__main__":
+    print("ayesha has been here")
+    """ Manipulating data for AI Model """
+    x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData("data/June_May_Datasets",
+                                                                                                                "descending",
+                                                                                                                "cycle",
+                                                                                                                12,
+                                                                                                                24,
+                                                                                                                24,
+                                                                                                                1,
+                                                                                                                cycle=1,
+                                                                                                                model="MSE",
+                                                                                                                verbose=0) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
