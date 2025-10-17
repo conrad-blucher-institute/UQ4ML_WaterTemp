@@ -44,16 +44,16 @@ runAggregateCode = False #True
 save = True
 
 # List of cycles to create necessary files for plotting and aggregate tables 
-cycles = [0, 1]
+cycles = [0, 1, 2, 3, 4]
 
 # List of leadTimes to make visuals and tables for models at different lead times. 
-leadTimes = [12,48]
+leadTimes = [12]
 
 # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
-architectures = ["CRPS"] #['mse','PNN',"CRPS"]
+architectures = ["MSE"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 2
+iterations = 1
 
 """
 Should be set to either "val", "test", or "train" depending on what information
