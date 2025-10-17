@@ -50,7 +50,7 @@ cycles = [0, 1, 2, 3, 4]
 leadTimes = [12]
 
 # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
-architectures = ["MSE"] #['mse','PNN',"CRPS"]
+architectures = ["mse"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
 iterations = 1
