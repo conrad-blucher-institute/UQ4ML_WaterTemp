@@ -47,13 +47,13 @@ save = True
 cycles = [0, 1, 2, 3, 4]
 
 # List of leadTimes to make visuals and tables for models at different lead times. 
-leadTimes = [12]
+leadTimes = [12, 24, 48, 120]
 
 # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
 architectures = ["MSE"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 1
+iterations = 15
 
 """
 Should be set to either "val", "test", or "train" depending on what information

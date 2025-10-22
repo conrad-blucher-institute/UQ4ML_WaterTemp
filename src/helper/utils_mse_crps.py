@@ -25,10 +25,10 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     import numpy as np
 
     # Function call to read the data
-    data_year1, data_year2, data_year3, data_year4, data_year5 = readingData(path_to_data)
+    data_year2, data_year3, data_year4, data_year5 = readingData(path_to_data)
 
     if verbose == 3:
-        for i, v in enumerate([data_year1, data_year2, data_year3, data_year4, data_year5]):
+        for i, v in enumerate([data_year2, data_year3, data_year4, data_year5]):
             print(v.columns)
 
     # with open('time_for_offsetcreator', 'w') as file:
@@ -52,7 +52,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
     # Function call to create additional columns
     start_time = datetime.now()
-    year1 = creatingAdditionalColumns(data_year1, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+    # year1 = creatingAdditionalColumns(data_year1, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year2 = creatingAdditionalColumns(data_year2, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year3 = creatingAdditionalColumns(data_year3, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year4 = creatingAdditionalColumns(data_year4, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
@@ -67,7 +67,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
     
     if verbose == 3:
-        for i, v in enumerate([year1, year2, year3, year4, year5]):
+        for i, v in enumerate([year2, year3, year4, year5]):
             print(v.columns)
     
     #with open('time_for_inputconstruction', 'w') as file:
@@ -79,7 +79,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
     year_independent = cycle
     # training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
-    training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, cycle)
+    training_data, testing_data, validation_data = splittingData(data_year2, data_year3, data_year4, data_year5, cycle)
     # training_data.to_csv('training_data.csv')
 
     print('finished splitting the data')
@@ -151,16 +151,21 @@ def readingData(path_to_data):
     import os
     import glob
     import pandas as pd
-    # Find all CSV files
+
+    # find all CSV files and sort them 
     csv_files = sorted(glob.glob(os.path.join(path_to_data, "*.csv")))
 
     print(f"Found {len(csv_files)} CSV files.")
     print("Files:", [os.path.basename(f) for f in csv_files])
 
+    # skip the first file; the first is our winter storm uri independent testing year
+    csv_files_to_read = csv_files[1:]
+
     # Load each CSV into a DataFrame
-    data_list = [pd.read_csv(f) for f in csv_files]
+    data_list = [pd.read_csv(f) for f in csv_files_to_read]
 
     return data_list
+
     # csv_files = sorted(glob.glob(f"{path_to_data}/*.csv"))
     # print(f"Found {len(csv_files)} CSV files.")
     # print("Files:", [os.path.basename(f) for f in csv_files])
@@ -314,12 +319,12 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
 import pandas as pd
 from typing import Union, Tuple
 
-def splittingData(year1, year2, year3, year4, year5, cycle):
+def splittingData(year2, year3, year4, year5, cycle):
     '''splittingData() groups the data into training, testing, and validation
     --Will rotate through the years as the cycle changes'''
     import pandas as pd
 
-    yearList = [year1,year2,year3,year4,year5]
+    yearList = [year2,year3,year4,year5]
 
     training = pd.DataFrame()
     testing = pd.DataFrame()
@@ -357,38 +362,38 @@ def splittingData(year1, year2, year3, year4, year5, cycle):
         validation = pd.DataFrame()
     
 
-def caht_splittingData(year1, year2, year3, year4, year5, year_independent, cycle) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+# def caht_splittingData(year1, year2, year3, year4, year5, year_independent, cycle) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     
-    yearList = [year1, year2, year3, year4, year5]
+#     yearList = [year1, year2, year3, year4, year5]
 
-    for j in range(cycle + 1):
-        # Rotate list by one position
-        rotated = yearList[-1:] + yearList[:-1]
+#     for j in range(cycle + 1):
+#         # Rotate list by one position
+#         rotated = yearList[-1:] + yearList[:-1]
 
-        # Split data
-        training = pd.concat(rotated[:3])
-        validation = rotated[3]
+#         # Split data
+#         training = pd.concat(rotated[:3])
+#         validation = rotated[3]
 
-        if isinstance(year_independent, pd.DataFrame):
-            print("USING INDEPENDENT TEST YEAR")
-            testing = year_independent
-        elif year_independent == "cycle":
-            print("USING REGULAR CYCLE TESTING")
-            testing = rotated[4]
-        else:
-            raise ValueError("Invalid value for 'year_independent'. Must be 'cycle' or a DataFrame.")
+#         if isinstance(year_independent, pd.DataFrame):
+#             print("USING INDEPENDENT TEST YEAR")
+#             testing = year_independent
+#         elif year_independent == "cycle":
+#             print("USING REGULAR CYCLE TESTING")
+#             testing = rotated[4]
+#         else:
+#             raise ValueError("Invalid value for 'year_independent'. Must be 'cycle' or a DataFrame.")
 
-        if j == cycle:
-            return training, testing, validation
+#         if j == cycle:
+#             return training, testing, validation
 
-    # fallback in case return not hit (shouldn’t happen)
-    return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+#     # fallback in case return not hit (shouldn’t happen)
+#     return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 
-def og_splittingData(year1, year2, year3, year4, year5, year_independent, cycle):
+def og_splittingData(year2, year3, year4, year5, year_independent, cycle):
     import pandas as pd
 
-    yearList = [year1, year2, year3, year4, year5]
+    yearList = [year2, year3, year4, year5]
 
     training = pd.DataFrame()
     testing = pd.DataFrame()
