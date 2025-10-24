@@ -55,7 +55,7 @@ leadTimes = [12, 24, 48, 120]
 architectures = ["mse"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 15
+iterations = 30
 
 """
 Should be set to either "val", "test", or "train" depending on what information
