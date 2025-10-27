@@ -51,7 +51,7 @@ independent_year = "cycle"
 
 """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
 # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
-cycle_list = [0, 1, 2, 3, 4]
+cycle_list = [0, 1, 2, 3]
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1
@@ -65,7 +65,7 @@ hours_back = 24
 temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
 
 # number of epochs
-epochs = 2000
+epochs = 20000
 
 
 input_structure = "descending"
