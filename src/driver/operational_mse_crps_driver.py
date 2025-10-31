@@ -44,7 +44,7 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD
 # if train:     training a model using hyperparameters gained from tuning
 tune_train_test = "train"
 # model_name_list = ["MAPE"] 
-model_name = "MAPE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
+model_name = "MSE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
 
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
@@ -57,7 +57,7 @@ cycle_list = [0, 1, 2, 3]
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1
-end_iteration = 30
+end_iteration = 15
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
 lead_time_list = [12]
@@ -67,7 +67,7 @@ hours_back = 24
 temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
 
 # number of epochs
-epochs = 20000
+epochs = 2000
 
 
 input_structure = "descending"
@@ -79,7 +79,9 @@ learning_rate = 0.01
 optimizer = 'adam' 
 kernel_regularizer = 'l2'
 
-path_to_data = "data/June_May_Datasets"
+#change this here
+# path_to_data = "data/June_May_Datasets"
+path_to_data = "data/2020_2025_Datasets"
 
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
