@@ -132,6 +132,18 @@ def model_selection_conditional(leadTime, architecture):
         
         model_names = ['combo1']  
         
+    elif leadTime == 12 and architecture == "mape":
+        
+        model_names = ['3_layers-leaky_relu-32_neurons']
+        
+    elif leadTime == 48 and architecture == "mape":
+        
+        model_names = ['2_layers-leaky_relu-16_neurons']
+
+    elif leadTime == 96 and architecture == "mape":
+        
+        model_names = ['2_layers-leaky_relu-16_neurons']
+         
     else:
         model_names = []
         
@@ -210,6 +222,9 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
                         modDf2 = pnn_metrics(modDf1)  
                         
                     elif architecture == "mse":
+                        modDf2 = mse_metrics(modDf1)
+
+                    elif architecture == "mape":
                         modDf2 = mse_metrics(modDf1)
 
                     # To ensure cross compatability
@@ -315,7 +330,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
     mean_traces = []
 
     # Sorts the Keys in an Effective Manner
-    sorted_keys = sorted(dfDict.keys(), key=lambda x: ('mse' not in x, 'CRPS' not in x, 'PNN' not in x))
+    sorted_keys = sorted(dfDict.keys(), key=lambda x: ('mse' not in x, 'CRPS' not in x, 'PNN' not in x, 'mape' not in x))
 
     # Loops through the dictionary of information for plotting
     for key in sorted_keys:
@@ -355,6 +370,19 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             ])
             
         elif 'mse' in key:
+            color = "#A8E6A1"
+            customda = df[['target','central_mae', 'central_mae<12', 'rmse_avg']]
+            hovertemp = "<br>".join([
+                "date_time: %{x}",
+                f"Model: {model_name}",
+                "Mean Predicted Temperature (°C): %{y}",
+                "Actual temperature (°C): %{customdata[0]}",
+                "RMSE_Average_Func (°C): %{customdata[3]}",
+                "Central_MAE (°C): %{customdata[1]}",
+                "Central_MAE<12 (°C): %{customdata[2]}"
+            ])
+
+        elif 'mape' in key:
             color = "#A8E6A1"
             customda = df[['target','central_mae', 'central_mae<12', 'rmse_avg']]
             hovertemp = "<br>".join([

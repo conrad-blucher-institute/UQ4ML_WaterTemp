@@ -42,8 +42,10 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD
 """
 
 # if train:     training a model using hyperparameters gained from tuning
-tune_train_test = "train" 
-model_name = "MSE" # "MSE" or "CRPS"
+tune_train_test = "train"
+# model_name_list = ["MAPE"] 
+model_name = "MAPE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
+
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
 # For Regular testing on rolling origin rotation structure set to "cycle"
@@ -58,7 +60,7 @@ start_iteration = 1
 end_iteration = 30
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [12, 24, 48, 120]
+lead_time_list = [12]
 hours_back = 24  
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
@@ -100,8 +102,13 @@ elif model_name == "MSE":
     loss_function = 'mse'
     metrics = ['mae']
 
+# mape is deterministic so it only predicts the temperature
+# does not capture the uncertainty 
+elif model_name == "MAPE":
 
-
+    output_units = 1
+    loss_function = 'mape'
+    metrics = ['mape']
 
 call_back_monitor = "val_loss"
 # batch size was determined to utilize the entire dataset... when left undeclared, the batch defaults to 32 
@@ -119,7 +126,7 @@ for k in range(output_units):
 if tune_train_test == "train":
     print("\n\n----------------------------- TRAINING ! -----------------------------\n\n")
 
-
+    # for model_name in model_name_list:
     for iteration in range(start_iteration, end_iteration, up_down):  
 
         for lead_time in lead_time_list:
@@ -150,7 +157,14 @@ if tune_train_test == "train":
                             num_layers = 2
                             act_func = 'leaky_relu'
                             neurons = 256 
+
                     elif model_name == "MSE":
+                        if combination == 1:
+                            num_layers = 3
+                            act_func = 'leaky_relu'
+                            neurons = 32
+
+                    elif model_name == "MAPE":
                         if combination == 1:
                             num_layers = 3
                             act_func = 'leaky_relu'
@@ -194,7 +208,7 @@ if tune_train_test == "train":
                             act_func = 'leaky_relu'
                             neurons = 16
                         
-    
+
 
                 combo_name = f"{model_name.lower()}-{num_layers}_layers-{act_func}-{neurons}_neurons"
 
@@ -248,12 +262,18 @@ if tune_train_test == "train":
                     if model_name == "MSE":
                         batch_size = x_train.shape[0]
                     
+                    elif model_name == "MAPE":
+                        batch_size = x_train.shape[0]
+
                     elif model_name == "CRPS":
                         batch_size = 512
                     inputShape = x_train[0].shape
                     
                     if model_name == "MSE":
                         batch_size = x_train.shape[0]
+
+                    elif model_name == "MAPE":
+                        batch_size = x_train.shape[0] 
                     
                     elif model_name == "CRPS":
                         batch_size = 512
@@ -344,7 +364,7 @@ if tune_train_test == "train":
                     """LOSS INFORMATION"""
                     loss = history.history['loss']
                     val_loss = history.history['val_loss']
-                   
+                
 
                     losses = pd.DataFrame(columns=['Loss', 'Val_Loss']) 
                     losses['Loss'] = loss
