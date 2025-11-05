@@ -16,8 +16,35 @@ class TrainingLogger(tf.keras.callbacks.Callback):
         with open(self.log_file, "a") as f:
             f.write(log_message)
 
-""" CREATING INPUT VECTOR """
-# MAIN function to create the input vector for the ml model
+'''  
+-------------------------------------------------------------------------
+                            def preparingData
+input:
+        path_to_data - a path to the folder that contains the csv files
+        input_structure - 
+        independent_year - 
+        input_hours_forecast -
+        atp_hours_back - 
+        wtp_hours_back -
+        pred_atp_intervals - 
+        IPPOffset = 0.0 - 
+        cycle = 0 -
+        model = "MLP" - 
+        verbose = 0 - 
+purpose:
+        this is the main function to create an input vector for the ML model. 
+output: 
+        x_train - input training data
+        y_train - target training data
+        x_val - input validation data
+        y_val - target validation data
+        x_test - input testing data
+        y_test - target testing data
+        training_dates - list of datetime objects for training data
+        validation_dates - list of datetime objects for validation data
+        testingDates - list of datetime objects for testing data
+        testingAirTemps - list of air temperatures for testing data
+------------------------------------------------------------------------- '''
 def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back, 
                   wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0):
     
@@ -344,6 +371,22 @@ import pandas as pd
 from typing import Union, Tuple
 
 
+'''  
+-------------------------------------------------------------------------
+                            def splittingData
+input:
+        year2 - dataframe for year 2
+        year3 - dataframe for year 3
+        year4 - dataframe for year 4
+        year5 - dataframe for year 5
+        cycle - an integer that indicates which cycle we are on. aka rotation.
+purpose:
+        
+output: 
+        training - dataframe for training data
+        testing - dataframe for testing data
+        validation - dataframe for validation data
+------------------------------------------------------------------------- '''
 def splittingData(year2, year3, year4, year5, cycle):
     '''splittingData() groups the data into training, testing, and validation
     --Will rotate through the years as the cycle changes'''
@@ -385,7 +428,26 @@ def splittingData(year2, year3, year4, year5, cycle):
         training = pd.DataFrame()
         testing = pd.DataFrame()
         validation = pd.DataFrame()
-    
+
+'''  
+-------------------------------------------------------------------------
+                            def og_splittingData
+input:
+        year2 - dataframe for year 2
+        year3 - dataframe for year 3
+        year4 - dataframe for year 4
+        year5 - dataframe for year 5
+        cycle - an integer that indicates which cycle we are on. aka rotation.
+purpose: 
+        this is identical to splittingData; only this one utilizes
+        independent testing year. may need to rid the parameters and just use
+        a list of dataframes instead of manually inputting each year. thus
+        there will be no need for two functions.
+output: 
+        training - dataframe for training data
+        testing - dataframe for testing data
+        validation - dataframe for validation data
+------------------------------------------------------------------------- '''
 def og_splittingData(year2, year3, year4, year5, year_independent, cycle):
     import pandas as pd
 
@@ -419,10 +481,21 @@ def og_splittingData(year2, year3, year4, year5, year_independent, cycle):
         training = pd.DataFrame()
         testing = pd.DataFrame()
         validation = pd.DataFrame()
-    
-def countingMissingValues(df):
-    '''countingMissingValues() counting the rows that contains a missing value in at least one of the columns'''
 
+
+'''  
+-------------------------------------------------------------------------
+                         def countingMissingValues
+input:
+        df - 
+purpose: 
+        count the rows in the dataframe that contain a missing values in 
+        at least one of the columns.
+output: 
+        numMissValues - 
+        percMissValues - 
+------------------------------------------------------------------------- '''
+def countingMissingValues(df):
     numMissValues = df.isnull().sum().sum()
     if len(df) == 0:
         return numMissValues, 0.0
@@ -439,8 +512,17 @@ def countingMissingValues(df):
 
     return numMissValues, percMissValues
 
+'''  
+-------------------------------------------------------------------------
+                        def deletingMissingValues
+input:
+        df - 
+purpose: 
+        delete the rows where at least one of the columns contain a missing value.
+output: 
+        df 
+------------------------------------------------------------------------- '''
 def deletingMissingValues(df):
-    '''deletingMissingValues() deleting the rows that at least one of the columns contain a missing value'''
     valueRemove = [-999]
     # Exclude 'date' column from missing value checks
     cols_to_check = [col for col in df.columns if col != 'date']
@@ -449,9 +531,27 @@ def deletingMissingValues(df):
     df = df.dropna(subset=cols_to_check)
     return df
 
+'''  
+-------------------------------------------------------------------------
+                        def reshaping
+input:
+        input_structure - 
+        training - 
+        testing - 
+        validation - 
+        model - 
+purpose: 
+        reshape the training, testing, and validation datasets to be able to 
+        use them as an input for the model.
+output: 
+        x_train -
+        y_train - 
+        x_val -
+        y_val -
+        x_test - 
+        y_test -  
+------------------------------------------------------------------------- '''
 def reshaping(input_structure, training, testing, validation, model):
-    '''reshaping() reshaping the training, testing, and validation datasets to be 
-    able to use them as an input for the AI model'''
     import numpy as np
 
     if input_structure == "descending":
@@ -459,7 +559,7 @@ def reshaping(input_structure, training, testing, validation, model):
     elif input_structure == "ascending":
         input_column_start = 3
 
-    # Handle empty DataFrames
+    # handle empty dataframes
     if training.empty:
         trainingData = np.empty((0, 0))
         trainingTarget = np.empty((0,))
@@ -563,9 +663,11 @@ def crps(y_true, y_pred):
     # Alias for crps_loss
     return crps_loss(y_true, y_pred)
 
+# this is for debugging, i think.
 
 if __name__ == "__main__":
     print("ayesha has been here")
+
     """ Manipulating data for AI Model """
     x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData("data/June_May_Datasets",
                                                                                                                 "descending",
