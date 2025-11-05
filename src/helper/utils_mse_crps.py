@@ -1,4 +1,5 @@
 import tensorflow as tf
+
 class TrainingLogger(tf.keras.callbacks.Callback):
     def __init__(self, log_file):
         super().__init__()
@@ -17,7 +18,9 @@ class TrainingLogger(tf.keras.callbacks.Callback):
 
 """ CREATING INPUT VECTOR """
 # MAIN function to create the input vector for the ml model
-def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0):
+def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back, 
+                  wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0):
+    
     '''preparingData() is the driver function'''
     # Importing libraries
     from datetime import datetime
@@ -52,16 +55,13 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
     # Function call to create additional columns
     start_time = datetime.now()
-    # year1 = creatingAdditionalColumns(data_year1, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+
+    # excluding the independent testing set 
     year2 = creatingAdditionalColumns(data_year2, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year3 = creatingAdditionalColumns(data_year3, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year4 = creatingAdditionalColumns(data_year4, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
     year5 = creatingAdditionalColumns(data_year5, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-   # year6 = creatingAdditionalColumns(data_year6, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-   # year7 = creatingAdditionalColumns(data_year7, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-   # year8 = creatingAdditionalColumns(data_year8, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-   # year9 = creatingAdditionalColumns(data_year9, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
-   # year10 = creatingAdditionalColumns(data_year10, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+
     print('finished input construction')
     end_time = datetime.now()
 
@@ -147,7 +147,22 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
     return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps
 
+'''  
+-------------------------------------------------------------------------
+                            def readingData
+input:
+        path_to_data - a path to the folder that contains the csv files                        
+purpose:
+        find all of the csv files from the given path and sort them.
+        print the number of files found, and their names. 
+        set the first file aside for independent testing year.
+        load each csv file into a dataframe and store them in a list.
+output: 
+        data_list - a list of dataframes for each year 
+------------------------------------------------------------------------- '''
 def readingData(path_to_data):
+
+
     import os
     import glob
     import pandas as pd
@@ -166,13 +181,22 @@ def readingData(path_to_data):
 
     return data_list
 
-    # csv_files = sorted(glob.glob(f"{path_to_data}/*.csv"))
-    # print(f"Found {len(csv_files)} CSV files.")
-    # print("Files:", [os.path.basename(f) for f in csv_files])
-
-    # dataframes = [pd.read_csv(f) for f in csv_files]
-    # return dataframes
-
+'''  
+-------------------------------------------------------------------------
+                            def creatingAdditionalColumns
+input:
+        df - a dataframe that contains the data for one year
+        input_structure - 
+        input_hours_forecast - 
+        atp_hours_back - 
+        wtp_hours_back -
+        pred_atp_interval - 
+        IPPOffset = 0.0 -                  
+purpose:
+        creating columns for the past and future (perfect prognosis) hours
+output: 
+        
+------------------------------------------------------------------------- '''
 def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset=0.0):
     '''creatingAdditionalColumns() creating columns for the past and future (perfect prog) hours'''
     
@@ -319,6 +343,7 @@ def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hou
 import pandas as pd
 from typing import Union, Tuple
 
+
 def splittingData(year2, year3, year4, year5, cycle):
     '''splittingData() groups the data into training, testing, and validation
     --Will rotate through the years as the cycle changes'''
@@ -361,35 +386,6 @@ def splittingData(year2, year3, year4, year5, cycle):
         testing = pd.DataFrame()
         validation = pd.DataFrame()
     
-
-# def caht_splittingData(year1, year2, year3, year4, year5, year_independent, cycle) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    
-#     yearList = [year1, year2, year3, year4, year5]
-
-#     for j in range(cycle + 1):
-#         # Rotate list by one position
-#         rotated = yearList[-1:] + yearList[:-1]
-
-#         # Split data
-#         training = pd.concat(rotated[:3])
-#         validation = rotated[3]
-
-#         if isinstance(year_independent, pd.DataFrame):
-#             print("USING INDEPENDENT TEST YEAR")
-#             testing = year_independent
-#         elif year_independent == "cycle":
-#             print("USING REGULAR CYCLE TESTING")
-#             testing = rotated[4]
-#         else:
-#             raise ValueError("Invalid value for 'year_independent'. Must be 'cycle' or a DataFrame.")
-
-#         if j == cycle:
-#             return training, testing, validation
-
-#     # fallback in case return not hit (shouldn’t happen)
-#     return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-
-
 def og_splittingData(year2, year3, year4, year5, year_independent, cycle):
     import pandas as pd
 
