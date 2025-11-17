@@ -669,7 +669,7 @@ if __name__ == "__main__":
     print("ayesha has been here")
 
     """ Manipulating data for AI Model """
-    x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData("data/June_May_Datasets",
+    x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData("data/ESB_datasets",
                                                                                                                 "descending",
                                                                                                                 "cycle",
                                                                                                                 12,

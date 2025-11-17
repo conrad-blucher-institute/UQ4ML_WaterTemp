@@ -14,6 +14,7 @@ for predicting water temperature in the Laguna Madre, TX for Cold Stunning Event
 from src.helper.utils_mse_crps import crps_loss, crps
 from src.helper.utils_mse_crps import preparingData
 
+# for manipulating paths
 from pathlib import Path
 
 import keras
@@ -55,19 +56,21 @@ independent_year = "cycle"
 # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
 cycle_list = [0, 1, 2, 3]
 
+
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1
 end_iteration = 15
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [12]
+lead_time_list = [12, 24, 48, 120]
 hours_back = 24  
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
 temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
 
 # number of epochs
-epochs = 2000
+# epochs = 2000
+epochs = 20000
 
 
 input_structure = "descending"
@@ -80,8 +83,7 @@ optimizer = 'adam'
 kernel_regularizer = 'l2'
 
 #change this here
-# path_to_data = "data/June_May_Datasets"
-path_to_data = "data/2020_2025_Datasets"
+path_to_data = "data\ESB_datasets"
 
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
