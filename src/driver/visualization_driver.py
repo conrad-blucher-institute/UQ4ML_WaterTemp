@@ -47,7 +47,7 @@ save = True
 cycles = [0, 1, 2, 3]
 
 # List of leadTimes to make visuals and tables for models at different lead times. 
-leadTimes = [12, 24, 48, 120]#[12]
+leadTimes = [12, 48, 96, 120]#[12]
 
 # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
 architectures = ["mse"] #['mse','PNN',"CRPS"]

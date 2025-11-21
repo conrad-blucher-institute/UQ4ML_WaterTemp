@@ -54,15 +54,15 @@ independent_year = "cycle"
 
 """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
 # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
-cycle_list = [0]#[0, 1, 2, 3]
+cycle_list = [0, 1, 2, 3]#[0, 1, 2, 3]
 
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
-start_iteration = 4 #1
-end_iteration = 6 #15
+start_iteration = 1 #1
+end_iteration = 15 #15
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [12]#[12, 48, 96, 120]
+lead_time_list = [48, 96, 120]#[12, 48, 96, 120]
 hours_back = 24  
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
