@@ -39,11 +39,12 @@ from datetime import datetime
 import tensorflow.keras.backend as K
 
 """
-RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD
+RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD / CURRENT WORKING DIRECTORY
 """
 
 # if train:     training a model using hyperparameters gained from tuning
 tune_train_test = "train"
+
 # model_name_list = ["MAPE"] 
 model_name = "MSE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
 
@@ -54,15 +55,15 @@ independent_year = "cycle"
 
 """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
 # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
-cycle_list = [0, 1, 2, 3]#[0, 1, 2, 3]
-
+# these will be re-named to rotations
+cycle_list = [0, 1, 2, 3] #[0, 1, 2, 3]
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1 #1
 end_iteration = 15 #15
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [48, 96, 120]#[12, 48, 96, 120]
+lead_time_list = [12, 48, 96, 120] #[12, 48, 96, 120]
 hours_back = 24  
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
@@ -109,12 +110,14 @@ elif model_name == "MSE":
 # mape is deterministic so it only predicts the temperature
 # does not capture the uncertainty 
 elif model_name == "MAPE":
-
     output_units = 1
     loss_function = 'mape'
     metrics = ['mape']
 
+# this is for picking which metric is being checked during training
+# for callback options such as early stopping and learning rate reducer
 call_back_monitor = "val_loss"
+
 # batch size was determined to utilize the entire dataset... when left undeclared, the batch defaults to 32 
 #batch_size_list = [4096] # 4096, 2048, 1024, 512, 256, 128, 64
 
@@ -186,6 +189,7 @@ if tune_train_test == "train":
                             num_layers = 3
                             act_func = 'selu'
                             neurons = 64
+
                     elif model_name == "MSE":
                         if combination == 2:
                             num_layers = 2
@@ -213,7 +217,6 @@ if tune_train_test == "train":
                             neurons = 16
                         
 
-
                 combo_name = f"{model_name.lower()}-{num_layers}_layers-{act_func}-{neurons}_neurons"
 
                 for cycle in cycle_list:
@@ -236,7 +239,6 @@ if tune_train_test == "train":
                     # computation graph, causing corruption; throwing an error
                     K.clear_session()
 
-                    # this is where i'm gonna fuc
                     """ Manipulating data for AI Model """
                     x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(path_to_data,
                                                                                                                                 input_structure,
