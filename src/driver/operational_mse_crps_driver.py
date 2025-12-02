@@ -249,7 +249,7 @@ if tune_train_test == "train":
                                                                                                                                 pred_atp_interval,
                                                                                                                                 IPPOffset = temperature_list[0],
                                                                                                                                 cycle=cycle,
-                                                                                                                                model=model_name) # "model" variable only mattered for when we used lstm; lstm resuired a transformation of dimensions of input shape
+                                                                                                                                model=model_name) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
                 
                     """PREPARINGDATA FUNCTION COMPUTE TIME"""
                     data_prep_time_end = datetime.now()
@@ -297,8 +297,6 @@ if tune_train_test == "train":
                                         activation=act_func, 
                                         kernel_regularizer=kernel_regularizer))
                     
-                    # DROPOUT LAYERS ?????
-
                     # last layer = output layer
                     model.add(Dense(output_units, activation=output_activation))
 
