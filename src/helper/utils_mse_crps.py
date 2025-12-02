@@ -55,8 +55,10 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     import numpy as np
 
     # Function call to read the data
+    # excluding data_year1, which is the independent testing data
     data_year2, data_year3, data_year4, data_year5 = readingData(path_to_data)
 
+    #verbose determines how much info we see 
     if verbose == 3:
         for i, v in enumerate([data_year2, data_year3, data_year4, data_year5]):
             print(v.columns)
@@ -104,8 +106,11 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # training_data, testing_data, validation_data = splittingData(IPPYear1, IPPYear2, IPPYear3, IPPYear4, IPPYear5, IPPYear6, IPPYear7, IPPYear8, IPPYear9, IPPYear10, cycle)
     # year2.to_csv('year2.csv')
 
+
     year_independent = cycle
     # training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
+
+
     training_data, testing_data, validation_data = splittingData(data_year2, data_year3, data_year4, data_year5, cycle)
     # training_data.to_csv('training_data.csv')
 
@@ -375,12 +380,18 @@ from typing import Union, Tuple
 -------------------------------------------------------------------------
                             def splittingData
 input:
-        year2 - dataframe for year 2
-        year3 - dataframe for year 3
-        year4 - dataframe for year 4
-        year5 - dataframe for year 5
-        cycle - an integer that indicates which cycle we are on. aka rotation.
-purpose:
+        year2 - dataframe for year 2 (2021-2022)    
+        year3 - dataframe for year 3 (2022-2023)
+        year4 - dataframe for year 4 (2023-2024)
+        year5 - dataframe for year 5 (2024-2025)
+        cycle - an integer that indicates which rotation we are on.
+                need to refactor all mentions of cycle to rotation.
+
+process: last item becomes testing
+        second to last item becomes validation
+        everything else is training
+        rotates the order of the list/years based on which cycle we want,
+        rotates "cycle" number of times
         
 output: 
         training - dataframe for training data
@@ -392,6 +403,7 @@ def splittingData(year2, year3, year4, year5, cycle):
     --Will rotate through the years as the cycle changes'''
     import pandas as pd
 
+    # maybe in future refactoring we can put in a list instead of the years individually
     yearList = [year2,year3,year4,year5]
 
     training = pd.DataFrame()
@@ -399,7 +411,7 @@ def splittingData(year2, year3, year4, year5, cycle):
     validation = pd.DataFrame()
     #"""
     
-    # loop until we get to the version we are tring to make
+    # loop until we get to the version we are trying to make
     for j in range(cycle+1):
 
         for i in range(len(yearList)):
@@ -600,6 +612,24 @@ def reshaping(input_structure, training, testing, validation, model):
 
     return x_train, y_train, x_val, y_val, x_test, y_test
 
+
+'''  
+-------------------------------------------------------------------------
+                        def dateTimeRetriever
+input:
+        dataset 
+        input_hours_forecast
+purpose: 
+        reshape the training, testing, and validation datasets to be able to 
+        use them as an input for the model.
+output: 
+        x_train -
+        y_train - 
+        x_val -
+        y_val -
+        x_test - 
+        y_test -  
+------------------------------------------------------------------------- '''
 def dateTimeRetriever(dataset, input_hours_forecast):
     import pandas as pd
     '''This function is designed to grab the date times from the testing data set for computations.'''
