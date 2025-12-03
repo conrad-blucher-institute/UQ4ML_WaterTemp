@@ -130,7 +130,7 @@ start_iteration = 21
 end_iteration = 23
 
 # MAIN - Location where models get saved to while training/tuning
-path_to_model_runs = "./mse_mape_tune_init_results" + f"/{model_name}_{start_iteration}_{end_iteration}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+path_to_model_runs = "mse_mape_tune_init_results" + f"/{model_name}_{start_iteration}_{end_iteration}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
 
 # step_direction is a step direction for moving through the loop 
 if start_iteration > end_iteration:
@@ -245,11 +245,13 @@ if tune_train_test == "tune":
 
                 """ Manipulating data for AI Model """
                 x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(path_to_data,
-                                                                                                                                            lead_time,
-                                                                                                                                            atp_hours_back,
-                                                                                                                                            wtp_hours_back,
-                                                                                                                                            pred_atp_interval,
-                                                                                                                                            IPPOffset = temperature_list[0],
+                                                                                                                                            input_structure="descending",
+                                                                                                                                            independent_year="not used",
+                                                                                                                                            input_hours_forecast=lead_time,
+                                                                                                                                            atp_hours_back=atp_hours_back,
+                                                                                                                                            wtp_hours_back=wtp_hours_back,
+                                                                                                                                            pred_atp_interval=pred_atp_interval,
+                                                                                                                                            IPPOffset=temperature_list[0],
                                                                                                                                             cycle=cycle,
                                                                                                                                             model=model_name) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
                 inputShape = x_train[0].shape
@@ -332,7 +334,7 @@ if tune_train_test == "tune":
                     max_trials=max_trials, # 
                     executions_per_trial=execution_per_trial, # run this particular combination this amount of times, take the avg of it, that's the metric
                     directory=save_path,
-                    project_name=save_path + r"\results" 
+                    project_name="results" 
                     )
 
                 # Learning rate reducer
