@@ -88,7 +88,7 @@ if gpus:
 # if train:     training a model using hyperparameters gained from tuning
 # if test:      pull from location a .h5 trained model, and test
 tune_train_test = "tune" # "train", "tune", "test"
-model_name = "MSE" 
+model_name = "MAPE" 
 
 while True:
     user_input = input(f"You are about to start\n-------------------- {tune_train_test.upper()}ING --------------------\nAre you sure you want to continue {tune_train_test.upper()}ING ? (y/n)\n").strip().lower()
@@ -129,9 +129,6 @@ call_back_monitor = "val_loss"
 start_iteration = 21
 end_iteration = 23
 
-# MAIN - Location where models get saved to while training/tuning
-path_to_model_runs = "mse_mape_tune_init_results" + f"/{model_name}_{start_iteration}_{end_iteration}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
-
 # step_direction is a step direction for moving through the loop 
 if start_iteration > end_iteration:
     step_direction = -1
@@ -144,8 +141,11 @@ else:
 cycle_list = [0,1,2,3] 
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [12,48,96, 120] 
+lead_time_list = [120]#[12,48,96,120] 
 hours_back = 24  
+
+# MAIN - Location where models get saved to while training/tuning
+path_to_model_runs = "mape_tune_init_results" + f"/{model_name}_{lead_time_list[0]}_{end_iteration}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
 # this is for miranda's UQ things; it is set to 0 so it won't kick in
@@ -173,7 +173,7 @@ elif model_name == "MSE":
 elif model_name == "MAPE":
     output_units = 1
     loss_function = 'mape'
-    metrics = ['mape']
+    metrics = ['mae']
 
 
     
