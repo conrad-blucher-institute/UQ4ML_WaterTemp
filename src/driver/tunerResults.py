@@ -8,7 +8,8 @@ to a csv such that we can then transfer everything with a single copy and paste 
 
 import json
 
-cycle_list = [1,3,6,7,9] #[0, 2, 5, 8]
+# cycle_list = [1,3,6,7,9] #[0, 2, 5, 8]
+cycle_list = [0, 1, 2, 3] #[0, 2, 5, 8]
 runs = 2 # number of iterations per hours back 
 hours_back = [24] #[6, 12, 24]
 max_trials = 30 # number of trials within each iteration
