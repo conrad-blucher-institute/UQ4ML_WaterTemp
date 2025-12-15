@@ -78,12 +78,14 @@ def create_parser():
 
     # dec 29th 2024 airplane to orlando edits
     parser.add_argument('--modify_sigma_loss',                  action='store_true',                                    help="Whether to use a sigma modification in loss func or not.")
-    parser.add_argument('--sigma_threshold',                    type=float,         default=2,                       help="Threshold for sigma modification to loss func.")
-    parser.add_argument('--sigma_regularization_parameter',     type=float,         default=0.1,                       help="Regularization Parameter for sigma loss func modification")
+    parser.add_argument('--sigma_threshold',                    type=float,         default=2,                          help="Threshold for sigma modification to loss func.")
+    parser.add_argument('--sigma_regularization_parameter',     type=float,         default=0.1,                        help="Regularization Parameter for sigma loss func modification")
 
     parser.add_argument('--modify_mu_loss',                     action='store_true',                                    help="Whether to use a mu modification in loss func or not.")
-    parser.add_argument('--mu_threshold',                       type=float,         default=0.5,                       help="Threshold for mu modification to loss func.")
-    parser.add_argument('--mu_regularization_parameter',        type=float,         default=0.2,                       help="Regularization Parameter for mu loss func modification")
+    parser.add_argument('--mu_threshold',                       type=float,         default=0.5,                        help="Threshold for mu modification to loss func.")
+    parser.add_argument('--mu_regularization_parameter',        type=float,         default=0.2,                        help="Regularization Parameter for mu loss func modification")
 
+
+    parser.add_argument('--max_trials',                         type=int,           default=30,                         help="Sets the maximum number of trials for the tuner to use. Implemented specifically for random search. Can be reused.")
 
     return parser

@@ -1,0 +1,9 @@
+--model_type=mape
+--metrics
+mae
+mae12
+me
+me12
+--num_output_neurons=1
+--epochs=20000
+--max_trials

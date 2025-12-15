@@ -1,0 +1,7 @@
+--model_type=mse
+--metrics
+mae
+mae12
+me
+me12
+--num_output_neurons=1

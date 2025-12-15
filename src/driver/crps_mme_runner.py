@@ -63,148 +63,120 @@ import glob
 
 import tensorflow.keras.backend as K
 
-"""
-RUN SCRIPT WITH COOLTURTLES DIRECTORY AS YOUR CWD
-"""
 
-"""GPU CHECK/USE EXPLICITLY"""
+def temp(args):
+            
 
-# print("Num GPUs Available:", len(tf.config.experimental.list_physical_devices('GPU')))
+    """
+    RUN SCRIPT WITH COOLTURTLES DIRECTORY AS YOUR CWD
+    """
 
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Set TensorFlow to use only the first GPU
-        tf.config.experimental.set_memory_growth(gpus[0], True)
-        tf.config.set_visible_devices(gpus[0], 'GPU')
-        print("Using GPU:", gpus[0])
-    except RuntimeError as e:
-        print(e)
+    """GPU CHECK/USE EXPLICITLY"""
+
+    # print("Num GPUs Available:", len(tf.config.experimental.list_physical_devices('GPU')))
+
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            # Set TensorFlow to use only the first GPU
+            tf.config.experimental.set_memory_growth(gpus[0], True)
+            tf.config.set_visible_devices(gpus[0], 'GPU')
+            print("Using GPU:", gpus[0])
+        except RuntimeError as e:
+            print(e)
 
 
 
 
-# if tune:      tuning hyperparameters, prepping for training
-# if train:     training a model using hyperparameters gained from tuning
-# if test:      pull from location a .h5 trained model, and test
-tune_train_test = "tune" # "train", "tune", "test"
-model_name = "MAPE" 
+    # path_to_data = "./June_May_Datasets"
+    path_to_data = "./data/ESB_datasets"
 
-while True:
-    user_input = input(f"You are about to start\n-------------------- {tune_train_test.upper()}ING --------------------\nAre you sure you want to continue {tune_train_test.upper()}ING ? (y/n)\n").strip().lower()
-    if user_input in ['y', 'n']:
-        break
+    # path_to_saved_models = r"C:\Users\cduff4\OneDrive - Texas A&M University-Corpus Christi\CBI\AMS\AMS 2025\CROSS_VALIDATION_COMBO_RUN_RESULTS"
+
+    # testing_datasets = [f"{path_to_data}\\simulated_cs_dataset_1.csv"] #, f"{path_to_data}\\simulated_cs_dataset_2.csv", f"{path_to_data}\\simulated_cs_dataset_3.csv"]
+
+    """ TUNING ITERATIONS AND VARIABLES """
+    tuner_iterations = [1]                     
+
+    # trials = number of combinations if Grid Search
+    max_trials = 30                               
+    execution_per_trial = 2
+
+    # units is synonymous with neurons
+    unit_list = [16, 32, 64, 100, 128, 256]       
+    activation_list = ['relu', 'selu', 'leaky_relu']
+    obj = "val_mae"
+    call_back_monitor = "val_loss"
+
+
+    """TRAINING ITERATIONS - CROSS VALIDATION"""
+    start_iteration = 21
+    end_iteration = 23
+
+    # step_direction is a step direction for moving through the loop 
+    if start_iteration > end_iteration:
+        step_direction = -1
     else:
-        print("Invalid input. Try again. (input a 'y' or a 'n')")
+        step_direction = 1
+        end_iteration += 1
+
+    """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
+    # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
+    cycle_list = [0,1,2,3] 
+
+    # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
+    lead_time_list = [120]#[12,48,96,120] 
+    hours_back = 24  
+
+    # MAIN - Location where models get saved to while training/tuning
+    path_to_model_runs = "mape_tune_init_results" + f"/{args.model_type}_{lead_time_list[0]}_{end_iteration}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    # list of temperature perturbations, "0.0" --> perfect prognosis
+    # this is for miranda's UQ things; it is set to 0 so it won't kick in
+    # we don't worry about this 
+    temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
+
+    # number of ensemble predictions
+
+    if args.model_type == "crps":
+
+        loss_function = crps_loss
+        metrics = [crps] # deal with later, create a code block that implement our custom functions including less than 12 functions
+
+    elif args.model_type == "mse":
+
+        loss_function = 'mse'
 
 
-if user_input == 'y':
-    print(f"Continuing...")
-elif user_input == 'n':
-    print(f"Stopping...")
-    sys.exit()
+    elif args.model_type == "mape":
+        loss_function = 'mape'
+        
 
-# path_to_data = "./June_May_Datasets"
-path_to_data = "./data/ESB_datasets"
+    input_structure = "descending"
+    independent_year = "cycle"
+    output_activation = 'linear'
 
-# path_to_saved_models = r"C:\Users\cduff4\OneDrive - Texas A&M University-Corpus Christi\CBI\AMS\AMS 2025\CROSS_VALIDATION_COMBO_RUN_RESULTS"
+    # starting with 0.01, the LEARNING RATE REDUCER reduces this value by 0.01 incrementally later within code # 1e-1, 1e-2, 1e-3, 1e-4, 1e-5
+    learning_rate = 0.01 
 
-# testing_datasets = [f"{path_to_data}\\simulated_cs_dataset_1.csv"] #, f"{path_to_data}\\simulated_cs_dataset_2.csv", f"{path_to_data}\\simulated_cs_dataset_3.csv"]
+    optimizer = 'adam' # adam, adadelta, SGD
+    kernel_regularizer = 'l2'
 
-""" TUNING ITERATIONS AND VARIABLES """
-tuner_iterations = [1]                     
+    # neurons = 200
+    # act_func = 'leaky_relu'
+    # num_layers = 1
 
-# trials = number of combinations if Grid Search
-max_trials = 30                               
-execution_per_trial = 2
+    # batch size was determined to utilize the entire dataset... when left undeclared, the batch defaults to 32 
+    #batch_size_list = [4096] # 4096, 2048, 1024, 512, 256, 128, 64
 
-# units is synonymous with neurons
-unit_list = [16, 32, 64, 100, 128, 256]       
-activation_list = ['relu', 'selu', 'leaky_relu']
-obj = "val_mae"
-call_back_monitor = "val_loss"
+    # dicitonary to hold the computation time per loop (cycle, leadtime, iteration)
+    compute_times = {}
 
+    # column names for the saving of the model predictions later within "train"
+    prediction_column_names = []
+    for k in range(output_units):
+        prediction_column_names.append(f'pred_{k+1}')   
 
-"""TRAINING ITERATIONS - CROSS VALIDATION"""
-start_iteration = 21
-end_iteration = 23
-
-# step_direction is a step direction for moving through the loop 
-if start_iteration > end_iteration:
-    step_direction = -1
-else:
-    step_direction = 1
-    end_iteration += 1
-
-""" MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
-# 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
-cycle_list = [0,1,2,3] 
-
-# 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [120]#[12,48,96,120] 
-hours_back = 24  
-
-# MAIN - Location where models get saved to while training/tuning
-path_to_model_runs = "mape_tune_init_results" + f"/{model_name}_{lead_time_list[0]}_{end_iteration}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
-
-# list of temperature perturbations, "0.0" --> perfect prognosis
-# this is for miranda's UQ things; it is set to 0 so it won't kick in
-# we don't worry about this 
-temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
-
-# number of epochs
-epochs = 20000
-
-# number of ensemble predictions
-
-if model_name == "CRPS":
-
-    output_units = 100
-    loss_function = crps_loss
-    metrics = [crps]
-
-elif model_name == "MSE":
-
-    output_units = 1
-    loss_function = 'mse'
-    metrics = ['mae']
-
-
-elif model_name == "MAPE":
-    output_units = 1
-    loss_function = 'mape'
-    metrics = ['mae']
-
-
-    
-input_structure = "descending"
-independent_year = "cycle"
-output_activation = 'linear'
-
-# starting with 0.01, the LEARNING RATE REDUCER reduces this value by 0.01 incrementally later within code # 1e-1, 1e-2, 1e-3, 1e-4, 1e-5
-learning_rate = 0.01 
-
-optimizer = 'adam' # adam, adadelta, SGD
-kernel_regularizer = 'l2'
-
-# neurons = 200
-# act_func = 'leaky_relu'
-# num_layers = 1
-
-# batch size was determined to utilize the entire dataset... when left undeclared, the batch defaults to 32 
-#batch_size_list = [4096] # 4096, 2048, 1024, 512, 256, 128, 64
-
-# dicitonary to hold the computation time per loop (cycle, leadtime, iteration)
-compute_times = {}
-
-# column names for the saving of the model predictions later within "train"
-prediction_column_names = []
-for k in range(output_units):
-    prediction_column_names.append(f'pred_{k+1}')   
-
-
-
-if tune_train_test == "tune":
     print("\n\n----------------------------- TUNING ! -----------------------------\n\n")
 
     if not os.path.exists(path_to_model_runs):
@@ -221,7 +193,7 @@ if tune_train_test == "tune":
 
         lead_time_compute_times = [] # to store the compute times for each leadtime
         
-       
+
         for lead_time in lead_time_list:
 
             leadtime_start_time = datetime.now()
@@ -253,7 +225,7 @@ if tune_train_test == "tune":
                                                                                                                                             pred_atp_interval=pred_atp_interval,
                                                                                                                                             IPPOffset=temperature_list[0],
                                                                                                                                             cycle=cycle,
-                                                                                                                                            model=model_name) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
+                                                                                                                                            model=args.model_type) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
                 inputShape = x_train[0].shape
 
                 # batch size to be the full length (# rows) of dataset
@@ -298,15 +270,15 @@ if tune_train_test == "tune":
                         
                         if chosen_optimizer == "adam":
                             model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=learning_rate), 
-                                        loss=loss_function, metrics=metrics)
+                                        loss=loss_function, metrics=args.metrics)
                         
                         # elif chosen_optimizer == "adadelta":
                         #     model.compile(optimizer=keras.optimizers.Adadelta(learning_rate=hp.Choice("learning_rate_",learning_rate_list, ordered=False)), 
-                        #                 loss=loss_function, metrics=metrics)
+                        #                 loss=loss_function, metrics=args.metrics)
 
                         # elif chosen_optimizer == "SGD":
                         #     model.compile(optimizer=keras.optimizers.SGD(learning_rate=hp.Choice("learning_rate_",learning_rate_list, ordered=False)), 
-                        #                 loss=loss_function, metrics=metrics)
+                        #                 loss=loss_function, metrics=args.metrics)
                         
 
                         return model
@@ -355,7 +327,7 @@ if tune_train_test == "tune":
 
                 tuner.search_space_summary()
 
-                tuner.search(x_train, y_train, validation_data=(x_val, y_val),  epochs=epochs, callbacks=[early_stopping, reduce_lr, tensorboard_callback])
+                tuner.search(x_train, y_train, validation_data=(x_val, y_val),  epochs=args.epochs, callbacks=[early_stopping, reduce_lr, tensorboard_callback])
 
                 tuner.results_summary()
 
@@ -385,3 +357,29 @@ if tune_train_test == "tune":
     with open(save_path + r"\compute_times.pkl", 'wb') as f:
         pickle.dump(compute_times, f)
 
+
+def main():
+    print('I am in main')
+    pass
+
+def show_keys(args):
+    args_dict = vars(args)
+    for key, value in args_dict.items():
+        print(f"{key}: {value}")
+
+from src.helper.my_parser import create_parser
+
+
+
+if __name__ == "__main__":
+
+    # Parse incoming command-line arguments
+    parser = create_parser()
+    args = parser.parse_args()
+
+    # checking what keys we have in our parser
+    show_keys(args)
+
+    main()
+
+    temp(args) 
