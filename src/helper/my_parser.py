@@ -75,7 +75,7 @@ def create_parser():
     parser: CommentArgumentParser = CommentArgumentParser(description='AI Model Maker', fromfile_prefix_chars='@')
     
     # High-level commands
-    parser.add_argument('--enviroment',                         type=str,           default='schooner',                 help="Sets where we are running this on to set the std.out and std.err saving files.")
+    parser.add_argument('--environment',                         type=str,           default='schooner',                 help="Sets where we are running this on to set the std.out and std.err saving files.")
     parser.add_argument('--nogo',                               action='store_true',                                    help='Do not perform the experiment')
     parser.add_argument('--verbose', '-v',                      action='count',     default=0,                          help="Verbosity level")
     parser.add_argument('--model_type',                         type=str,           default='mlp',                      help="Model Architecture type")
@@ -152,5 +152,10 @@ def create_parser():
 
 
     parser.add_argument('--max_trials',                         type=int,           default=30,                         help="Sets the maximum number of trials for the tuner to use. Implemented specifically for random search. Can be reused.")
+    parser.add_argument('--executions_per_trial',               type=int,           default=2,                          help="sets how many models one trial of the tuner computes, returns the average of all models")
+    parser.add_argument('--unit_list',             nargs='+',   type=int,           default=None, help="options for hidden layer sizes, part of tuner hyperparameter search space")
+    
+
+
 
     return parser
