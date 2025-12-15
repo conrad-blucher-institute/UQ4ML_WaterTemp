@@ -85,11 +85,8 @@ def temp(args):
         except RuntimeError as e:
             print(e)
 
-
-
-
     # path_to_data = "./June_May_Datasets"
-    path_to_data = "./data/ESB_datasets"
+    # args.data_set = "./data/ESB_datasets"
 
     # path_to_saved_models = r"C:\Users\cduff4\OneDrive - Texas A&M University-Corpus Christi\CBI\AMS\AMS 2025\CROSS_VALIDATION_COMBO_RUN_RESULTS"
 
@@ -98,12 +95,8 @@ def temp(args):
     """ TUNING ITERATIONS AND VARIABLES """
     tuner_iterations = [1]                     
 
-    # trials = number of combinations if Grid Search
-    max_trials = 30                               
-    execution_per_trial = 2
 
-    # units is synonymous with neurons
-    unit_list = [16, 32, 64, 100, 128, 256]       
+    # units is synonymous with neurons  
     activation_list = ['relu', 'selu', 'leaky_relu']
     obj = "val_mae"
     call_back_monitor = "val_loss"
@@ -216,7 +209,7 @@ def temp(args):
                 pred_atp_interval = 1 # hour intervals (3 hrs for operational team currently)
 
                 """ Manipulating data for AI Model """
-                x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(path_to_data,
+                x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
                                                                                                                                             input_structure="descending",
                                                                                                                                             independent_year="not used",
                                                                                                                                             input_hours_forecast=lead_time,
@@ -243,7 +236,7 @@ def temp(args):
                         # to maintain consistency amongst the layers
 
                         # parameter search space
-                        neurons = hp.Choice('neurons_', values=unit_list, default=128, ordered=False)
+                        neurons = hp.Choice('neurons_', values=args.unit_list, default=128, ordered=False)
                         act_func = hp.Choice('act_',values=activation_list, default='leaky_relu',ordered=False)
                         # select a value from min_value to max_value
                         layers = hp.Int('layers', min_value=1, max_value=3, step=1, default=3)
@@ -303,8 +296,9 @@ def temp(args):
                     hypermodel=MyHyperModel(),
                     objective=kt.Objective(obj, direction="min"), # min is descending
                     overwrite=True, # if we rerun this tuner, overwrite anything that exists (in the directory)
-                    max_trials=max_trials, # 
-                    executions_per_trial=execution_per_trial, # run this particular combination this amount of times, take the avg of it, that's the metric
+                    # trials = number of combinations if Grid Search
+                    max_trials=args.max_trials, 
+                    executions_per_trial=args.executions_per_trial, # run this particular combination this amount of times, take the avg of it, that's the metric
                     directory=save_path,
                     project_name="results" 
                     )
