@@ -63,10 +63,95 @@ import glob
 
 import tensorflow.keras.backend as K
 
+def mae_metric(y_true, y_pred):
+    """Wrapper for mae that returns a tensor for Keras metric compatibility."""
+    if y_pred.shape[1] > 1:
+        mean_pred = tf.reduce_mean(y_pred, axis=-1)
+        mean_pred = tf.expand_dims(mean_pred, axis=-1)
+    else:
+        mean_pred = y_pred
+    differences = tf.abs(tf.subtract(y_true, mean_pred))
+    return tf.reduce_mean(differences)
+
+def mae12_metric(y_true, y_pred):
+    """Wrapper for mae12 that returns a tensor for Keras metric compatibility."""
+    if y_pred.shape[1] > 1:
+        mean_pred = tf.reduce_mean(y_pred, axis=-1, keepdims=True)
+        true_val = y_true[:, :1]
+    else:
+        mean_pred = y_pred
+        true_val = y_true
+    mask = true_val < 12
+    filtered_y_true = tf.boolean_mask(true_val, mask)
+    filtered_y_pred_mean = tf.boolean_mask(mean_pred, mask)
+    differences = tf.abs(filtered_y_true - filtered_y_pred_mean)
+    # Return 0 if no values match the condition
+    return tf.cond(tf.size(differences) > 0, 
+                   lambda: tf.reduce_mean(differences),
+                   lambda: tf.constant(0.0))
+
+def me_metric(y_true, y_pred):
+    """Wrapper for me that returns a tensor for Keras metric compatibility."""
+    if y_pred.shape[1] > 1:
+        mean_pred = tf.reduce_mean(y_pred, axis=-1)
+        mean_pred = tf.expand_dims(mean_pred, axis=-1)
+    else:
+        mean_pred = y_pred
+    mean_square = tf.reduce_mean((tf.subtract(y_true, mean_pred)), axis=-1)
+    return tf.reduce_mean(mean_square)
+
+def me12_metric(y_true, y_pred):
+    """Wrapper for me12 that returns a tensor for Keras metric compatibility."""
+    if y_pred.shape[1] > 1:
+        mean_pred = tf.reduce_mean(y_pred, axis=-1, keepdims=True)
+        true_val = y_true[:, :1]
+    else:
+        mean_pred = y_pred
+        true_val = y_true
+    mask = true_val < 12
+    filtered_y_true = tf.boolean_mask(true_val, mask)
+    filtered_y_pred_mean = tf.boolean_mask(mean_pred, mask)
+    differences = filtered_y_true - filtered_y_pred_mean
+    # Return 0 if no values match the condition
+    return tf.cond(tf.size(differences) > 0,
+                   lambda: tf.reduce_mean(differences),
+                   lambda: tf.constant(0.0))
+
+def convert_metrics_to_callables(metric_list):
+    """
+    Convert metric names (strings) to their corresponding callable functions.
+    
+    Args:
+        metric_list: List of metric names as strings (e.g., ['mae', 'mae12', 'me12'])
+    
+    Returns:
+        List of callable metric functions
+    """
+    
+    # Dictionary mapping metric names to their callable functions
+    metrics_dict = {
+        'mae': mae_metric,
+        'mae12': mae12_metric,
+        'me': me_metric,
+        'me12': me12_metric,
+        'crps': crps,
+        'mse': 'mse',  # keras built-in metric
+        'mae_builtin': 'mae',  # keras built-in metric
+        'mape': 'mape',  # keras built-in metric
+    }
+    
+    converted_metrics = []
+    for metric in metric_list:
+        if metric in metrics_dict:
+            converted_metrics.append(metrics_dict[metric])
+        else:
+            # Try to use it as a keras built-in metric
+            print(f"Warning: Metric '{metric}' not found in custom metrics. Attempting to use as built-in Keras metric.")
+            converted_metrics.append(metric)
+    
+    return converted_metrics
 
 def temp(args):
-            
-
     """
     RUN SCRIPT WITH COOLTURTLES DIRECTORY AS YOUR CWD
     """
@@ -74,6 +159,11 @@ def temp(args):
     """GPU CHECK/USE EXPLICITLY"""
 
     # print("Num GPUs Available:", len(tf.config.experimental.list_physical_devices('GPU')))
+    
+    # print(f'{args.call_back_monitor} bleep')
+    # print(f'{args.rotation} bloop')
+    # print(f'{args.leadtime} blip')
+    # return
 
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
@@ -85,75 +175,24 @@ def temp(args):
         except RuntimeError as e:
             print(e)
 
-    # path_to_data = "./June_May_Datasets"
-    # args.data_set = "./data/ESB_datasets"
-
     # path_to_saved_models = r"C:\Users\cduff4\OneDrive - Texas A&M University-Corpus Christi\CBI\AMS\AMS 2025\CROSS_VALIDATION_COMBO_RUN_RESULTS"
 
     # testing_datasets = [f"{path_to_data}\\simulated_cs_dataset_1.csv"] #, f"{path_to_data}\\simulated_cs_dataset_2.csv", f"{path_to_data}\\simulated_cs_dataset_3.csv"]
 
-    """ TUNING ITERATIONS AND VARIABLES """
-    tuner_iterations = [1]                     
-
-
-    # units is synonymous with neurons  
-    activation_list = ['relu', 'selu', 'leaky_relu']
-    obj = "val_mae"
-    call_back_monitor = "val_loss"
-
-
-    """TRAINING ITERATIONS - CROSS VALIDATION"""
-    start_iteration = 21
-    end_iteration = 23
-
-    # step_direction is a step direction for moving through the loop 
-    if start_iteration > end_iteration:
-        step_direction = -1
-    else:
-        step_direction = 1
-        end_iteration += 1
-
     """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
     # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
-    cycle_list = [0,1,2,3] 
 
-    # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-    lead_time_list = [120]#[12,48,96,120] 
-    hours_back = 24  
-
-    # MAIN - Location where models get saved to while training/tuning
-    path_to_model_runs = "mape_tune_init_results" + f"/{args.model_type}_{lead_time_list[0]}_{end_iteration}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
-
-    # list of temperature perturbations, "0.0" --> perfect prognosis
-    # this is for miranda's UQ things; it is set to 0 so it won't kick in
-    # we don't worry about this 
-    temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
-
-    # number of ensemble predictions
+    # # MAIN - Location where models get saved to while training/tuning
+    path_to_model_runs = f"{args.results_folder}/{args.model_type}" + datetime.now().strftime("%Y%m%d-%H%M%S")
 
     if args.model_type == "crps":
-
         loss_function = crps_loss
         metrics = [crps] # deal with later, create a code block that implement our custom functions including less than 12 functions
+    
+    # Convert metric strings to callable functions
+    args.metrics = convert_metrics_to_callables(args.metrics)
 
-    elif args.model_type == "mse":
-
-        loss_function = 'mse'
-
-
-    elif args.model_type == "mape":
-        loss_function = 'mape'
-        
-
-    input_structure = "descending"
-    independent_year = "cycle"
-    output_activation = 'linear'
-
-    # starting with 0.01, the LEARNING RATE REDUCER reduces this value by 0.01 incrementally later within code # 1e-1, 1e-2, 1e-3, 1e-4, 1e-5
-    learning_rate = 0.01 
-
-    optimizer = 'adam' # adam, adadelta, SGD
-    kernel_regularizer = 'l2'
+    # kernel_regularizer = 'l2' done, converted to parser
 
     # neurons = 200
     # act_func = 'leaky_relu'
@@ -167,7 +206,7 @@ def temp(args):
 
     # column names for the saving of the model predictions later within "train"
     prediction_column_names = []
-    for k in range(output_units):
+    for k in range(args.num_output_neurons):
         prediction_column_names.append(f'pred_{k+1}')   
 
     print("\n\n----------------------------- TUNING ! -----------------------------\n\n")
@@ -180,172 +219,161 @@ def temp(args):
     # hector wants to refactor this later
     # actually delete this outermost for-loop later not refactor 
     # redundant notes ^
-    for iteration in tuner_iterations: 
-        # this tracks how long each takes to tune 
-        iteration_time_start = datetime.now()
+#         # this tracks how long each takes to tune 
+    iteration_time_start = datetime.now()
 
-        lead_time_compute_times = [] # to store the compute times for each leadtime
+    lead_time_compute_times = [] # to store the compute times for each leadtime
+    
+
+    for lead_time in args.leadtime_list:
+
+        leadtime_start_time = datetime.now()
+
+        rotation_compute_times = [] # to store the comput times for each rotation
+        for rotation in args.rotation_list:
+            # getting the time it takes to tune per rotation
+            rotation_start_time = datetime.now()
+
+            save_path = f"{path_to_model_runs}\Lead_Time_{lead_time}h_Rotation_{args.rotation_list}"
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+
+            """ Model Input Variables """
+            input_hours_forecast = lead_time
+            pred_atp_interval = 1 # hour intervals (3 hrs for operational team currently)
+
+            """ Manipulating data for AI Model """
+            x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
+                                                                                                                                        input_structure=args.input_structure,
+                                                                                                                                        independent_year="not used",
+                                                                                                                                        input_hours_forecast=lead_time,
+                                                                                                                                        atp_hours_back=args.atp_hours_back,
+                                                                                                                                        wtp_hours_back=args.wtp_hours_back,
+                                                                                                                                        pred_atp_interval=pred_atp_interval,
+                                                                                                                                                                                                                                   cycle=rotation,
+                                                                                                                                        model=args.model_type) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
+            inputShape = x_train[0].shape
+
+            # batch size to be the full length (# rows) of dataset
+            batch_size = x_train.shape[0]
+
+            
+            """ TUNING THE MODEL """
+            # kerastuner hypermodel
+            class MyHyperModel(kt.HyperModel):
+                def build(self, hp):
+
+                    model = Sequential()
+
+                    # to tune for the number of units once, to then be appliead to all of the hidden layers
+                    # to maintain consistency amongst the layers
+
+                    # parameter search space
+                    neurons = hp.Choice('neurons_', values=args.unit_list, default=128, ordered=False)
+                    act_func = hp.Choice('act_',values=args.activation_function_list, default='leaky_relu',ordered=False)
+                    # select a value from min_value to max_value
+                    layers = hp.Int('layers', min_value=1, max_value=3, step=1, default=3)
+
+
+                    # first layer = input layer
+                    model.add(Input(shape=(inputShape)))
+
+                    # hidden layer(s)
+                    #
+                    for i in range(layers):
+                        model.add(Dense(units=neurons, 
+                                        activation=act_func, 
+                                        kernel_regularizer=args.kernel_regularizer))
+                    
+                    # last layer = output layer
+                    model.add(Dense(args.num_output_neurons, activation=args.activation_function))
+
+                    ''' This is legacy code that was used to tune the optimizer; settled for adam. '''
+                    # Define the optimizer, learning rate as a hyperparameter to tune.
+
+                    #chosen_optimizer=hp.Choice("optimizer", values=optimizer_list, ordered=False)  
+                    chosen_optimizer = args.optimizer
+
+                    if chosen_optimizer == "adam":
+                        model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=args.lrate), 
+                                    loss=args.loss_function, metrics=args.metrics)
+                    
+                    # elif chosen_optimizer == "adadelta":
+                    #     model.compile(optimizer=keras.optimizers.Adadelta(learning_rate=hp.Choice("learning_rate_",learning_rate_list, ordered=False)), 
+                    #                 loss=loss_function, metrics=args.metrics)
+
+                    # elif chosen_optimizer == "SGD":
+                    #     model.compile(optimizer=keras.optimizers.SGD(learning_rate=hp.Choice("learning_rate_",learning_rate_list, ordered=False)), 
+                    #                 loss=loss_function, metrics=args.metrics)
+                    ''' End of legacy code used to tune the optimizer. '''
+
+                    return model
+                
+
+                def fit(self, hp, model, *args, **kwargs):
+                            #batch = hp.Choice("batch_size", values=batch_size_list, ordered=False)
+                            batch = batch_size
+                            history = model.fit(*args, batch_size=batch, **kwargs)
+                            
+                            return history
+                
+
+            # tuner is an instance of randomsearch
+            # its attributes are:
+            # hypermodel - instance of myhypermodel
+            
+            # the parameter search space is all of the parameters that we're gonna consider 
+            # 54 combinations
+
+            tuner = kt.RandomSearch(  # here change to either: BayesianOptimization, GridSearch, Random
+                hypermodel=MyHyperModel(),
+                objective=kt.Objective(args.tuner_objective, direction="min"), # min is descending
+                overwrite=True, # if we rerun this tuner, overwrite anything that exists (in the directory)
+                # trials = number of combinations if Grid Search
+                max_trials=args.max_trials, 
+                executions_per_trial=args.executions_per_trial, # run this particular combination this amount of times, take the avg of it, that's the metric
+                directory=save_path,
+                project_name="results" 
+                )
+
+            # Learning rate reducer
+            reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor=args.call_back_monitor, min_delta=0.001,
+                                                            factor=0.1, patience=15, min_lr=0.00001)
+            
+            # Defining the early stopping
+            early_stopping = EarlyStopping(monitor=args.call_back_monitor,
+                                                min_delta=0.001,
+                                                patience=25,
+                                                verbose=2,
+                                                mode='auto',
+                                                restore_best_weights=True)
+            
+            log_dir = save_path + r"\logs"
+            tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
+            
+
+            tuner.search_space_summary()
+
+            tuner.search(x_train, y_train, validation_data=(x_val, y_val),  epochs=args.epochs, callbacks=[early_stopping, reduce_lr, tensorboard_callback])
+
+            tuner.results_summary()
+
+            rotation_end_time = datetime.now()
+
+            rotation_compute_times.append({f"Rotation {rotation}": rotation_end_time-rotation_start_time})
         
+        with open((save_path + r"\total_cycle_compute_time.pkl"), 'wb') as f:
+            pickle.dump(rotation_compute_times, f)
 
-        for lead_time in lead_time_list:
+        lead_time_end_time = datetime.now()
+        lead_time_compute_times.append({
+            f"{lead_time}h Lead Time": lead_time_end_time-leadtime_start_time,
+            "Rotations": rotation_compute_times  
+        })
 
-            leadtime_start_time = datetime.now()
+    with open(save_path + r"\total_lead_time_compute_time.pkl", 'wb') as f:
+            pickle.dump(lead_time_compute_times, f)
 
-            cycle_compute_times = [] # to store the comput times for each cycle
-            for cycle in cycle_list:
-                # getting the time it takes to tune per cycle
-                cycle_start_time = datetime.now()
-
-                save_path = f"{path_to_model_runs}\Iter_{iteration}_{lead_time}h_Cycle_{cycle}"
-                if not os.path.exists(save_path):
-                    os.makedirs(save_path)
-
-            
-
-                """ Model Input Variables """
-                input_hours_forecast = lead_time
-                atp_hours_back = hours_back
-                wtp_hours_back = hours_back
-                pred_atp_interval = 1 # hour intervals (3 hrs for operational team currently)
-
-                """ Manipulating data for AI Model """
-                x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
-                                                                                                                                            input_structure="descending",
-                                                                                                                                            independent_year="not used",
-                                                                                                                                            input_hours_forecast=lead_time,
-                                                                                                                                            atp_hours_back=atp_hours_back,
-                                                                                                                                            wtp_hours_back=wtp_hours_back,
-                                                                                                                                            pred_atp_interval=pred_atp_interval,
-                                                                                                                                            IPPOffset=temperature_list[0],
-                                                                                                                                            cycle=cycle,
-                                                                                                                                            model=args.model_type) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
-                inputShape = x_train[0].shape
-
-                # batch size to be the full length (# rows) of dataset
-                batch_size = x_train.shape[0]
-
-                
-                """ TUNING THE MODEL """
-                # kerastuner hypermodel
-                class MyHyperModel(kt.HyperModel):
-                    def build(self, hp):
-
-                        model = Sequential()
-
-                        # to tune for the number of units once, to then be appliead to all of the hidden layers
-                        # to maintain consistency amongst the layers
-
-                        # parameter search space
-                        neurons = hp.Choice('neurons_', values=args.unit_list, default=128, ordered=False)
-                        act_func = hp.Choice('act_',values=activation_list, default='leaky_relu',ordered=False)
-                        # select a value from min_value to max_value
-                        layers = hp.Int('layers', min_value=1, max_value=3, step=1, default=3)
-
-
-                        # first layer = input layer
-                        model.add(Input(shape=(inputShape)))
-
-                        # hidden layer(s)
-                        #
-                        for i in range(layers):
-                            model.add(Dense(units=neurons, 
-                                            activation=act_func, 
-                                            kernel_regularizer=kernel_regularizer))
-                        
-
-                        # last layer = output layer
-                        model.add(Dense(output_units, activation=output_activation))
-
-
-                        # Define the optimizer, learning rate as a hyperparameter to tune.
-                        #chosen_optimizer=hp.Choice("optimizer", values=optimizer_list, ordered=False)  
-                        chosen_optimizer = optimizer
-                        
-                        if chosen_optimizer == "adam":
-                            model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=learning_rate), 
-                                        loss=loss_function, metrics=args.metrics)
-                        
-                        # elif chosen_optimizer == "adadelta":
-                        #     model.compile(optimizer=keras.optimizers.Adadelta(learning_rate=hp.Choice("learning_rate_",learning_rate_list, ordered=False)), 
-                        #                 loss=loss_function, metrics=args.metrics)
-
-                        # elif chosen_optimizer == "SGD":
-                        #     model.compile(optimizer=keras.optimizers.SGD(learning_rate=hp.Choice("learning_rate_",learning_rate_list, ordered=False)), 
-                        #                 loss=loss_function, metrics=args.metrics)
-                        
-
-                        return model
-                    
-
-                    def fit(self, hp, model, *args, **kwargs):
-                                #batch = hp.Choice("batch_size", values=batch_size_list, ordered=False)
-                                batch = batch_size
-                                history = model.fit(*args, batch_size=batch, **kwargs)
-                                
-                                return history
-                    
-
-                # tuner is an instance of randomsearch
-                # its attributes are:
-                # hypermodel - instance of myhypermodel
-                
-                # the parameter search space is all of the parameters that we're gonna consider 
-                # 54 combinations
-
-                tuner = kt.RandomSearch(  # here change to either: BayesianOptimization, GridSearch, Random
-                    hypermodel=MyHyperModel(),
-                    objective=kt.Objective(obj, direction="min"), # min is descending
-                    overwrite=True, # if we rerun this tuner, overwrite anything that exists (in the directory)
-                    # trials = number of combinations if Grid Search
-                    max_trials=args.max_trials, 
-                    executions_per_trial=args.executions_per_trial, # run this particular combination this amount of times, take the avg of it, that's the metric
-                    directory=save_path,
-                    project_name="results" 
-                    )
-
-                # Learning rate reducer
-                reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor=call_back_monitor, min_delta=0.001,
-                                                                factor=0.1, patience=15, min_lr=0.00001)
-                
-                # Defining the early stopping
-                early_stopping = EarlyStopping(monitor=call_back_monitor,
-                                                    min_delta=0.001,
-                                                    patience=25,
-                                                    verbose=2,
-                                                    mode='auto',
-                                                    restore_best_weights=True)
-                
-                log_dir = save_path + r"\logs"
-                tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
-                
-
-                tuner.search_space_summary()
-
-                tuner.search(x_train, y_train, validation_data=(x_val, y_val),  epochs=args.epochs, callbacks=[early_stopping, reduce_lr, tensorboard_callback])
-
-                tuner.results_summary()
-
-                cycle_end_time = datetime.now()
-
-                cycle_compute_times.append({f"Cycle {cycle}": cycle_end_time-cycle_start_time})
-            
-            with open((save_path + r"\total_cycle_compute_time.pkl"), 'wb') as f:
-                pickle.dump(cycle_compute_times, f)
-
-            lead_time_end_time = datetime.now()
-            lead_time_compute_times.append({
-                f"{lead_time}h Lead Time": lead_time_end_time-leadtime_start_time,
-                "Cycles": cycle_compute_times  
-            })
-
-        with open(save_path + r"\total_lead_time_compute_time.pkl", 'wb') as f:
-                pickle.dump(lead_time_compute_times, f)
-
-        iteration_time_end = datetime.now()
-        compute_times[f"Iteration {iteration}"] = {
-            f"Iteration {iteration}": iteration_time_end-iteration_time_start,
-            r"Lead Time Times": lead_time_compute_times
-        }
 
 
     with open(save_path + r"\compute_times.pkl", 'wb') as f:

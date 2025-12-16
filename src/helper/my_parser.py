@@ -25,8 +25,8 @@ def create_parser():
 
     # Naming / Experiment Parameters
 
-    parser.add_argument('--cycle',                   nargs='+', type=int,           default=[0],                        help="Cycle of data split for loading our dataset")
-    parser.add_argument('--leadtime',                nargs='+', type=int,           default=[12],                       help="Leadtime we are predicting")
+    parser.add_argument('--rotation_list',                   nargs='+', type=int,           default=[0],                        help="Cycle of data split for loading our dataset")
+    parser.add_argument('--leadtime_list',                nargs='+', type=int,           default=[12],                       help="Leadtime we are predicting")
     parser.add_argument('--repetitions',                        type=int,           default=1,                          help="Number of times to repeat this experiment")
 
     parser.add_argument('--c_cycle',                            type=int,           default=0,                          help="current experiments: Leadtime we are predicting")
@@ -45,8 +45,8 @@ def create_parser():
     '''add these to a sub_parser for mlp'''
     # MLP (water temp) Parameters
     # parser.add_argument('--input_hours_forecast', type=int, default=24, help="Leadtime to forecast/predict")
-    parser.add_argument('--atp_hours_back',                     type=int,           default=12,                         help="Hour to go back for Air Tempurature.")
-    parser.add_argument('--wtp_hours_back',                     type=int,           default=12,                         help="Hour to go back for Water Tempurature.")
+    parser.add_argument('--atp_hours_back',                     type=int,           default=24,                         help="Hour to go back for Air Temperature.")
+    parser.add_argument('--wtp_hours_back',                     type=int,           default=24,                         help="Hour to go back for Water Temperature.")
 
     # Network Parameters
     parser.add_argument('--dropout_rate',                       type=float,         default=None,                       help="dropout_rate rate")
@@ -56,8 +56,8 @@ def create_parser():
     parser.add_argument('-l', '--loss_function',                type=str,           default='categorical_crossentropy', help="Loss Function")
     parser.add_argument('--activation_function',                type=str,           default='elu',                      help="Activation Function")
     parser.add_argument('--batch_size',                         type=int,           default=32,                         help="Batch Size")
-    parser.add_argument('--patience',                           type=int,           default=25,                         help="Patience for Early Stoping")
-    parser.add_argument('--min_delta',                          type=float,         default=0.01,                       help="Patience for Early Stoping")
+    parser.add_argument('--patience',                           type=int,           default=25,                         help="Patience for Early Stopping")
+    parser.add_argument('--min_delta',                          type=float,         default=0.01,                       help="Patience for Early Stopping")
 
     parser.add_argument('--lr_reducer_patience',                type=int,           default=15,                         help="Sets the patience parameter for the learning rate reducer callback")
     parser.add_argument('--early_stop_patience',                type=int,           default=45,                         help="Sets the patience parameter for the early stopping callback")
@@ -71,7 +71,7 @@ def create_parser():
     parser.add_argument('--kernel_sizes',            nargs='+', type=int,           default=None,                       help="Kernel sizes")
     parser.add_argument('--pooling',                 nargs='+', type=int,           default=None,                       help="Pooling sizes")
 
-    parser.add_argument('--num_output_neurons',                 type=int,           default=1,                          help="Number of Nuerons in Output Layer.")
+    parser.add_argument('--num_output_neurons',                 type=int,           default=1,                          help="Number of Neurons in Output Layer.")
 
     # Modify Loss for experiments 4/1/2024
     # parser.add_argument('--modify_loss', type=bool, default=False, help="Number of Nuerons in Output Layer.")
@@ -88,9 +88,13 @@ def create_parser():
 
     parser.add_argument('--max_trials',                         type=int,           default=30,                         help="Sets the maximum number of trials for the tuner to use. Implemented specifically for random search. Can be reused.")
     parser.add_argument('--executions_per_trial',               type=int,           default=2,                          help="sets how many models one trial of the tuner computes, returns the average of all models")
-    parser.add_argument('--unit_list',             nargs='+',   type=int,           default=None, help="options for hidden layer sizes, part of tuner hyperparameter search space")
-    
-
+    parser.add_argument('--unit_list',             nargs='+',   type=int,           default=None,                       help="options for hidden layer sizes, part of tuner hyperparameter search space")
+    parser.add_argument('--activation_function_list', nargs='+',type=str,           default=None,                       help="List of Activation Functions")
+    parser.add_argument('--tuner_objective',                    type=str,           default="val_mae",                  help="Metric objective for the tuner")
+    parser.add_argument('--call_back_monitor',                    type=str,           default="val_loss",                  help="placeholder text")
+    parser.add_argument('--input_structure',         type=str,           default="descending",                  help="placeholder text")
+    parser.add_argument('--optimizer',         type=str,           default="adam",                  help="placeholder text")
+    parser.add_argument('--kernel_regularizer',         type=str,           default="l2",                  help="placeholder text")
 
 
     return parser
