@@ -38,7 +38,7 @@ leaky_relu
 --activation_function=linear
 --lrate=0.01
 --optimizer=adam
---kernel_regularizer=12
+--kernel_regularizer=l2
 --atp_hours_back=24
 --wtp_hours_back=24
 --loss_function=mape

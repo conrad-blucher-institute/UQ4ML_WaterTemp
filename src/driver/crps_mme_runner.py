@@ -175,31 +175,13 @@ def temp(args):
         except RuntimeError as e:
             print(e)
 
-    # path_to_saved_models = r"C:\Users\cduff4\OneDrive - Texas A&M University-Corpus Christi\CBI\AMS\AMS 2025\CROSS_VALIDATION_COMBO_RUN_RESULTS"
-
-    # testing_datasets = [f"{path_to_data}\\simulated_cs_dataset_1.csv"] #, f"{path_to_data}\\simulated_cs_dataset_2.csv", f"{path_to_data}\\simulated_cs_dataset_3.csv"]
-
     """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
-    # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
 
     # # MAIN - Location where models get saved to while training/tuning
-    path_to_model_runs = f"{args.results_folder}/{args.model_type}" + datetime.now().strftime("%Y%m%d-%H%M%S")
-
-    if args.model_type == "crps":
-        loss_function = crps_loss
-        metrics = [crps] # deal with later, create a code block that implement our custom functions including less than 12 functions
+    path_to_model_runs = f"{args.results_folder}/{args.model_type}_" + datetime.now().strftime("%Y%m%d-%H%M%S")
     
     # Convert metric strings to callable functions
     args.metrics = convert_metrics_to_callables(args.metrics)
-
-    # kernel_regularizer = 'l2' done, converted to parser
-
-    # neurons = 200
-    # act_func = 'leaky_relu'
-    # num_layers = 1
-
-    # batch size was determined to utilize the entire dataset... when left undeclared, the batch defaults to 32 
-    #batch_size_list = [4096] # 4096, 2048, 1024, 512, 256, 128, 64
 
     # dicitonary to hold the computation time per loop (cycle, leadtime, iteration)
     compute_times = {}
@@ -214,17 +196,8 @@ def temp(args):
     if not os.path.exists(path_to_model_runs):
         os.makedirs(path_to_model_runs)
 
-    # he prefers one for loop that iterates through the cartesian product instead of 3 nested for loops
-    # so get rid of the outermost for loop one and do something with the 3 inner ones 
-    # hector wants to refactor this later
-    # actually delete this outermost for-loop later not refactor 
-    # redundant notes ^
-#         # this tracks how long each takes to tune 
-    iteration_time_start = datetime.now()
-
     lead_time_compute_times = [] # to store the compute times for each leadtime
     
-
     for lead_time in args.leadtime_list:
 
         leadtime_start_time = datetime.now()
@@ -234,12 +207,11 @@ def temp(args):
             # getting the time it takes to tune per rotation
             rotation_start_time = datetime.now()
 
-            save_path = f"{path_to_model_runs}\Lead_Time_{lead_time}h_Rotation_{args.rotation_list}"
+            save_path = f"{path_to_model_runs}\Lead_Time_{lead_time}h_Rotation_{rotation}"
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
 
             """ Model Input Variables """
-            input_hours_forecast = lead_time
             pred_atp_interval = 1 # hour intervals (3 hrs for operational team currently)
 
             """ Manipulating data for AI Model """
