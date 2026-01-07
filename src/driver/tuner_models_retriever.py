@@ -20,11 +20,9 @@ import pandas as pd
 
 import sys
 sys.path.append('./src') # need this to import functinos from other files 
-# from utils import preparingData
+from utils import preparingData, crps_loss
 from utils import crps, ssrat_avg, get_spread_skill_points, get_pit_points, mf, di, mae, mae12
 from utils import load_tuned_model
-from src.helper.utils_mse_crps import crps_loss, crps
-from src.helper.utils_mse_crps import preparingData
 from datetime import datetime
 import json
 
@@ -63,6 +61,7 @@ class MyHyperModel(kt.HyperModel):
 
         model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate), 
                         loss=loss_function, metrics=metrics)
+  
         return model
     
     def fit(self, hp, model, *args, **kwargs):
@@ -71,15 +70,13 @@ class MyHyperModel(kt.HyperModel):
                 
                 return history
 
-path_to_data = "./coolTurtles/ESB_Datasets"
+path_to_data = "./coolTurtles/June_May_Datasets"
 
-# model_name = "CRPS"
-model_name = "MSE"
+model_name = "CRPS"
 
 
-obj = "val_loss"
-# max_trials = 18
-max_trials = 30
+obj = "val_crps"
+max_trials = 18
 execution_per_trial = 2
 kernel_regularizer = 'l2'
 learning_rate = 0.01
@@ -89,17 +86,14 @@ activation_list = ['relu', 'selu', 'leaky_relu']
 output_units = 100
 output_activation = 'linear'
 
-# save_path = "../Models/CRPS_MME_TUNER_RESULTS"
-save_path = "../Models/MSE_MAPE_TUNER_RESULTS"
+save_path = "./CRPS_WINTER_25_TUNE"
 
-# loss_function = crps_loss
-# metrics = [crps]
-loss_function = 'mse'
-metrics = ["mae"]
+loss_function = crps_loss
+metrics = [crps]
 
-lead_times = [12] #,48,96]
-# lead_times = [12, 48, 96, 120] #,48,96]
-cycles = [0, 1, 2, 3]
+lead_times = [84] # For looping
+
+cycles = [1,3,6,7,9]
 iterations = [1,2]
 
 # column names for the saving of the model predictions later within "train"
@@ -128,9 +122,8 @@ for lead_time in lead_times:
             atp_hours_back = 24
             wtp_hours_back = 24
             pred_atp_interval = 1 # hour intervals (3 hrs for operational team currently)
-            # input_structure = "ascending"
-            input_structure = "descending"
 
+            input_structure = "descending"
 
             """ Manipulating data for AI Model """
             x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(path_to_data,
@@ -151,7 +144,7 @@ for lead_time in lead_times:
 
             # path to results; this directory has the "trial_00", "trial_01", etc folders inside
             # as well as the oracle.json file which is where the saved models can be retrieved
-            tuner_directory = save_path + f"/Iteration_{iteration}_{lead_time}h_Lead_Time_Cycle_{cycle}"
+            tuner_directory = save_path + f"/Iter_{iteration}_{lead_time}h_Cycle_{cycle}/results"
             oracle_path = os.path.join(tuner_directory, "oracle.json")
 
             with open(oracle_path, "r") as f:
@@ -178,29 +171,20 @@ for lead_time in lead_times:
                     train_preds = model.predict(x_train).astype("float32")
                     val_preds = model.predict(x_val).astype("float32")
 
-                    if lead_time == 12:
-                        if  (hparams['layers'] == 1 and hparams['act_'] == 'selu' and hparams['neurons_'] == 128) or\
-                            (hparams['layers'] == 1 and hparams['act_'] == 'relu' and hparams['neurons_'] == 128) or\
-                            (hparams['layers'] == 1 and hparams['act_'] == 'leaky_relu' and hparams['neurons_'] == 128) or\
-                            (hparams['layers'] == 1 and hparams['act_'] == 'leaky_relu' and hparams['neurons_'] == 100) or\
-                            (hparams['layers'] == 2 and hparams['act_'] == 'leaky_relu' and hparams['neurons_'] == 100) or\
-                            (hparams['layers'] == 2 and hparams['act_'] == 'leaky_relu' and hparams['neurons_'] == 256) or\
-                            (hparams['layers'] == 3 and hparams['act_'] == 'relu' and hparams['neurons_'] == 32) or\
-                            (hparams['layers'] == 3 and hparams['act_'] == 'leaky_relu' and hparams['neurons_'] == 128):
+        
+                    # saving the predictions
+                    df_val = pd.DataFrame(columns=prediction_column_names, data=val_preds)
+                    df_train = pd.DataFrame(columns=prediction_column_names, data=train_preds)
 
-                                # saving the predictions
-                                df_val = pd.DataFrame(columns=prediction_column_names, data=val_preds)
-                                df_train = pd.DataFrame(columns=prediction_column_names, data=train_preds)
+                    df_train.insert(loc=0, column='date_time', value=training_dates)
+                    df_val.insert(loc=0, column='date_time', value=validation_dates)
 
-                                df_train.insert(loc=0, column='date_time', value=training_dates)
-                                df_val.insert(loc=0, column='date_time', value=validation_dates)
+                    df_train.insert(loc=1, column='target', value=y_train)
+                    df_val.insert(loc=1, column='target', value=y_val)
 
-                                df_train.insert(loc=1, column='target', value=y_train)
-                                df_val.insert(loc=1, column='target', value=y_val)
-
-                                
-                                df_val.to_csv(f"./VAL_{lead_time}h_cycle{cycle}_{hparams['layers']}_layers-{hparams['act_']}-{hparams['neurons_']}_neurons.csv")
-                                df_train.to_csv(f"./TRAIN_{lead_time}h_cycle{cycle}_{hparams['layers']}_layers-{hparams['act_']}-{hparams['neurons_']}_neurons.csv")
+                    
+                    # df_val.to_csv(f"./VAL_{lead_time}h_cycle{cycle}_{hparams['layers']}_layers-{hparams['act_']}-{hparams['neurons_']}_neurons.csv")
+                    # df_train.to_csv(f"./TRAIN_{lead_time}h_cycle{cycle}_{hparams['layers']}_layers-{hparams['act_']}-{hparams['neurons_']}_neurons.csv")
                     # og_val_metrics = model.evaluate(x_val, y_val, batch_size=512)
                     # og_train_metrics = model.evaluate(x_train, y_train, batch_size=512)
 

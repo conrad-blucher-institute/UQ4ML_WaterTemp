@@ -46,7 +46,7 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD / CURRENT WORKING DIRECTORY
 tune_train_test = "train"
 
 # model_name_list = ["MAPE"] 
-model_name = "MSE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
+model_name = "MAPE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
 
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
@@ -60,7 +60,7 @@ cycle_list = [0, 1, 2, 3] #[0, 1, 2, 3]
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1 #1
-end_iteration = 15 #15
+end_iteration = 2 #15
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
 lead_time_list = [12, 48, 96, 120] #[12, 48, 96, 120]
@@ -71,7 +71,7 @@ temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 
 
 # number of epochs
 # epochs = 2000
-epochs = 20000
+epochs = 1
 
 
 input_structure = "descending"
@@ -146,9 +146,7 @@ if tune_train_test == "train":
                 cross_val_combinations = [2]
 
             elif lead_time == 96:
-                
                 cross_val_combinations = [2]
-            
                 
             for combination in cross_val_combinations:
             
@@ -171,11 +169,17 @@ if tune_train_test == "train":
                             act_func = 'leaky_relu'
                             neurons = 32
 
+                    # elif model_name == "MAPE":
+                    #     if combination == 1:
+                    #         num_layers = 3
+                    #         act_func = 'leaky_relu'
+                    #         neurons = 32
+
                     elif model_name == "MAPE":
                         if combination == 1:
-                            num_layers = 3
+                            num_layers = 1
                             act_func = 'leaky_relu'
-                            neurons = 32
+                            neurons = 100
 
                 elif lead_time == 48:
 
@@ -196,6 +200,11 @@ if tune_train_test == "train":
                             act_func = 'leaky_relu'
                             neurons = 16
                     
+                    elif model_name == "MAPE":
+                        if combination == 1:
+                            num_layers = 3
+                            act_func = 'relu'
+                            neurons = 32
 
                 elif lead_time == 96:
 
@@ -215,7 +224,20 @@ if tune_train_test == "train":
                             num_layers = 2
                             act_func = 'leaky_relu'
                             neurons = 16
+                    
+                    elif model_name == "MAPE":
+                        if combination == 1:
+                            num_layers = 1
+                            act_func = 'leaky_relu'
+                            neurons = 256
                         
+                elif lead_time == 120:  
+
+                    if model_name == "MAPE":   
+                        if combination == 1:
+                            num_layers = 3
+                            act_func = 'relu'
+                            neurons = 256
 
                 combo_name = f"{model_name.lower()}-{num_layers}_layers-{act_func}-{neurons}_neurons"
 
