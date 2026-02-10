@@ -35,7 +35,7 @@ byCycle = False
 #Parameter settings
 # directory name
 # dataset = 'CRPS' # Used for single 
-dataset = 'mape' # Used for single 
+dataset = 'mse' # Used for single 
 datasetLst = ['MME_MSE', 'MME_MAPE'] # Comparing multiple loss functions
 #leadtime = 12
 leadList = [12, 48, 96, 120] # For looping
@@ -102,8 +102,9 @@ def data_reader(dataset, leadTime, objective, allTrials):
         identifier = "best_trials"
         
     # save_path = "./" + str(leadTime) + 'h_hyperparametersExcel_' + objective + "_" + identifier
-    save_path = f"results/ESB_mape_tuner_results_{leadTime}h_hyperparametersExcel_val_mae_ALL_Trials"
-        
+    # save_path = f"results/ESB_mape_tuner_results_{leadTime}h_hyperparametersExcel_val_mae_ALL_Trials"
+    save_path = f"results/ESB_mse_tuner_results_{leadTime}h_hyperparametersExcel_val_mae_ALL_Trials"
+    
     #Opens excel formatted file for use in visualizations
     dataFrame = pd.read_csv(save_path+'.csv')
     

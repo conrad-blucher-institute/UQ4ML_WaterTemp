@@ -14,3 +14,6 @@ subprocess.run(["python", "-m", "src.driver.visualization_driver"], check=True)
 
 
 print("Test script completed.")
+
+# for lt in [12, 48, 96, 120]:
+#     subprocess.run('python',f'myscript_leadtime{lt}', check=True)

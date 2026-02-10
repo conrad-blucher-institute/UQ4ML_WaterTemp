@@ -118,9 +118,16 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                     
                     if URI == True:
                         
-                        # Define start and end for Winter Storm Uri
-                        start = pd.Timestamp("2021-02-14 05:00")
-                        end = pd.Timestamp("2021-02-21 15:00")
+                        # Define start and end for Winter Storm Uri\
+                        
+                        # use these  if your timezones are timezone naive
+                        # start = pd.Timestamp("2021-02-14 05:00")
+                        # end = pd.Timestamp("2021-02-21 15:00")
+
+                        # use tz='UTC' if your timezones are UTC
+                        # want to keep all of these lines
+                        start = pd.Timestamp("2021-02-14 05:00", tz='UTC')
+                        end = pd.Timestamp("2021-02-21 15:00", tz='UTC')
                         
                         # Mask for Winter Storm URI
                         mask = (modDf1.index >= start) & (modDf1.index <= end)
@@ -200,8 +207,49 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
         
                         mseCalc = mse(actualReshaped, averageShapedTens)
                         print("MSE Calculated")
+
+                        # hector added
+                        mapeCalc = np.mean(np.abs((actualReshaped - averageShapedTens) / actualReshaped)) * 100
+                        print("MAPE Calculated")
                         
-                        row = {
+                        # Compute per-metric residuals and standard deviations
+                        pit_residuals = np.abs(pitAverageCalc - actualShaped)
+                        pit_std = np.std(pit_residuals)
+                        
+                        ssrel_residuals = np.abs(ssrelCalcAVG - actualShaped)
+                        ssrel_std = np.std(ssrel_residuals)
+                        
+                        crps_residuals = np.abs(crpsCalc_gauss.flatten() - actualShaped)
+                        crps_std = np.std(crps_residuals)
+                        
+                        ssrat_residuals = np.abs(ssratAverage - actualShaped)
+                        ssrat_std = np.std(ssrat_residuals)
+                        
+                        me_residuals = meCalc.flatten() - actualShaped
+                        me_std = np.std(me_residuals)
+                        
+                        mae12_residuals = mae12Calc.flatten() - actualShaped
+                        mae12_std = np.std(mae12_residuals)
+                        
+                        me12_residuals = me12Calc.flatten() - actualShaped
+                        me12_std = np.std(me12_residuals)
+                        
+                        mae_residuals = maeCalc.flatten() - actualShaped
+                        mae_std = np.std(mae_residuals)
+                        
+                        rmse_residuals = rmseCalc.flatten() - actualShaped
+                        rmse_std = np.std(rmse_residuals)
+                        
+                        mse_residuals = mseCalc.flatten() - actualShaped
+                        mse_std = np.std(mse_residuals)
+                        
+                        mape_residuals = mapeCalc.flatten() - actualShaped
+                        mape_std = np.std(mape_residuals)
+                        
+                        print("Standard Deviations Calculated per Metric")
+                        
+                        # Row 1: Original numeric metrics
+                        row_original = {
                         'architecture': architecture,
                         'dataset': obsVsPred,
                         'selection': key,
@@ -217,29 +265,70 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                         'me12' : me12Calc,
                         'mae': maeCalc,
                         'rmse': rmseCalc,
-                        'mse': mseCalc
+                        'mse': mseCalc,
+                        'mape': mapeCalc
                         }
+                        
+                        # Row 2: Formatted strings with ±1 standard deviation
+                        row_1std = {
+                        'architecture': architecture,
+                        'dataset': obsVsPred,
+                        'selection': key,
+                        'leadTime': leadTime,
+                        'cycle': cycle,
+                        'model': model,
+                        # 'pit' : f"{pitAverageCalc:.2f} ± {pit_std:.2f}",
+                        # 'ssrel': f"{ssrelCalcAVG:.2f} ± {ssrel_std:.2f}",
+                        # 'crps': f"{crpsCalc_gauss:.2f} ± {crps_std:.2f}",
+                        # 'ssrat' : f"{ssratAverage:.2f} ± {ssrat_std:.2f}",
+                        'me': f"{meCalc:.2f} ± {me_std:.2f}",
+                        'mae12': f"{mae12Calc:.2f} ± {mae12_std:.2f}",
+                        'me12' : f"{me12Calc:.2f} ± {me12_std:.2f}",
+                        'mae': f"{maeCalc:.2f} ± {mae_std:.2f}",
+                        'rmse': f"{rmseCalc:.2f} ± {rmse_std:.2f}",
+                        'mse': f"{mseCalc:.2f} ± {mse_std:.2f}",
+                        'mape': f"{mapeCalc:.2f} ± {mape_std:.2f}"
+                        }
+                        
+                        # Row 3: Formatted strings with ±2 standard deviations
+                        row_2std = {
+                        'architecture': architecture,
+                        'dataset': obsVsPred,
+                        'selection': key,
+                        'leadTime': leadTime,
+                        'cycle': cycle,
+                        'model': model,
+                        # 'pit' : f"{pitAverageCalc:.2f} ± {(2 * pit_std):.2f}",
+                        # 'ssrel': f"{ssrelCalcAVG:.2f} ± {(2 * ssrel_std):.2f}",
+                        # 'crps': f"{crpsCalc_gauss:.2f} ± {(2 * crps_std):.2f}",
+                        # 'ssrat' : f"{ssratAverage:.2f} ± {(2 * ssrat_std):.2f}",
+                        'me': f"{meCalc:.2f} ± {(2 * me_std):.2f}",
+                        'mae12': f"{mae12Calc:.2f} ± {(2 * mae12_std):.2f}",
+                        'me12' : f"{me12Calc:.2f} ± {(2 * me12_std):.2f}",
+                        'mae': f"{maeCalc:.2f} ± {(2 * mae_std):.2f}",
+                        'rmse': f"{rmseCalc:.2f} ± {(2 * rmse_std):.2f}",
+                        'mse': f"{mseCalc:.2f} ± {(2 * mse_std):.2f}",
+                        'mape': f"{mapeCalc:.2f} ± {(2 * mape_std):.2f}"
+                        }
+                        
+                        # Append all three rows
+                        row = [row_original, row_1std, row_2std]
                         
                         # Structure to append the rows to their corresponding containers
                         if key == "Whole":
-                                                    
-                            resultsCsvWhole.append(row)
+                            resultsCsvWhole.extend(row)
                             
                         elif key == "COLD":
-                            
-                            resultsCsvCold.append(row)
+                            resultsCsvCold.extend(row)
                     
                         elif key == 'Temp<'+str(threshold):
-                            
-                            resultsCsvTemp.append(row)
+                            resultsCsvTemp.extend(row)
                             
                         elif key == 'URI':
-                            
-                            resultsCsvURI.append(row)
+                            resultsCsvURI.extend(row)
                             
                         elif key == 'URI' + str(padding):
-                            
-                            resultsCsvURIPadded.append(row)
+                            resultsCsvURIPadded.extend(row)
                             
                     # Line of code to help ensure memory is being freed up. Necessary when the files have all of the predictions.
                     del df, coldDf, filtered_df, dfDict

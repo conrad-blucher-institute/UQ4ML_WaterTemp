@@ -98,14 +98,18 @@ def model_selection_conditional(leadTime, architecture):
     
     if leadTime == 12 and architecture == "mse":
         
-        model_names = ['3_layers-leaky_relu-32_neurons']
+        model_names = ['2_layers-leaky_relu-16_neurons']
         
     elif leadTime == 48 and architecture == "mse":
         
-        model_names = ['2_layers-leaky_relu-16_neurons']
+        model_names = ['3_layers-leaky_relu-16_neurons']
 
     elif leadTime == 96 and architecture == "mse":
         
+        model_names = ['2_layers-leaky_relu-32_neurons']
+    
+    elif leadTime == 120 and architecture == "mse":
+
         model_names = ['2_layers-leaky_relu-16_neurons']
         
     elif leadTime == 12 and architecture == "CRPS":
@@ -134,15 +138,19 @@ def model_selection_conditional(leadTime, architecture):
         
     elif leadTime == 12 and architecture == "mape":
         
-        model_names = ['3_layers-leaky_relu-32_neurons']
+        model_names = ['1_layers-leaky_relu-100_neurons']
         
     elif leadTime == 48 and architecture == "mape":
         
-        model_names = ['2_layers-leaky_relu-16_neurons']
+        model_names = ['3_layers-leaky_relu-32_neurons']
 
     elif leadTime == 96 and architecture == "mape":
         
-        model_names = ['2_layers-leaky_relu-16_neurons']
+        model_names = ['1_layers-leaky_relu-256_neurons']
+         
+    elif leadTime == 120 and architecture == "mape":
+        
+        model_names = ['3_layers-relu-256_neurons']
          
     else:
         model_names = []
@@ -402,7 +410,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             mode='lines',
             line=dict(color=color, width=2),
             showlegend=False,
-            legendgroup=model_name,
+            legendgroup=f"{model_name}_fan",
             opacity=1,
             connectgaps=False
         ))
@@ -415,7 +423,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             #fillcolor=fill_rgba,
             name=f"{model_name} ±2SD",
             showlegend=True,
-            legendgroup=model_name,
+            legendgroup=f"{model_name}_fan",
             legendrank=1,
             opacity=1,
             connectgaps=False
@@ -429,10 +437,10 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
             customdata=customda,
             hovertemplate=hovertemp,
             line=dict(color=color, width=5),
-            line_dash="dot",
+            line_dash="solid",
             mode='lines',
             showlegend=True,
-            legendgroup=model_name,
+            legendgroup=f"{model_name}_mean",
             legendrank=2,
             opacity=1,
             connectgaps=False

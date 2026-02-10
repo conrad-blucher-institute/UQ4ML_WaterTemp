@@ -67,20 +67,34 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     #     totaltime = end_time - start_time
     #     file.write(str(totaltime))
      # to alternate between the two independent years as testing years
-    # if independent_year == 'cycle', then that means that we are doing the regular cycle year as testing
-    # if independent_year != 'cycle':
 
-    #     if independent_year == '2021':
-    #         data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
-    #     elif independent_year == '2024':
-    #         data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
+    # if independent_year == 'cycle', then that means that we are doing the regular cycle year as testing
+    
+    if independent_year != 'cycle':
+
+        if independent_year == '2021':
+            data_independent_year = pd.read_csv("data/ESB_datasets/esb_2020_2021.csv")
+        # elif independent_year == '2024':
+        #     data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
 
         
-    #     year_independent = creatingAdditionalColumns(data_independent_year, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+        year_independent = creatingAdditionalColumns(data_independent_year, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
+        
+        # Debug: inspect year_independent
+        print("year_independent shape:", year_independent.shape)
+        print("year_independent columns:", year_independent.columns.tolist())
+        print("year_independent head:\n", year_independent.head())
+        print("year_independent tail:\n", year_independent.tail())
+        print("Missing values in year_independent:\n", year_independent.isnull().sum())
+        
+        # Export to CSV for inspection
+        year_independent.to_csv('debug_year_independent.csv', index=False)
+
+        # return
     
-    
-    # elif independent_year == 'cycle':
-        # year_independent = independent_year
+    elif independent_year == 'cycle':
+        year_independent = independent_year
+
 
     # Function call to create additional columns
     start_time = datetime.now()
@@ -107,13 +121,16 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # year2.to_csv('year2.csv')
 
 
-    year_independent = cycle
     # training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
 
 
-    training_data, testing_data, validation_data = splittingData(data_year2, data_year3, data_year4, data_year5, cycle)
-    # training_data.to_csv('training_data.csv')
+    training_data, testing_data, validation_data = splittingData(data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
+    training_data.to_csv('debug_training_data.csv')
+    testing_data.to_csv('debug_testing_data.csv')
+    validation_data.to_csv('debug_validation_data.csv')
 
+    # return
+    
     print('finished splitting the data')
     #print(training_data)
 
@@ -141,9 +158,28 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     dataframe_checker(-999, [training_data, testing_data, validation_data]) # checking for any rogue number less than -999
 
     # Function call to delete the rows that at least one of the columns contain a missing value (-999)
+    print("\n*** BEFORE DELETION ***")
+    print(f"Training rows with -999: {(training_data == -999).any(axis=1).sum()}")
+    print(f"Testing rows with -999: {(testing_data == -999).any(axis=1).sum()}")
+    print(f"Validation rows with -999: {(validation_data == -999).any(axis=1).sum()}")
+    
     training = deletingMissingValues(training_data)
     testing = deletingMissingValues(testing_data)
     validation = deletingMissingValues(validation_data)
+
+    print("\n*** AFTER DELETION ***")
+    print(f"Training rows with -999: {(training == -999).any(axis=1).sum()}")
+    print(f"Testing rows with -999: {(testing == -999).any(axis=1).sum()}")
+    print(f"Validation rows with -999: {(validation == -999).any(axis=1).sum()}")
+    print(f"Training size: {training.shape[0]} (was {training_data.shape[0]})")
+    print(f"Testing size: {testing.shape[0]} (was {testing_data.shape[0]})")
+    print(f"Validation size: {validation.shape[0]} (was {validation_data.shape[0]})\n")
+
+    # Save cleaned data for verification
+    training.to_csv('debug_training_data_CLEANED.csv')
+    testing.to_csv('debug_testing_data_CLEANED.csv')
+    validation.to_csv('debug_validation_data_CLEANED.csv')
+    print("Saved cleaned data to debug_*_CLEANED.csv files for verification\n")
 
     dataframe_checker(-100, [training, testing, validation]) # checking for any rogue number less than -100
     
@@ -398,7 +434,7 @@ output:
         testing - dataframe for testing data
         validation - dataframe for validation data
 ------------------------------------------------------------------------- '''
-def splittingData(year2, year3, year4, year5, cycle):
+def temp_splittingData(year2, year3, year4, year5, cycle):
     '''splittingData() groups the data into training, testing, and validation
     --Will rotate through the years as the cycle changes'''
     import pandas as pd
@@ -443,7 +479,7 @@ def splittingData(year2, year3, year4, year5, cycle):
 
 '''  
 -------------------------------------------------------------------------
-                            def og_splittingData
+                            def splittingData
 input:
         year2 - dataframe for year 2
         year3 - dataframe for year 3
@@ -451,7 +487,7 @@ input:
         year5 - dataframe for year 5
         cycle - an integer that indicates which cycle we are on. aka rotation.
 purpose: 
-        this is identical to splittingData; only this one utilizes
+        this is identical to temp_splittingData; only this one utilizes
         independent testing year. may need to rid the parameters and just use
         a list of dataframes instead of manually inputting each year. thus
         there will be no need for two functions.
@@ -460,7 +496,7 @@ output:
         testing - dataframe for testing data
         validation - dataframe for validation data
 ------------------------------------------------------------------------- '''
-def og_splittingData(year2, year3, year4, year5, year_independent, cycle):
+def splittingData(year2, year3, year4, year5, year_independent, cycle):
     import pandas as pd
 
     yearList = [year2, year3, year4, year5]
@@ -508,13 +544,6 @@ output:
         percMissValues - 
 ------------------------------------------------------------------------- '''
 def countingMissingValues(df):
-    numMissValues = df.isnull().sum().sum()
-    if len(df) == 0:
-        return numMissValues, 0.0
-    
-    percMissValues = (numMissValues/len(df))*100
-    return numMissValues, percMissValues
-
     missing_standard = df.isna().any(axis=1)
     missing_custom = df.isin([-999]).any(axis=1)
     missingValues = df[missing_standard | missing_custom]
@@ -524,9 +553,10 @@ def countingMissingValues(df):
 
     return numMissValues, percMissValues
 
+
 '''  
 -------------------------------------------------------------------------
-                        def deletingMissingValues
+                        def og_deletingMissingValues
 input:
         df - 
 purpose: 
@@ -534,7 +564,7 @@ purpose:
 output: 
         df 
 ------------------------------------------------------------------------- '''
-def deletingMissingValues(df):
+def og_deletingMissingValues(df):
     valueRemove = [-999]
     # Exclude 'date' column from missing value checks
     cols_to_check = [col for col in df.columns if col != 'date']
@@ -542,6 +572,65 @@ def deletingMissingValues(df):
     df = df[~mask]
     df = df.dropna(subset=cols_to_check)
     return df
+
+'''  
+-------------------------------------------------------------------------
+                        def deletingMissingValues
+input:
+        df - dataframe to clean
+purpose: 
+        delete the rows where at least one of the columns contain a missing value (-999).
+        This removes rows with incomplete sequences that were created during feature engineering.
+output: 
+        df - cleaned dataframe with rows containing -999 removed
+------------------------------------------------------------------------- '''
+def deletingMissingValues(df):
+    """
+    Robustly removes rows containing -999 sentinel values used for missing data.
+    Also removes rows with NaN values.
+    """
+    import pandas as pd
+    
+    if df.empty:
+        return df.copy()
+    
+    # Exclude 'date' column from missing value checks
+    cols_to_check = [col for col in df.columns if col != 'date']
+    
+    # Debug: show initial state
+    initial_rows = len(df)
+    
+    # Create a copy to avoid SettingWithCopyWarning
+    df = df.copy()
+    
+    # Remove rows with -999 or NaN in any column
+    # Using multiple conditions for robustness
+    mask_nan = df[cols_to_check].isna().any(axis=1)
+    mask_missing = (df[cols_to_check] == -999).any(axis=1)
+    
+    # Combine masks
+    rows_to_remove = mask_nan | mask_missing
+    
+    # Keep only rows without missing values
+    df = df[~rows_to_remove]
+    
+    # Final check: drop any remaining NaNs just to be safe
+    df = df.dropna(subset=cols_to_check, how='any')
+    
+    # Debug: show final state
+    final_rows = len(df)
+    rows_removed = initial_rows - final_rows
+    
+    if initial_rows > 0:
+        pct_removed = (rows_removed / initial_rows * 100)
+        rows_with_999_after = (df[cols_to_check] == -999).any(axis=1).sum() if len(df) > 0 else 0
+        print(f"  Rows: {initial_rows} → {final_rows} (removed {rows_removed}, {pct_removed:.1f}%)")
+        if rows_with_999_after > 0:
+            print(f"  ⚠️  WARNING: {rows_with_999_after} rows still contain -999 after deletion!")
+    
+    return df
+
+
 
 '''  
 -------------------------------------------------------------------------
@@ -694,7 +783,6 @@ def crps(y_true, y_pred):
     return crps_loss(y_true, y_pred)
 
 # this is for debugging, i think.
-
 if __name__ == "__main__":
     print("ayesha has been here")
 

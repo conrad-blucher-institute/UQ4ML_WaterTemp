@@ -37,7 +37,7 @@ IMPORTANT:
 Set to False first to ensure the files are there, 
 this exists so you dont have to run the intensive functions again.
 """
-runAggregateCode = False #True
+runAggregateCode = True #True
 
 # Variable to save the plots will be set to True, otherwise False. 
 # Note: The plot files are not large, but I would keep this true so that you can look at your plots. 
@@ -53,14 +53,15 @@ leadTimes = [12, 48, 96, 120]#[12]
 architectures = ["mape"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 2
+iterations = 30
 
 """
 Should be set to either "val", "test", or "train" depending on what information
 you want to visualize. If you ran the 2021 or 2024 testing years please use 
 '2021' or '2024' to retrieve relevant information.
 """
-obsVsPred = 'val' 
+# obsVsPred = 'val' 
+obsVsPred = 'test'
 
 """
 Set to true if you want csvs outputted that contain all of the predictions 
@@ -75,6 +76,7 @@ expanded = False
 
 ##### CODE EXECUTION for Plotting and Calculation Files
 
+# set to true run again
 if runAggregateCode == False:
     """
     This line is ran so that the files needed to create the pltos are created and retrieved.
@@ -90,13 +92,14 @@ if runAggregateCode == False:
         decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
 
 else:
-    
     ##### Aggregate Table Execution Code #######
     """
     Set to false if you wish to run byCombo code. 
     NOTE: If you decided to save all of the predictions to the files, this process will take time to load and execute calculations.
     Mainly this note is only for the CRPS model. 
     """
+
+    # change this to false next
     byCycle = True
     
     # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified.
@@ -119,7 +122,8 @@ else:
         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
         
         # Outputs Figure 13 to a folder called "Paper_Figures".
-        figure_13_plot(padding)
+        # 2026-01-15 ayesha: commenting this out because this is a boxplot; dont think i need this right now
+        # figure_13_plot(padding)
 
     # This elif is here to ensure the URI code in the aggregate table function is ran when byUQMethod is selected.
     elif obsVsPred == '2021' and byCycle == False:
