@@ -213,7 +213,8 @@ def readingData(path_to_data):
 
     return data_list
 
-'''  
+# r treats this string as a RAW STRING 
+r'''  
 -------------------------------------------------------------------------
                             def creatingAdditionalColumns
 input:
@@ -230,133 +231,61 @@ output:
         
 ------------------------------------------------------------------------- '''
 def creatingAdditionalColumns(df, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset=0.0):
-    '''creatingAdditionalColumns() creating columns for the past and future (perfect prog) hours'''
-    
+    """Optimized implementation using pandas.shift and concat.
+
+    This replaces the original per-column insertion loops with vectorized
+    shift operations and a single concat, which is much faster on large
+    DataFrames.
+    """
+    import warnings
+    import pandas as pd
+    import numpy as np
+    warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+
     interval = pred_atp_interval
+    new_columns = {}
 
-    # Creating past air temperature values
-    s = 'airTemperature__'
-    s3 = 'h_ago'
+    # Work on a copy and apply IPP offset vectorized
+    df_work = df.copy()
+    if IPPOffset != 0.0:
+        mask = df_work['Air Average'] != -999
+        df_work.loc[mask, 'Air Average'] = df_work.loc[mask, 'Air Average'] + IPPOffset
 
-    for i in range(atp_hours_back): 
+    # Vectorized: create lagged air temperature columns using pandas.shift()
+    for lag in range(1, atp_hours_back + 1):
+        col_name = f'airTemperature__{lag}h_ago'
+        new_columns[col_name] = df_work['Air Average'].shift(lag).fillna(-999).values
 
-        j = i + 1
-        con = s + str(j) 
-        con = []
+    # Vectorized: create lagged water temperature columns using pandas.shift()
+    for lag in range(1, wtp_hours_back + 1):
+        col_name = f'waterTemperature__{lag}h_ago'
+        new_columns[col_name] = df_work['Water Average'].shift(lag).fillna(-999).values
 
-        name = s + str(j) + s3
+    # Vectorized: create forward-looking air temperature columns (perfect prognosis)
+    for hours_ahead in range(interval, input_hours_forecast + 1, interval):
+        col_name = f'airTemperature_pred__{hours_ahead}h_forecast'
+        shifted = df_work['Air Average'].shift(-hours_ahead)
+        new_columns[col_name] = shifted.fillna(-999).values
 
-        for k in range(j):  # Creating missing values rows for the previous five days
-            con.append(-999)
+    # Vectorized: create target (forward-looking water temperature)
+    target_col = f'waterTemperature_{input_hours_forecast}h_forecast'
+    shifted_target = df_work['Water Average'].shift(-input_hours_forecast)
+    new_columns[target_col] = shifted_target.fillna(-999).values
 
-        for w in range(len(df)-(j)):   # Creating past columns
-            temp = df['Air Average'][w]
-            con.append(temp)  
+    # Add all new columns at once via concat
+    df = pd.concat([df_work, pd.DataFrame(new_columns)], axis=1)
 
-        df[name] = con
-        
-    # Creating past water temperature values
-    x1 = 'waterTemperature__'
-    x3 = 'h_ago'
-
-    for i in range(wtp_hours_back): 
-
-        j = i + 1
-        con = x1 + str(j) 
-        con = []
-
-        name = x1 + str(j) + x3
-
-        for k in range(j):    # Creating missing values rows for the previous five days
-            con.append(-999)
-
-        for w in range(len(df)-(j)):
-            temp = df['Water Average'][w]     # Creating past columns
-            con.append(temp)  
-
-        df[name] = con
-        
-    df = offSetCreator(df,IPPOffset, input_hours_forecast)
-
-    # Predicted air temperature
-    xPred = 'airTemperature_pred__'
-    xPred3 = 'h_forecast'
-        
-    for i in range(interval, input_hours_forecast+1, interval): 
-
-        j = i
-        con = xPred + str(i) 
-        con = []
-
-        name = xPred + str(j) + xPred3
-
-        for w in range(len(df) - (i)):   
-            temp = df['Air Average'][w + i]    # Creating future columns
-            con.append(temp)  
-
-        for k in range(i):      # Creating missing values rows for the next five days
-            con.append(-999)
-
-        df[name] = con
-    
-        
-    # Creating a list used to create the future columns
-    kList_wtp = []
-   
-    for z in range(input_hours_forecast):
-        
-        temp_wtp = (z + 1)
-        kList_wtp.append(temp_wtp)
-        
-        if(z == input_hours_forecast - 1):
-            value_wtp = temp_wtp
-               
-    # Creating target
-    t = 'waterTemperature_' + str(input_hours_forecast) + 'h_forecast'
-
-    con = t + str(j)
-    con = []
-
-    name = t 
-
-    for w in range(len(df) - (input_hours_forecast)):
-        temp = df['Water Average'][w+(input_hours_forecast)] #-1
-        con.append(temp)
-    
-    for k in range(input_hours_forecast):
-        con.append(-999)
-    
-    df[name] = con
-    
-    
-    # Delecting extra rows from the beginning
-    # df = df.iloc[120:]
-    
-    # Delecting extra rows from the end
-    # df = df.iloc[:-120] 
-    
     if input_structure == "descending":
-        
-        # begining of changing the order of the input vector 
-        # we want the input vector to look like this below
-        # wtp_3h_ago, wtp_2h_ago, wtp_1h_ago, current_wtp, atp_3h_ago, atp_2h_ago, atp_1h_ago, current_atp, atp_1h_forecast, atp_2h_forecast, atp_3h_forecast, target_wtp_3h_forecast
-
-        # separating the columns (water temperature xh_ago, air temperature xh_ago, and air temperature xh_forecast)
         water_temp_columns = [col for col in df.columns if "waterTemperature__" in col]
         air_temp_columns = [col for col in df.columns if "airTemperature__" in col and "_ago" in col]
         forecast_columns = [col for col in df.columns if "forecast" in col]
-
-        
-        # the datetime, current wtp and current atp
         other_columns = [col for col in df.columns if col not in water_temp_columns + air_temp_columns + forecast_columns]
-        # removing current wtp and atp from list to be added back in the appropriate location
 
         if "Water Average" in other_columns:
-            other_columns.remove("Water Average")  
+            other_columns.remove("Water Average")
         if "Air Average" in other_columns:
-            other_columns.remove("Air Average")  
+            other_columns.remove("Air Average")
 
-        # Reorder columns
         reordered_columns = (
             other_columns
             + water_temp_columns[::-1]

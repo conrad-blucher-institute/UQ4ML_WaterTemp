@@ -128,6 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# VSCode settings, extensions, and workspace storage
+.vscode/ 
+
 # custom
 *.pyc 
 results/
@@ -138,4 +141,7 @@ src/driver/run*
 configs/*debug.txt
 configs/*visuals.txt
 local_work_in_progress/
-esb2020-2021_experiment/
+
+esb_03_2026_tune_experiment/results/
+esb_03_2026_tune_experiment/tuning-viz-folder/visuals/
+esb2020_2021_experiment/experiment_results

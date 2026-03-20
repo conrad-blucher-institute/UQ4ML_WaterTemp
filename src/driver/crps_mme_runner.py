@@ -211,7 +211,7 @@ def temp(args):
                 """ Manipulating data for AI Model """
                 x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
                                                                                                                                             input_structure="descending",
-                                                                                                                                            independent_year="not used",
+                                                                                                                                            independent_year="cycle",
                                                                                                                                             input_hours_forecast=lead_time,
                                                                                                                                             atp_hours_back=atp_hours_back,
                                                                                                                                             wtp_hours_back=wtp_hours_back,
@@ -305,7 +305,7 @@ def temp(args):
 
                 # Learning rate reducer
                 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor=call_back_monitor, min_delta=0.001,
-                                                                factor=0.1, patience=15, min_lr=0.00001)
+                    factor=0.1, patience=15, min_lr=0.00001)
                 
                 # Defining the early stopping
                 early_stopping = EarlyStopping(monitor=call_back_monitor,
