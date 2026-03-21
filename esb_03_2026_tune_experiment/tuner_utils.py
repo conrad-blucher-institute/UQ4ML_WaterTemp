@@ -75,8 +75,9 @@ class ProgressTracker:
             # Create CSV with headers (include run_num so multiple runs append)
             with open(progress_path, 'w', newline='') as f:
                 writer = csv.DictWriter(f, fieldnames=[
-                    'run_num', 'model_type', 'lead_time', 'cycle', 'activation', 'num_layers', 
-                    'neurons', 'loss_value', 'metrics', 'timestamp', 'status'
+                    'run_num', 'model_type', 'lead_time', 'cycle', 'activation', 'num_layers',
+                    'neurons', 'loss_value', 'val_mae', 'val_mae12', 'mae_2021', 'mae12_2021',
+                    'metrics', 'timestamp', 'status'
                 ])
                 writer.writeheader()
     
@@ -86,13 +87,16 @@ class ProgressTracker:
         return f"{config['model_type']}_{config['lead_time']}_{config['cycle']}_" \
                f"{config['activation']}_{config['num_layers']}_{config['neurons']}"
     
-    def is_completed(self, model_type: str, lead_time: int, cycle: int, 
+    def is_completed(self, model_type: str, lead_time: int, cycle: int,
                      activation: str, num_layers: int, neurons: int, run_num: int = 0) -> bool:
-        """Check if a configuration has been completed."""
-        # If run_num is specified, only consider completion for that run
+        """Check if a configuration has been completed successfully."""
+        # Only consider rows that have status 'completed' (skip errored rows so they get retried)
         if self.results:
             for row in self.results:
                 try:
+                    status = str(row.get('status', '')).lower()
+                    if status.startswith('error') or status == '':
+                        continue
                     if (row['model_type'] == str(model_type) and int(row['lead_time']) == int(lead_time)
                         and int(row['cycle']) == int(cycle) and row['activation'] == str(activation)
                         and int(row['num_layers']) == int(num_layers) and int(row['neurons']) == int(neurons)
@@ -100,22 +104,19 @@ class ProgressTracker:
                         return True
                 except Exception:
                     continue
-        # Fallback: check global completed set (ignores run_num)
-        config = {
-            'model_type': model_type,
-            'lead_time': lead_time,
-            'cycle': cycle,
-            'activation': activation,
-            'num_layers': num_layers,
-            'neurons': neurons
-        }
-        key = self._make_key(config)
-        return key in self.completed
+        return False
     
-    def log_result(self, model_type: str, lead_time: int, cycle: int, 
-                   activation: str, num_layers: int, neurons: int, 
+    def log_result(self, model_type: str, lead_time: int, cycle: int,
+                   activation: str, num_layers: int, neurons: int,
                    loss_value: float, status: str = "completed", run_num: int = 0, metrics: Dict[str, Any] = None):
         """Log a tuning result."""
+        # Promote key metrics to top-level columns so the CSV is queryable without JSON parsing
+        def _extract(key):
+            if not metrics:
+                return ''
+            v = metrics.get(key, '')
+            return float(v) if v != '' else ''
+
         config = {
             'run_num': run_num,
             'model_type': model_type,
@@ -125,20 +126,25 @@ class ProgressTracker:
             'num_layers': num_layers,
             'neurons': neurons,
             'loss_value': loss_value,
+            'val_mae': _extract('val_mae'),
+            'val_mae12': _extract('val_mae12'),
+            'mae_2021': _extract('mae_2021'),
+            'mae12_2021': _extract('mae12_2021'),
             'metrics': '' if not metrics else json.dumps(metrics),
             'timestamp': datetime.now().isoformat(),
             'status': status
         }
-        
+
         key = self._make_key(config)
         self.completed.add(key)
         self.results.append(config)
-        
+
         # Append to CSV
         with open(self.progress_path, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=[
-                'run_num', 'model_type', 'lead_time', 'cycle', 'activation', 'num_layers', 
-                'neurons', 'loss_value', 'metrics', 'timestamp', 'status'
+                'run_num', 'model_type', 'lead_time', 'cycle', 'activation', 'num_layers',
+                'neurons', 'loss_value', 'val_mae', 'val_mae12', 'mae_2021', 'mae12_2021',
+                'metrics', 'timestamp', 'status'
             ])
             writer.writerow(config)
 
