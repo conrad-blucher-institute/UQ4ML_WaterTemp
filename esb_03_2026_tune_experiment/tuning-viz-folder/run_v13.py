@@ -1,13 +1,13 @@
 """
-Run V8 visualizations for tuning results.
+Run V13 visualizations for tuning results.
 
 Usage:
-    python run_v8.py                       # GUI folder picker
-    python run_v8.py --test-iterations 3   # duplicate data 3x for testing iteration plot
+    python run_v13.py                       # GUI folder picker
+    python run_v13.py --test-iterations 3   # duplicate data 3x for testing iteration plot
 
-A folder picker dialog opens (defaults to results/).
-Select a folder containing *_progress.csv files (e.g. mape_results_run1/).
-Output HTMLs go to <selected_folder>_visuals/ as a sibling directory.
+V13 changes:
+    - Two-row header: controls on top, legend + parameter filters on bottom
+    - Offset toggle visible for all plot types including scatter
 """
 
 import argparse
@@ -18,11 +18,9 @@ from tkinter import filedialog
 from pathlib import Path
 import pandas as pd
 from tuning_viz.data_loader import TuningResultsLoader
-from tuning_viz.plot_types.scatter_plot_v8 import plot_scatter_v8
+from tuning_viz.plot_types.unified_plot_v13 import plot_unified_v13
 from tuning_viz.plot_types.heatmap_plot_v8 import plot_heatmap_v8
-from tuning_viz.plot_types.boxplot_plot_v8 import plot_boxplot_v8
-from tuning_viz.plot_types.violin_plot_v8 import plot_violin_v8
-from tuning_viz.plot_types.top_configs_plot_v8 import plot_top_configs_v8, plot_top10_per_cycle_v8
+from tuning_viz.plot_types.top_configs_plot_v12 import plot_top_configs_v12, plot_top10_per_cycle_v12
 from tuning_viz.plot_types.parallel_coords_v8 import plot_parallel_coords_v8
 from tuning_viz.plot_types.iteration_comparison_plot_v8 import plot_iteration_comparison_v8
 
@@ -32,7 +30,6 @@ _DEFAULT_RESULTS = str((_VIZ_DIR / '../../results').resolve())
 
 
 def pick_folder():
-    """Open a GUI folder picker, return selected Path or exit."""
     root = tk.Tk()
     root.withdraw()
     folder = filedialog.askdirectory(
@@ -47,7 +44,6 @@ def pick_folder():
 
 
 def discover_csvs(folder):
-    """Find *_progress.csv files and infer metric type from filename."""
     csvs = sorted(glob.glob(str(folder / '*_progress.csv')))
     if not csvs:
         print(f"No *_progress.csv files found in {folder}")
@@ -56,19 +52,10 @@ def discover_csvs(folder):
 
 
 def infer_metric_column(csv_path):
-    """Default metric column based on filename prefix."""
-    name = Path(csv_path).stem.lower()
-    if 'mse' in name:
-        return 'val_mae'
-    if 'mape' in name:
-        return 'val_mae'
-    if 'crps' in name:
-        return 'val_mae'
     return 'val_mae'
 
 
 def load_data(csv_paths, metric_column, test_iterations=0):
-    """Load CSVs. If test_iterations > 0, duplicate first CSV that many times."""
     loader = TuningResultsLoader(metric_column=metric_column)
     if test_iterations > 0:
         paths = [csv_paths[0]] * test_iterations
@@ -82,10 +69,9 @@ def load_data(csv_paths, metric_column, test_iterations=0):
     return pd.concat(dfs, ignore_index=True)
 
 
-def run_v8(data, metric_column, output_dir):
-    """Generate all v8 plots."""
+def run_v13(data, metric_column, output_dir):
     print(f"\n{'='*60}")
-    print(f"V8 Visualizations: {output_dir}")
+    print(f"V13 Visualizations: {output_dir}")
     print(f"{'='*60}")
     print(f"Loaded {len(data)} configurations")
     print(f"Metric: {metric_column}")
@@ -95,21 +81,15 @@ def run_v8(data, metric_column, output_dir):
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    print("\n--- Scatter ---")
-    plot_scatter_v8(data, metric_column, output_dir=output_dir)
+    print("\n--- Unified Explorer (two-row header + offset for all types) ---")
+    plot_unified_v13(data, metric_column, output_dir=output_dir)
 
     print("\n--- Heatmaps ---")
     plot_heatmap_v8(data, metric_column, output_dir=output_dir)
 
-    print("\n--- Boxplot ---")
-    plot_boxplot_v8(data, metric_column, output_dir=output_dir)
-
-    print("\n--- Violin ---")
-    plot_violin_v8(data, metric_column, output_dir=output_dir)
-
-    print("\n--- Top Configs ---")
-    plot_top_configs_v8(data, metric_column, output_dir=output_dir)
-    plot_top10_per_cycle_v8(data, metric_column, output_dir=output_dir)
+    print("\n--- Top Configs (cycle + leadtime dropdowns) ---")
+    plot_top_configs_v12(data, metric_column, output_dir=output_dir)
+    plot_top10_per_cycle_v12(data, metric_column, output_dir=output_dir)
 
     print("\n--- Parallel Coordinates ---")
     plot_parallel_coords_v8(data, metric_column, output_dir=output_dir)
@@ -118,15 +98,15 @@ def run_v8(data, metric_column, output_dir):
     plot_iteration_comparison_v8(data, metric_column, output_dir=output_dir)
 
     print(f"\n{'='*60}")
-    print(f"All v8 plots saved to: {output_dir}")
+    print(f"All v13 plots saved to: {output_dir}")
     print(f"{'='*60}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run V8 tuning visualizations")
+    parser = argparse.ArgumentParser(description="Run V13 tuning visualizations")
     parser.add_argument(
         '--test-iterations', type=int, default=0,
-        help="Duplicate data N times for testing the iteration stability plot."
+        help="Duplicate data N times for testing the iteration stability plot.",
     )
     args = parser.parse_args()
 
@@ -140,4 +120,4 @@ if __name__ == "__main__":
     for csv_path in csv_paths:
         metric_column = infer_metric_column(csv_path)
         data = load_data([csv_path], metric_column, test_iterations=args.test_iterations)
-        run_v8(data, metric_column, output_dir)
+        run_v13(data, metric_column, output_dir)
