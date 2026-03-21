@@ -108,24 +108,51 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
 
     year_independent = cycle
-    # training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
 
+    # Debug logger: writes to debug_preparingData.txt when verbose >= 2
+    # The log file path comes from config's 'debug_log_dir' key (set by the tuner's
+    # output directory), falling back to the current working directory.
+    _debug_log_path = None
+    def _dlog(msg):
+        nonlocal _debug_log_path
+        if verbose < 2:
+            return
+        print(f'\n  [preparingData] {msg}\n')
+        if _debug_log_path is None:
+            import os
+            _debug_log_dir = os.environ.get('TUNER_DEBUG_LOG_DIR', '.')
+            _debug_log_path = os.path.join(_debug_log_dir, 'debug_preparingData.txt')
+        with open(_debug_log_path, 'a') as _f:
+            _f.write(f'{msg}\n\n')
 
-    training_data, testing_data, validation_data = splittingData(data_year2, data_year3, data_year4, data_year5, cycle)
-    # training_data.to_csv('training_data.csv')
+    _dlog(f'params: input_structure={input_structure}, input_hours_forecast={input_hours_forecast}, '
+          f'atp_hours_back={atp_hours_back}, wtp_hours_back={wtp_hours_back}, cycle={cycle}, model={model}')
+
+    _dlog(f'raw data shapes: year2={data_year2.shape}, year3={data_year3.shape}, '
+          f'year4={data_year4.shape}, year5={data_year5.shape}')
+
+    _dlog(f'after creatingAdditionalColumns: year2={year2.shape}, year3={year3.shape}, '
+          f'year4={year4.shape}, year5={year5.shape}')
+
+    _dlog(f'year2 columns ({len(year2.columns)}): {list(year2.columns)[:5]}...{list(year2.columns)[-3:]}')
+
+    # FIX: was passing raw data_year2..5 (3 columns) instead of
+    # year2..5 (with engineered features). Models were training on only
+    # 1 feature (Air Average) instead of ~62 lag features.
+    training_data, testing_data, validation_data = splittingData(year2, year3, year4, year5, cycle)
 
     print('finished splitting the data')
-    #print(training_data)
 
     print("Testing data shape:", testing_data.shape)
     print("train data shape:", training_data.shape)
     print("val data shape:", validation_data.shape)
+    _dlog(f'after splittingData: train={training_data.shape}, test={testing_data.shape}, val={validation_data.shape}')
 
     # Function call to count the number of missing values
     training_numMissingValues, training_percMissVal = countingMissingValues(training_data)
     testing_numMissingValues, testing_percMissVal = countingMissingValues(testing_data)
     validation_numMissingValues, validation_percMissVal = countingMissingValues(validation_data)
-    
+
     #  Printing the number of missing values
     print()
     print('Training Missing Values: ', training_numMissingValues)
@@ -137,7 +164,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     print('Validation Missing Values: ', validation_numMissingValues)
     print('Validation Percentatge of Missing Values: ', round(validation_percMissVal,4), ' %')
     print()
-    
+
     dataframe_checker(-999, [training_data, testing_data, validation_data]) # checking for any rogue number less than -999
 
     # Function call to delete the rows that at least one of the columns contain a missing value (-999)
@@ -146,7 +173,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     validation = deletingMissingValues(validation_data)
 
     dataframe_checker(-100, [training, testing, validation]) # checking for any rogue number less than -100
-    
+    _dlog(f'after deletingMissingValues: train={training.shape}, test={testing.shape}, val={validation.shape}')
 
     # For new calculations created in the Summer of 2023
     training_dates = dateTimeRetriever(training, input_hours_forecast) if not training.empty else []
@@ -159,9 +186,12 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
         testingAirTemps = []
 
     print()
-    
+
     # Function call to reshpe the dataset and prepare it to be used as in input for the neural network
-    x_train, y_train, x_val, y_val, x_test, y_test = reshaping(input_structure, training, testing, validation, model) 
+    x_train, y_train, x_val, y_val, x_test, y_test = reshaping(input_structure, training, testing, validation, model)
+
+    _dlog(f'after reshaping: x_train={x_train.shape}, y_train={y_train.shape}, '
+          f'x_val={x_val.shape}, y_val={y_val.shape}, x_test={x_test.shape}, y_test={y_test.shape}')
 
     if verbose == 3:
         print("NaNs in x_train:", np.isnan(x_train).sum())
@@ -542,7 +572,44 @@ def reshaping(input_structure, training, testing, validation, model):
     return x_train, y_train, x_val, y_val, x_test, y_test
 
 
-'''  
+def prepare_independent_year(csv_path, input_structure, lead_time,
+                             atp_hours_back, wtp_hours_back,
+                             pred_atp_interval=1, IPPOffset=0.0):
+    """Prepare the independent test year (e.g. esb_2020_2021.csv) for evaluation.
+
+    Runs the same feature-engineering pipeline as preparingData() but on a single
+    CSV that readingData() intentionally skips. Returns numpy arrays ready for
+    model.evaluate() or model.predict(), plus datetime labels.
+
+    Returns:
+        (X, y, dates) where X has shape (n_samples, n_features),
+        y has shape (n_samples,), and dates is a list of datetime strings.
+    """
+    import pandas as pd
+
+    df_raw = pd.read_csv(csv_path)
+    df_features = creatingAdditionalColumns(
+        df=df_raw,
+        input_structure=input_structure,
+        input_hours_forecast=lead_time,
+        atp_hours_back=atp_hours_back,
+        wtp_hours_back=wtp_hours_back,
+        pred_atp_interval=pred_atp_interval,
+        IPPOffset=IPPOffset,
+    )
+    df_clean = deletingMissingValues(df_features)
+
+    # dateTimeRetriever mutates the 'date' column, so pass a copy
+    dates = dateTimeRetriever(df_clean.copy(), lead_time)
+
+    col_start = 1 if input_structure == 'descending' else 3
+    X = df_clean.iloc[:, col_start:-1].values.astype(float)
+    y = df_clean.iloc[:, -1].values.astype(float)
+
+    return X, y, dates
+
+
+'''
 -------------------------------------------------------------------------
                         def dateTimeRetriever
 input:
