@@ -19,8 +19,8 @@ from tuner_utils import GridSearchConfig
 class MAPETuner(BaseHyperparameterTuner):
     """MAPE-specific hyperparameter tuner."""
     
-    def __init__(self, output_dir: Path, max_workers: int = 4):
-        super().__init__("MAPE", output_dir, max_workers)
+    def __init__(self, output_dir: Path, max_workers: int = 4, keras_save_dir: Path = None):
+        super().__init__("MAPE", output_dir, max_workers, keras_save_dir=keras_save_dir)
         
         # TODO: Load training data once (for all workers)
         # self.train_data = load_train_data()
@@ -240,8 +240,91 @@ class MAPETuner(BaseHyperparameterTuner):
         else:
             val_loss = -1.0
 
-        # Return loss and all final metrics
+        # Build metrics dict from Keras history
         metrics_dict = {k: float(v[-1]) for k, v in hist.items() if isinstance(v, (list, tuple)) and len(v) > 0}
+
+        # Import mae12 once so it is available for both val and 2021 evaluation
+        try:
+            from src.helper.utils import mae12 as _mae12
+        except Exception:
+            try:
+                from helper.utils import mae12 as _mae12
+            except Exception:
+                _mae12 = None
+
+        # Post-hoc mae12 on validation set (y_true <= 12°C)
+        if validation is not None and _mae12 is not None:
+            try:
+                x_val_arr, y_val_arr = validation
+                y_pred_val = model.predict(x_val_arr, verbose=0)
+                metrics_dict['val_mae12'] = float(_mae12(y_val_arr, y_pred_val))
+            except Exception as e:
+                print(f"  WARNING: mae12 val computation failed: {e}")
+
+        # Post-hoc 2021 independent test set evaluation
+        try:
+            import glob as _glob
+            import os as _os
+            import pandas as _pd2021
+            try:
+                from src.helper.utils_mse_crps import (
+                    creatingAdditionalColumns as _createCols,
+                    deletingMissingValues as _deleteMissing,
+                    reshaping as _reshape,
+                )
+            except Exception:
+                from helper.utils_mse_crps import (
+                    creatingAdditionalColumns as _createCols,
+                    deletingMissingValues as _deleteMissing,
+                    reshaping as _reshape,
+                )
+            data_path = config.get('path_to_data', str(_REPO_ROOT / 'data' / 'ESB_datasets'))
+            csv_files = sorted(_glob.glob(_os.path.join(data_path, '*.csv')))
+            if not csv_files:
+                raise RuntimeError('No CSV files found in data path for 2021 evaluation')
+            data_2021 = _pd2021.read_csv(csv_files[0])
+            processed_2021 = _createCols(
+                data_2021,
+                config.get('input_structure', 'descending'),
+                config['lead_time'],
+                config.get('atp_hours_back', 24),
+                config.get('wtp_hours_back', 24),
+                config.get('pred_atp_interval', 1),
+                config.get('IPPOffset', 0.0),
+            )
+            cleaned_2021 = _deleteMissing(processed_2021)
+            empty_df = _pd2021.DataFrame()
+            _, _, _, _, x_2021, y_2021 = _reshape(
+                config.get('input_structure', 'descending'),
+                empty_df, cleaned_2021, empty_df,
+                config.get('model', config.get('model_type', 'MAPE')),
+            )
+            if x_2021.shape[0] > 0:
+                eval_results = model.evaluate(x_2021, y_2021, verbose=0)
+                for name, val in zip(model.metrics_names, eval_results):
+                    if name == 'loss':
+                        continue
+                    metrics_dict[f'{name}_2021'] = float(val)
+                if _mae12 is not None:
+                    y_pred_2021 = model.predict(x_2021, verbose=0)
+                    metrics_dict['mae12_2021'] = float(_mae12(y_2021, y_pred_2021))
+        except Exception as e:
+            print(f"  WARNING: 2021 evaluation failed: {e}")
+
+        # Save trained model as .keras file if a save directory was provided
+        keras_save_dir = config.get('keras_save_dir')
+        if keras_save_dir is not None:
+            from pathlib import Path as _Path
+            save_dir = _Path(keras_save_dir)
+            save_dir.mkdir(parents=True, exist_ok=True)
+            fname = (
+                f"{config['model_type']}_{config['lead_time']}h"
+                f"_cycle{config['cycle']}_{config['activation']}"
+                f"_{config['num_layers']}L_{config['neurons']}N"
+                f"_run{config['run_num']}.keras"
+            )
+            model.save(save_dir / fname)
+
         return (val_loss, metrics_dict)
 
 
