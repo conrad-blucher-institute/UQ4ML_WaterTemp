@@ -28,7 +28,7 @@ class BaseHyperparameterTuner:
     - `get_grid_search_config()`: return GridSearchConfig instance
     """
     
-    def __init__(self, model_type: str, output_dir: Path, max_workers: int = 4, run_num: int = 0, metrics: List[str] = None, default_epochs: int = 200000, keras_save_dir: Path = None):
+    def __init__(self, model_type: str, output_dir: Path, max_workers: int = 4, run_num: int = 0, metrics: List[str] = None, default_epochs: int = 200000, keras_save_dir: Path = None, verbose: int = 0):
         """
         Args:
             model_type: 'CRPS', 'MAPE', or 'MSE'
@@ -44,6 +44,7 @@ class BaseHyperparameterTuner:
         self.default_epochs = int(default_epochs)
         # Metrics that will be recorded for each tuning run (strings or callables handled by subclass)
         self.metrics = metrics or []
+        self.verbose = int(verbose)
         # Directory to save trained .keras files (None = don't save)
         self.keras_save_dir = Path(keras_save_dir) if keras_save_dir is not None else None
         if self.keras_save_dir is not None:
@@ -183,6 +184,8 @@ class BaseHyperparameterTuner:
                 c['output_activation'] = 'linear'
             if 'learning_rate' not in c:
                 c['learning_rate'] = 0.001
+            if 'verbose' not in c:
+                c['verbose'] = self.verbose
 
         total_before = len(configs)
         # Optionally limit to a subset (debug)

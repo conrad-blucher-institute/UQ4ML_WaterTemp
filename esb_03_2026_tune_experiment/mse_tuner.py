@@ -19,8 +19,8 @@ from tuner_utils import GridSearchConfig
 class MSETuner(BaseHyperparameterTuner):
     """MSE-specific hyperparameter tuner."""
     
-    def __init__(self, output_dir: Path, max_workers: int = 4, keras_save_dir: Path = None):
-        super().__init__("MSE", output_dir, max_workers, keras_save_dir=keras_save_dir)
+    def __init__(self, output_dir: Path, max_workers: int = 4, keras_save_dir: Path = None, verbose: int = 0):
+        super().__init__("MSE", output_dir, max_workers, keras_save_dir=keras_save_dir, verbose=verbose)
         
         # TODO: Load training data once (for all workers)
         # self.train_data = load_train_data()
@@ -171,6 +171,8 @@ class MSETuner(BaseHyperparameterTuner):
             except Exception:
                 input_shape = None
 
+        print(f"  DEBUG x_train.shape={getattr(x_train, 'shape', '?')}, inferred input_shape={input_shape}")
+
         if input_shape is not None:
             config['input_shape'] = list(input_shape)
             model = self._build_model(config)
@@ -245,42 +247,28 @@ class MSETuner(BaseHyperparameterTuner):
                 print(f"  WARNING: mae12 val computation failed: {e}")
 
         # Post-hoc 2021 independent test set evaluation
+        # Uses prepare_independent_year() which runs the same feature-engineering
+        # pipeline as preparingData() on the CSV that readingData() skips.
         try:
             import glob as _glob
             import os as _os
-            import pandas as _pd2021
             try:
-                from src.helper.utils_mse_crps import (
-                    creatingAdditionalColumns as _createCols,
-                    deletingMissingValues as _deleteMissing,
-                    reshaping as _reshape,
-                )
+                from src.helper.utils_mse_crps import prepare_independent_year as _prep2021
             except Exception:
-                from helper.utils_mse_crps import (
-                    creatingAdditionalColumns as _createCols,
-                    deletingMissingValues as _deleteMissing,
-                    reshaping as _reshape,
-                )
+                from helper.utils_mse_crps import prepare_independent_year as _prep2021
             data_path = config.get('path_to_data', str(_REPO_ROOT / 'data' / 'ESB_datasets'))
             csv_files = sorted(_glob.glob(_os.path.join(data_path, '*.csv')))
             if not csv_files:
                 raise RuntimeError('No CSV files found in data path for 2021 evaluation')
-            data_2021 = _pd2021.read_csv(csv_files[0])
-            processed_2021 = _createCols(
-                data_2021,
-                config.get('input_structure', 'descending'),
-                config['lead_time'],
-                config.get('atp_hours_back', 24),
-                config.get('wtp_hours_back', 24),
-                config.get('pred_atp_interval', 1),
-                config.get('IPPOffset', 0.0),
-            )
-            cleaned_2021 = _deleteMissing(processed_2021)
-            empty_df = _pd2021.DataFrame()
-            _, _, _, _, x_2021, y_2021 = _reshape(
-                config.get('input_structure', 'descending'),
-                empty_df, cleaned_2021, empty_df,
-                config.get('model', config.get('model_type', 'MSE')),
+            # First sorted CSV = esb_2020_2021.csv (the independent test year)
+            x_2021, y_2021, _ = _prep2021(
+                csv_path=csv_files[0],
+                input_structure=config.get('input_structure', 'descending'),
+                lead_time=config.get('input_hours_forecast', config.get('lead_time')),
+                atp_hours_back=config.get('atp_hours_back', 24),
+                wtp_hours_back=config.get('wtp_hours_back', 24),
+                pred_atp_interval=config.get('pred_atp_interval', 1),
+                IPPOffset=config.get('IPPOffset', 0.0),
             )
             if x_2021.shape[0] > 0:
                 eval_results = model.evaluate(x_2021, y_2021, verbose=0)

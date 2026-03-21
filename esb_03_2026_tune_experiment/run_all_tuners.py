@@ -66,11 +66,12 @@ except Exception:
 class TuningOrchestrator:
     """Orchestrates all three tuners with logging and progress tracking."""
 
-    def __init__(self, output_dir: Path, max_workers: int = 4):
+    def __init__(self, output_dir: Path, max_workers: int = 4, verbose: int = 0):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.max_workers = max_workers
+        self.verbose = verbose
         self.timing_log = self.output_dir / "orchestrator_timing.csv"
         self.summary_log = self.output_dir / "orchestrator_summary.txt"
         
@@ -133,7 +134,7 @@ class TuningOrchestrator:
                     cur_workers = max(1, cur_workers // 2)
                     print(f"Throttle flag present, reducing workers to {cur_workers}")
 
-                mape_tuner = MAPETuner(mape_output, max_workers=cur_workers, keras_save_dir=mape_output / "keras_files")
+                mape_tuner = MAPETuner(mape_output, max_workers=cur_workers, keras_save_dir=mape_output / "keras_files", verbose=self.verbose)
 
 
                 if epoch_override is not None:
@@ -164,7 +165,7 @@ class TuningOrchestrator:
                     cur_workers = max(1, cur_workers // 2)
                     print(f"Throttle flag present, reducing workers to {cur_workers}")
 
-                mse_tuner = MSETuner(mse_output, max_workers=cur_workers, keras_save_dir=mse_output / "keras_files")
+                mse_tuner = MSETuner(mse_output, max_workers=cur_workers, keras_save_dir=mse_output / "keras_files", verbose=self.verbose)
 
 
                 if epoch_override is not None:
@@ -237,14 +238,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output",
         type=Path,
-        default=_REPO_ROOT / "results",
-        help="Output directory for all tuning results (default: <repo_root>/results)"
+        default=None,
+        help="Output directory (default: results/esb_tuner for production, results/esb_tuner_debug_MM-DD-YYYY_HHhMMmSSs for --debug)"
     )
     parser.add_argument(
         "--workers",
         type=int,
-        default=4,
-        help="Number of parallel workers per tuner"
+        default=None,
+        help="Number of parallel workers per tuner (default: 1 for --debug, 4 for production)"
     )
     parser.add_argument(
         "--auto-workers",
@@ -254,7 +255,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--debug",
         action='store_true',
-        help="Run in debug mode (short runs, useful for quick iteration)"
+        help="Run in debug mode (2 epochs, 10 models, 1 worker, 2 reps — all overridable)"
     )
     parser.add_argument(
         "--epochs",
@@ -265,30 +266,33 @@ if __name__ == "__main__":
     parser.add_argument(
         "--repetitions",
         type=int,
-        default=1,
-        help="Number of repeated runs to perform (run numbering)"
+        default=None,
+        help="Number of repeated runs (default: 2 for --debug, 1 for production)"
     )
     parser.add_argument(
         "--max_models",
         type=int,
         default=None,
-        help="(Debug) maximum number of models to run per tuner"
+        help="Maximum number of models to run per tuner (default: 10 for --debug, all for production)"
     )
     args = parser.parse_args()
 
-    # Determine epoch override: command-line --epochs > debug flag > default (None)
-    if args.epochs is not None:
-        epoch_override = int(args.epochs)
-    elif args.debug:
-        epoch_override = 2
+    # --- Apply debug defaults (CLI flags always take priority) ---
+    if args.debug:
+        epoch_override = args.epochs if args.epochs is not None else 2
+        max_models = args.max_models if args.max_models is not None else 10
+        workers = args.workers if args.workers is not None else 1
+        repetitions = args.repetitions if args.repetitions is not None else 2
+        if args.output is None:
+            timestamp = datetime.now().strftime('%m-%d-%Y_%Hh%Mm%Ss')
+            args.output = _REPO_ROOT / "results" / f"esb_tuner_debug_{timestamp}"
     else:
-        epoch_override = None
-
-    # If debug and no explicit max_models provided, limit to 10
-    max_models = args.max_models if args.max_models is not None else (10 if args.debug else None)
-
-    # Optionally auto-select workers based on physical cores
-    workers = int(args.workers)
+        epoch_override = args.epochs  # None unless explicitly set
+        max_models = args.max_models  # None = run all
+        workers = args.workers if args.workers is not None else 4
+        repetitions = args.repetitions if args.repetitions is not None else 1
+        if args.output is None:
+            args.output = _REPO_ROOT / "results" / "esb_tuner"
     if args.auto_workers:
         try:
             if psutil is not None:
@@ -305,5 +309,8 @@ if __name__ == "__main__":
     os.environ.setdefault('MKL_NUM_THREADS', '1')
     os.environ.setdefault('NUMEXPR_NUM_THREADS', '1')
 
-    orchestrator = TuningOrchestrator(args.output, max_workers=workers)
-    orchestrator.run_all_tuners(epoch_override=epoch_override, repetitions=args.repetitions, max_models=max_models)
+    verbose = 2 if args.debug else 0
+    # Set env var so preparingData() debug logs land in the experiment folder
+    os.environ['TUNER_DEBUG_LOG_DIR'] = str(args.output)
+    orchestrator = TuningOrchestrator(args.output, max_workers=workers, verbose=verbose)
+    orchestrator.run_all_tuners(epoch_override=epoch_override, repetitions=repetitions, max_models=max_models)
