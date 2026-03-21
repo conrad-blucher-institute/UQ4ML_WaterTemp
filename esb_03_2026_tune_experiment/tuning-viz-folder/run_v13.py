@@ -23,6 +23,7 @@ from tuning_viz.plot_types.heatmap_plot_v8 import plot_heatmap_v8
 from tuning_viz.plot_types.top_configs_plot_v12 import plot_top_configs_v12, plot_top10_per_cycle_v12
 from tuning_viz.plot_types.parallel_coords_v8 import plot_parallel_coords_v8
 from tuning_viz.plot_types.iteration_comparison_plot_v8 import plot_iteration_comparison_v8
+from tuning_viz.plot_types.timeseries_compare_v13 import plot_timeseries_compare_v13
 
 
 _VIZ_DIR = Path(__file__).resolve().parent
@@ -69,7 +70,7 @@ def load_data(csv_paths, metric_column, test_iterations=0):
     return pd.concat(dfs, ignore_index=True)
 
 
-def run_v13(data, metric_column, output_dir):
+def run_v13(data, metric_column, output_dir, results_folder=None):
     print(f"\n{'='*60}")
     print(f"V13 Visualizations: {output_dir}")
     print(f"{'='*60}")
@@ -97,6 +98,15 @@ def run_v13(data, metric_column, output_dir):
     print("\n--- Iteration Stability ---")
     plot_iteration_comparison_v8(data, metric_column, output_dir=output_dir)
 
+    # Time series comparison (only if predictions/ folder exists)
+    if results_folder:
+        pred_dir = str(Path(results_folder) / 'predictions')
+        if Path(pred_dir).exists() and (Path(pred_dir) / '_index.csv').exists():
+            print("\n--- Time Series Comparison ---")
+            plot_timeseries_compare_v13(pred_dir, output_dir=output_dir)
+        else:
+            print("\n--- Time Series Comparison: SKIPPED (no predictions/ folder, run generate_predictions.py first) ---")
+
     print(f"\n{'='*60}")
     print(f"All v13 plots saved to: {output_dir}")
     print(f"{'='*60}")
@@ -120,4 +130,4 @@ if __name__ == "__main__":
     for csv_path in csv_paths:
         metric_column = infer_metric_column(csv_path)
         data = load_data([csv_path], metric_column, test_iterations=args.test_iterations)
-        run_v13(data, metric_column, output_dir)
+        run_v13(data, metric_column, output_dir, results_folder=str(folder))
