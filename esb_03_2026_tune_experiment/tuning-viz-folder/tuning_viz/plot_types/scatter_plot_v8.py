@@ -1,6 +1,6 @@
 """
-V8 Scatter: x-axis selector, filter dropdowns, color-by with side-by-side grouping.
-Models(N) counter. #52a8ad default color.
+V8 Scatter: x-axis selector, y-axis metric selector, filter dropdowns,
+color-by with side-by-side grouping. Models(N) counter. #52a8ad default color.
 """
 
 from typing import Optional
@@ -21,16 +21,34 @@ def plot_scatter_v8(data: pd.DataFrame, metric_column: str, output_dir: Optional
 
     clean = data.dropna(subset=['leadtime']).copy()
 
+    # Detect all numeric metric columns available in the data
+    _skip = {'run_id', 'iteration', 'leadtime', 'cycle', 'num_layers', 'neurons'}
+    metric_cols = [c for c in clean.columns
+                   if c not in _skip
+                   and pd.api.types.is_numeric_dtype(clean[c])
+                   and clean[c].notna().any()
+                   and c not in ('metric_type',)]
+    # Ensure the requested metric_column is first in the list
+    if metric_column in metric_cols:
+        metric_cols.remove(metric_column)
+    metric_cols.insert(0, metric_column)
+
+    # Build records with ALL metric columns so the JS can switch y-axis
     records = []
     for _, row in clean.iterrows():
-        records.append({
+        rec = {
             'activation': str(row['activation']),
             'num_layers': int(row['num_layers']),
             'neurons': int(row['neurons']),
             'leadtime': int(row['leadtime']),
             'cycle': int(row['cycle']),
-            'metric': float(row[metric_column]),
-        })
+        }
+        for mc in metric_cols:
+            try:
+                rec[mc] = float(row[mc])
+            except (ValueError, TypeError):
+                rec[mc] = None
+        records.append(rec)
 
     data_json = _json.dumps(records)
 
@@ -49,6 +67,14 @@ def plot_scatter_v8(data: pd.DataFrame, metric_column: str, output_dir: Optional
         for v in values:
             opts += f'<option value="{v}">{v}</option>\n'
         return opts
+
+    # Build y-axis metric dropdown options (first one = selected)
+    y_axis_options = ''
+    for i, mc in enumerate(metric_cols):
+        sel = ' selected' if i == 0 else ''
+        y_axis_options += f'<option value="{mc}"{sel}>{mc}</option>\n'
+
+    metric_cols_json = _json.dumps(metric_cols)
 
     html = f"""<!DOCTYPE html>
 <html><head>
@@ -70,7 +96,7 @@ def plot_scatter_v8(data: pd.DataFrame, metric_column: str, output_dir: Optional
 </style>
 </head><body>
 <div class="controls">
-    <h2>Hyperparameter Scatter: {metric_column}</h2>
+    <h2>Hyperparameter Scatter</h2>
     <div class="filter-bar">
         <div class="filter-group">
             <label>X Axis:</label>
@@ -80,6 +106,12 @@ def plot_scatter_v8(data: pd.DataFrame, metric_column: str, output_dir: Optional
                 <option value="leadtime">Leadtime (h)</option>
                 <option value="cycle">Cycle</option>
                 <option value="activation">Activation</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Y Axis:</label>
+            <select id="yAxis" onchange="rebuild()">
+                {y_axis_options}
             </select>
         </div>
         <div class="filter-group">
@@ -115,13 +147,14 @@ def plot_scatter_v8(data: pd.DataFrame, metric_column: str, output_dir: Optional
             <select id="fCy" onchange="rebuild()">{_make_options(cycle_vals)}</select>
         </div>
         <span id="modelCount" class="model-count">Models (0)</span>
+        <span id="missingCount" class="model-count" style="color: #c0392b; background: rgba(192, 57, 43, 0.1);">Missing (0)</span>
     </div>
 </div>
 <div id="plotDiv"></div>
 
 <script>
 var allData = {data_json};
-var metricCol = "{metric_column}";
+var metricCols = {metric_cols_json};
 
 var xAxisLabels = {{
     'neurons': 'Hidden Units', 'num_layers': 'Number of Layers',
@@ -134,14 +167,16 @@ var colorPalette = [
     '#e78ac3','#a6d854','#ffd92f','#e5c494','#b3b3b3'
 ];
 
-function makeHover(d) {{
+function makeHover(d, yMetric) {{
     return 'Act: ' + d.activation + '<br>Layers: ' + d.num_layers +
            '<br>Neurons: ' + d.neurons + '<br>LT: ' + d.leadtime + 'h' +
-           '<br>Cycle: ' + d.cycle + '<br>' + metricCol + ': ' + d.metric.toFixed(4);
+           '<br>Cycle: ' + d.cycle + '<br>' + yMetric + ': ' +
+           (d[yMetric] != null ? d[yMetric].toFixed(4) : 'N/A');
 }}
 
 function rebuild() {{
     var xParam = document.getElementById('xAxis').value;
+    var yMetric = document.getElementById('yAxis').value;
     var colorBy = document.getElementById('colorBy').value;
     var fAct = document.getElementById('fAct').value;
     var fLayers = document.getElementById('fLayers').value;
@@ -149,7 +184,8 @@ function rebuild() {{
     var fLT = document.getElementById('fLT').value;
     var fCy = document.getElementById('fCy').value;
 
-    var filtered = allData.filter(function(d) {{
+    // First filter by hyperparameter selections only
+    var paramFiltered = allData.filter(function(d) {{
         if (fAct !== 'ALL' && d.activation !== fAct) return false;
         if (fLayers !== 'ALL' && d.num_layers !== parseInt(fLayers)) return false;
         if (fNeurons !== 'ALL' && d.neurons !== parseInt(fNeurons)) return false;
@@ -158,7 +194,18 @@ function rebuild() {{
         return true;
     }});
 
+    // Then separate: rows with valid y metric vs rows missing it
+    var filtered = paramFiltered.filter(function(d) {{ return d[yMetric] != null; }});
+    var missingCount = paramFiltered.length - filtered.length;
+
     document.getElementById('modelCount').textContent = 'Models (' + filtered.length + ')';
+    var missingEl = document.getElementById('missingCount');
+    if (missingCount > 0) {{
+        missingEl.textContent = 'Missing ' + yMetric + ' (' + missingCount + ')';
+        missingEl.style.display = '';
+    }} else {{
+        missingEl.style.display = 'none';
+    }}
 
     var traces = [];
     var useColor = (colorBy !== 'none' && colorBy !== xParam);
@@ -166,14 +213,14 @@ function rebuild() {{
     if (!useColor) {{
         traces.push({{
             x: filtered.map(function(d) {{ return String(d[xParam]); }}),
-            y: filtered.map(function(d) {{ return d.metric; }}),
+            y: filtered.map(function(d) {{ return d[yMetric]; }}),
             mode: 'markers', type: 'scatter',
             marker: {{ size: 6, color: 'rgba(82, 168, 173, 0.55)',
                        line: {{ width: 0.5, color: 'rgba(60, 130, 135, 0.4)' }} }},
-            text: filtered.map(makeHover), hoverinfo: 'text', showlegend: false
+            text: filtered.map(function(d) {{ return makeHover(d, yMetric); }}),
+            hoverinfo: 'text', showlegend: false
         }});
     }} else {{
-        // Group by color param, apply x-offset for side-by-side
         var groups = {{}};
         filtered.forEach(function(d) {{
             var key = String(d[colorBy]);
@@ -187,7 +234,7 @@ function rebuild() {{
         }} else {{ keys.sort(); }}
 
         var nGroups = keys.length;
-        var spread = 0.6; // total width of offset band
+        var spread = 0.6;
         var step = nGroups > 1 ? spread / (nGroups - 1) : 0;
         var startOffset = nGroups > 1 ? -spread / 2 : 0;
 
@@ -195,7 +242,6 @@ function rebuild() {{
             var sub = groups[key];
             var offset = startOffset + ci * step;
 
-            // For categorical x, use numeric mapping + offset
             var allXRaw = filtered.map(function(d) {{ return String(d[xParam]); }});
             var uniqueX = [...new Set(allXRaw)];
             if (xParam !== 'activation') {{
@@ -210,18 +256,18 @@ function rebuild() {{
 
             traces.push({{
                 x: xNums,
-                y: sub.map(function(d) {{ return d.metric; }}),
+                y: sub.map(function(d) {{ return d[yMetric]; }}),
                 mode: 'markers', type: 'scatter',
                 name: key, showlegend: true,
                 marker: {{ size: 6, color: colorPalette[ci % colorPalette.length], opacity: 0.6,
                            line: {{ width: 0.5, color: 'rgba(0,0,0,0.15)' }} }},
-                text: sub.map(makeHover), hoverinfo: 'text',
-                _uniqueX: uniqueX // stash for layout
+                text: sub.map(function(d) {{ return makeHover(d, yMetric); }}),
+                hoverinfo: 'text',
+                _uniqueX: uniqueX
             }});
         }});
     }}
 
-    // Build x-axis
     var allXRaw = filtered.map(function(d) {{ return String(d[xParam]); }});
     var uniqueX = [...new Set(allXRaw)];
     if (xParam !== 'activation') {{
@@ -230,7 +276,6 @@ function rebuild() {{
 
     var xAxisConfig;
     if (useColor) {{
-        // Numeric x with tick labels
         xAxisConfig = {{
             title: xAxisLabels[xParam],
             tickvals: uniqueX.map(function(v, i) {{ return i; }}),
@@ -246,7 +291,7 @@ function rebuild() {{
 
     var layout = {{
         xaxis: xAxisConfig,
-        yaxis: {{ title: metricCol }},
+        yaxis: {{ title: yMetric }},
         height: 550, margin: {{ t: 30, b: 60, l: 70, r: 30 }},
         hovermode: 'closest',
         showlegend: useColor,
