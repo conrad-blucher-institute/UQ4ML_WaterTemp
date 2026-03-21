@@ -65,11 +65,11 @@ except Exception:
 
 class TuningOrchestrator:
     """Orchestrates all three tuners with logging and progress tracking."""
-    
+
     def __init__(self, output_dir: Path, max_workers: int = 4):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.max_workers = max_workers
         self.timing_log = self.output_dir / "orchestrator_timing.csv"
         self.summary_log = self.output_dir / "orchestrator_summary.txt"
@@ -133,7 +133,7 @@ class TuningOrchestrator:
                     cur_workers = max(1, cur_workers // 2)
                     print(f"Throttle flag present, reducing workers to {cur_workers}")
 
-                mape_tuner = MAPETuner(mape_output, max_workers=cur_workers)
+                mape_tuner = MAPETuner(mape_output, max_workers=cur_workers, keras_save_dir=mape_output / "keras_files")
 
 
                 if epoch_override is not None:
@@ -164,7 +164,7 @@ class TuningOrchestrator:
                     cur_workers = max(1, cur_workers // 2)
                     print(f"Throttle flag present, reducing workers to {cur_workers}")
 
-                mse_tuner = MSETuner(mse_output, max_workers=cur_workers)
+                mse_tuner = MSETuner(mse_output, max_workers=cur_workers, keras_save_dir=mse_output / "keras_files")
 
 
                 if epoch_override is not None:
@@ -237,8 +237,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output",
         type=Path,
-        default="./tune_experiment_results",
-        help="Output directory for all tuning results"
+        default=_REPO_ROOT / "results",
+        help="Output directory for all tuning results (default: <repo_root>/results)"
     )
     parser.add_argument(
         "--workers",
