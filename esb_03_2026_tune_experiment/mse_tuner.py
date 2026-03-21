@@ -282,19 +282,25 @@ class MSETuner(BaseHyperparameterTuner):
         except Exception as e:
             print(f"  WARNING: 2021 evaluation failed: {e}")
 
-        # Save trained model as .keras file if a save directory was provided
+        # Record how many epochs actually ran (before early stopping)
+        metrics_dict['epochs_trained'] = len(hist.get('loss', []))
+
+        # Save trained model and training history if a save directory was provided
         keras_save_dir = config.get('keras_save_dir')
         if keras_save_dir is not None:
+            import json as _json
             from pathlib import Path as _Path
             save_dir = _Path(keras_save_dir)
             save_dir.mkdir(parents=True, exist_ok=True)
-            fname = (
+            base_name = (
                 f"{config['model_type']}_{config['lead_time']}h"
                 f"_cycle{config['cycle']}_{config['activation']}"
                 f"_{config['num_layers']}L_{config['neurons']}N"
-                f"_run{config['run_num']}.keras"
+                f"_run{config['run_num']}"
             )
-            model.save(save_dir / fname)
+            model.save(save_dir / f"{base_name}.keras")
+            with open(save_dir / f"{base_name}_history.json", 'w') as _hf:
+                _json.dump(hist, _hf, default=lambda o: float(o) if hasattr(o, 'item') else str(o))
 
         return (val_loss, metrics_dict)
 

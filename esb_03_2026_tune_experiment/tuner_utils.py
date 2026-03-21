@@ -4,6 +4,7 @@ Shared utilities for hyperparameter tuning with grid search, progress tracking, 
 
 import csv
 import json
+import numpy as np
 import time
 from pathlib import Path
 from datetime import datetime
@@ -130,7 +131,7 @@ class ProgressTracker:
             'val_mae12': _extract('val_mae12'),
             'mae_2021': _extract('mae_2021'),
             'mae12_2021': _extract('mae12_2021'),
-            'metrics': '' if not metrics else json.dumps(metrics),
+            'metrics': '' if not metrics else json.dumps(metrics, default=lambda o: float(o) if hasattr(o, 'item') else str(o)),
             'timestamp': datetime.now().isoformat(),
             'status': status
         }
