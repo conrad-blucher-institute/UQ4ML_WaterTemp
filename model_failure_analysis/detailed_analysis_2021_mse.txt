@@ -1,0 +1,528 @@
+
+================================================================================
+ANALYSIS: MSE - LeadTime 12h - Cycle 0
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 24/30 (80.0%)
+  Total extreme predictions: 652 / 260,610 (0.25%)
+  Avg extreme predictions per affected model: 21.73
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 175.33
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -31.48°C)
+  Iteration with worst min: #18 (min: -7.52°C)
+  Min across all models: -31.48°C
+  Max across all models: 33.40°C
+  Mean across all models: 22.28°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -31.48°C
+  Ensemble mean: 22.28°C
+  Ensemble max: 33.40°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.23°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+   POOR: Majority (24/30) have extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 48h - Cycle 0
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 9/30 (30.0%)
+  Total extreme predictions: 283 / 258,450 (0.11%)
+  Avg extreme predictions per affected model: 9.43
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 161.57
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -0.58°C)
+  Iteration with worst min: #3 (min: 0.06°C)
+  Min across all models: -27.11°C
+  Max across all models: 34.51°C
+  Mean across all models: 22.47°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -27.11°C
+  Ensemble mean: 22.47°C
+  Ensemble max: 34.51°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.18°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 9/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 96h - Cycle 0
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 18/30 (60.0%)
+  Total extreme predictions: 261 / 255,570 (0.10%)
+  Avg extreme predictions per affected model: 8.70
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 141.93
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -5.74°C)
+  Iteration with worst min: #14 (min: -2.75°C)
+  Min across all models: -12.26°C
+  Max across all models: 33.34°C
+  Mean across all models: 22.55°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -12.26°C
+  Ensemble mean: 22.55°C
+  Ensemble max: 33.34°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.13°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+   POOR: Majority (18/30) have extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 120h - Cycle 0
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 9/30 (30.0%)
+  Total extreme predictions: 140 / 254,130 (0.06%)
+  Avg extreme predictions per affected model: 4.67
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 158.47
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -7.71°C)
+  Iteration with worst min: #29 (min: -11.63°C)
+  Min across all models: -11.63°C
+  Max across all models: 33.05°C
+  Mean across all models: 22.53°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -11.63°C
+  Ensemble mean: 22.53°C
+  Ensemble max: 33.05°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.11°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 9/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 12h - Cycle 1
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 15/30 (50.0%)
+  Total extreme predictions: 360 / 260,610 (0.14%)
+  Avg extreme predictions per affected model: 12.00
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 191.37
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -0.63°C)
+  Iteration with worst min: #24 (min: 0.41°C)
+  Min across all models: -25.19°C
+  Max across all models: 34.61°C
+  Mean across all models: 22.42°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -25.19°C
+  Ensemble mean: 22.42°C
+  Ensemble max: 34.61°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.23°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+   POOR: Majority (15/30) have extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 48h - Cycle 1
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 4/30 (13.3%)
+  Total extreme predictions: 87 / 258,450 (0.03%)
+  Avg extreme predictions per affected model: 2.90
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 163.97
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -5.31°C)
+  Iteration with worst min: #23 (min: 0.78°C)
+  Min across all models: -14.25°C
+  Max across all models: 36.41°C
+  Mean across all models: 22.77°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -14.25°C
+  Ensemble mean: 22.77°C
+  Ensemble max: 36.41°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.18°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 4/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 96h - Cycle 1
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 10/30 (33.3%)
+  Total extreme predictions: 140 / 255,570 (0.05%)
+  Avg extreme predictions per affected model: 4.67
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 147.90
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: 0.18°C)
+  Iteration with worst min: #8 (min: -2.33°C)
+  Min across all models: -9.51°C
+  Max across all models: 33.55°C
+  Mean across all models: 22.73°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -9.51°C
+  Ensemble mean: 22.73°C
+  Ensemble max: 33.55°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.13°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 10/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 120h - Cycle 1
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 6/30 (20.0%)
+  Total extreme predictions: 114 / 254,130 (0.04%)
+  Avg extreme predictions per affected model: 3.80
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 146.50
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -8.04°C)
+  Iteration with worst min: #13 (min: -4.45°C)
+  Min across all models: -13.07°C
+  Max across all models: 33.90°C
+  Mean across all models: 22.84°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -13.07°C
+  Ensemble mean: 22.84°C
+  Ensemble max: 33.90°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.11°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 6/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 12h - Cycle 2
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 18/30 (60.0%)
+  Total extreme predictions: 477 / 260,610 (0.18%)
+  Avg extreme predictions per affected model: 15.90
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 196.77
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -20.66°C)
+  Iteration with worst min: #13 (min: -5.58°C)
+  Min across all models: -44.98°C
+  Max across all models: 33.97°C
+  Mean across all models: 22.10°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -44.98°C
+  Ensemble mean: 22.10°C
+  Ensemble max: 33.97°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.23°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+   POOR: Majority (18/30) have extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 48h - Cycle 2
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 6/30 (20.0%)
+  Total extreme predictions: 140 / 258,450 (0.05%)
+  Avg extreme predictions per affected model: 4.67
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 163.33
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -4.07°C)
+  Iteration with worst min: #27 (min: -0.44°C)
+  Min across all models: -10.05°C
+  Max across all models: 33.32°C
+  Mean across all models: 22.48°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -10.05°C
+  Ensemble mean: 22.48°C
+  Ensemble max: 33.32°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.18°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 6/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 96h - Cycle 2
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 16/30 (53.3%)
+  Total extreme predictions: 319 / 255,570 (0.12%)
+  Avg extreme predictions per affected model: 10.63
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 138.53
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -1.85°C)
+  Iteration with worst min: #20 (min: -3.84°C)
+  Min across all models: -15.90°C
+  Max across all models: 34.02°C
+  Mean across all models: 22.73°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -15.90°C
+  Ensemble mean: 22.73°C
+  Ensemble max: 34.02°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.13°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+   POOR: Majority (16/30) have extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 120h - Cycle 2
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 9/30 (30.0%)
+  Total extreme predictions: 197 / 254,130 (0.08%)
+  Avg extreme predictions per affected model: 6.57
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 147.40
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -2.18°C)
+  Iteration with worst min: #14 (min: -8.00°C)
+  Min across all models: -13.20°C
+  Max across all models: 35.18°C
+  Mean across all models: 22.74°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -13.20°C
+  Ensemble mean: 22.74°C
+  Ensemble max: 35.18°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.11°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 9/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 12h - Cycle 3
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 18/30 (60.0%)
+  Total extreme predictions: 439 / 260,610 (0.17%)
+  Avg extreme predictions per affected model: 14.63
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 180.00
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -4.71°C)
+  Iteration with worst min: #23 (min: -1.64°C)
+  Min across all models: -32.24°C
+  Max across all models: 33.34°C
+  Mean across all models: 22.29°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -32.24°C
+  Ensemble mean: 22.29°C
+  Ensemble max: 33.34°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.23°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+   POOR: Majority (18/30) have extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 48h - Cycle 3
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 7/30 (23.3%)
+  Total extreme predictions: 132 / 258,450 (0.05%)
+  Avg extreme predictions per affected model: 4.40
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 162.10
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -2.74°C)
+  Iteration with worst min: #3 (min: -4.67°C)
+  Min across all models: -10.16°C
+  Max across all models: 32.50°C
+  Mean across all models: 22.40°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -10.16°C
+  Ensemble mean: 22.40°C
+  Ensemble max: 32.50°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.18°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 7/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 96h - Cycle 3
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 13/30 (43.3%)
+  Total extreme predictions: 245 / 255,570 (0.10%)
+  Avg extreme predictions per affected model: 8.17
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 139.97
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -6.54°C)
+  Iteration with worst min: #28 (min: -11.75°C)
+  Min across all models: -14.33°C
+  Max across all models: 33.43°C
+  Mean across all models: 22.41°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -14.33°C
+  Ensemble mean: 22.41°C
+  Ensemble max: 33.43°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.13°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 13/30 models with extreme lows
+
+================================================================================
+ANALYSIS: MSE - LeadTime 120h - Cycle 3
+================================================================================
+
+ EXTREME LOW FAILURES (< -5.0°C):
+  Models affected: 6/30 (20.0%)
+  Total extreme predictions: 90 / 254,130 (0.04%)
+  Avg extreme predictions per affected model: 3.00
+
+  CONCERNING LOWS (-5.0°C to 5.0°C):
+  Models affected: 30/30 (100.0%)
+  Avg concerning predictions per affected model: 155.47
+
+ PER-MODEL STATISTICS:
+  Iteration with best min: #1 (min: -1.13°C)
+  Iteration with worst min: #25 (min: -5.35°C)
+  Min across all models: -10.19°C
+  Max across all models: 33.77°C
+  Mean across all models: 22.50°C
+
+ ENSEMBLE STATISTICS:
+  Ensemble min: -10.19°C
+  Ensemble mean: 22.50°C
+  Ensemble max: 33.77°C
+
+ OBSERVED DATA (for reference):
+  Observed min: -0.90°C
+  Observed mean: 23.11°C
+  Observed max: 34.13°C
+
+ PERFORMANCE CLASSIFICATION:
+    CONCERNING: 6/30 models with extreme lows

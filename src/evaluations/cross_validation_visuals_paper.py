@@ -96,10 +96,14 @@ def model_selection_conditional(leadTime, architecture):
         list of models
     """
     
+    # if leadTime == 12 and architecture == "mse":
+        
+    #     model_names = ['2_layers-leaky_relu-16_neurons']
+   
     if leadTime == 12 and architecture == "mse":
         
-        model_names = ['2_layers-leaky_relu-16_neurons']
-        
+        model_names = ['1_layers-leaky_relu-2_neurons']
+
     elif leadTime == 48 and architecture == "mse":
         
         model_names = ['3_layers-leaky_relu-16_neurons']
@@ -136,21 +140,25 @@ def model_selection_conditional(leadTime, architecture):
         
         model_names = ['combo1']  
         
+    # elif leadTime == 12 and architecture == "mape":
+        
+    #     model_names = ['1_layers-leaky_relu-100_neurons']
+        
     elif leadTime == 12 and architecture == "mape":
         
-        model_names = ['1_layers-leaky_relu-100_neurons']
+        model_names = ['1_layers-sigmoid-128_neurons']
         
     elif leadTime == 48 and architecture == "mape":
         
-        model_names = ['3_layers-leaky_relu-32_neurons']
+        model_names = ['2_layers-sigmoid-256_neurons']
 
     elif leadTime == 96 and architecture == "mape":
         
-        model_names = ['1_layers-leaky_relu-256_neurons']
+        model_names = ['2_layers-sigmoid-256_neurons']
          
     elif leadTime == 120 and architecture == "mape":
         
-        model_names = ['3_layers-relu-256_neurons']
+        model_names = ['3_layers-sigmoid-256_neurons']
          
     else:
         model_names = []

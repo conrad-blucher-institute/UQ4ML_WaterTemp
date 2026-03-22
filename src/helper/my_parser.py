@@ -91,10 +91,10 @@ def create_parser():
     parser.add_argument('--unit_list',             nargs='+',   type=int,           default=None,                       help="options for hidden layer sizes, part of tuner hyperparameter search space")
     parser.add_argument('--activation_function_list', nargs='+',type=str,           default=None,                       help="List of Activation Functions")
     parser.add_argument('--tuner_objective',                    type=str,           default="val_mae",                  help="Metric objective for the tuner")
-    parser.add_argument('--call_back_monitor',                    type=str,           default="val_loss",                  help="placeholder text")
-    parser.add_argument('--input_structure',         type=str,           default="descending",                  help="placeholder text")
-    parser.add_argument('--optimizer',         type=str,           default="adam",                  help="placeholder text")
-    parser.add_argument('--kernel_regularizer',         type=str,           default="l2",                  help="placeholder text")
+    parser.add_argument('--call_back_monitor',                  type=str,           default="val_loss",                 help="placeholder text")
+    parser.add_argument('--input_structure',                    type=str,           default="descending",               help="placeholder text")
+    parser.add_argument('--optimizer',                          type=str,           default="adam",                     help="placeholder text")
+    parser.add_argument('--kernel_regularizer',                 type=str,           default="l2",                       help="placeholder text")
 
 
     return parser

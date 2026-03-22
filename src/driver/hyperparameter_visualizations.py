@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-File for visualizing hyperparameter tuning performances
+File for visualizing hyperparameter tuning performances.
+This will aggregate the output of tunerResults (ALL_TRIALS) csv's
+into bycombo and bycycle csv's.
+
+Run tunerResults first, then this.
 
 Authors: Jarett Woodall and Hector Marrero-Colominas
 """
@@ -29,13 +33,13 @@ pio.renderers.default='browser'
 
 import numpy as np
 
-# change this wheeeee
+# change this wheeeee. bycycle = true gives you bycycle (obviously !!) and when it's false, it'll give you bycombo
 byCycle = False
 
 #Parameter settings
 # directory name
 # dataset = 'CRPS' # Used for single 
-dataset = 'mse' # Used for single 
+dataset = 'mape' # Used for single 
 datasetLst = ['MME_MSE', 'MME_MAPE'] # Comparing multiple loss functions
 #leadtime = 12
 leadList = [12, 48, 96, 120] # For looping
@@ -102,9 +106,9 @@ def data_reader(dataset, leadTime, objective, allTrials):
         identifier = "best_trials"
         
     # save_path = "./" + str(leadTime) + 'h_hyperparametersExcel_' + objective + "_" + identifier
-    # save_path = f"results/ESB_mape_tuner_results_{leadTime}h_hyperparametersExcel_val_mae_ALL_Trials"
-    save_path = f"results/ESB_mse_tuner_results_{leadTime}h_hyperparametersExcel_val_mae_ALL_Trials"
-    
+    # save_path = f"ESB_mse_trials_to_aggregate/{leadTime}h_hyperparametersExcel_val_mae_ALL_Trials"
+    save_path = f"results/ESB_mape_tuner_results_{leadTime}h_hyperparametersExcel_val_mae_ALL_Trials"
+
     #Opens excel formatted file for use in visualizations
     dataFrame = pd.read_csv(save_path+'.csv')
     
@@ -140,8 +144,8 @@ def mean_stdev_calculation(df, metrics, objective, byCycle, multiLoss):
         newDf[item + "_stdev"] = df.groupby(groupByList, as_index=True)[item].std()
        
     # Calculate average and stdevfor objective score
-    newDf[objective + "_Score_mean"] = df.groupby(groupByList,as_index=True)[objective + " Score:"].mean()
-    newDf[objective + "_Score_stdev"] = df.groupby(groupByList,as_index=True)[objective + " Score:"].std()
+    # newDf[objective + "_Score_mean"] = df.groupby(groupByList,as_index=True)[objective + " Score:"].mean()
+    # newDf[objective + "_Score_stdev"] = df.groupby(groupByList,as_index=True)[objective + " Score:"].std()
     
     #Reset index for 
     newDf = newDf.reset_index()
@@ -228,7 +232,7 @@ def hyperparameter_boxplot(df, objective, leadtime, alltrials, byCycle, metricTo
         fig = make_subplots(rows=2, cols=5, horizontal_spacing=0.05)
         
         # Creates a list
-        cycleList = df['Cycle:'].unique().tolist()
+        cycleList = df['Rotation:'].unique().tolist()
     
         #Control for creating subplots
         row = 1
@@ -252,7 +256,7 @@ def hyperparameter_boxplot(df, objective, leadtime, alltrials, byCycle, metricTo
             row = 2
             
         if byCycle == True: 
-            temp = df.loc[df['Cycle:'] == cycle,:]
+            temp = df.loc[df['Rotation:'] == cycle,:]
             controlList = temp['Combination'].unique().tolist()
             
             print(temp.head())
@@ -402,7 +406,7 @@ def heatmap_plot(df, objective, leadtime, alltrials, metricToGraph, multiLoss, s
         df['Combination'] =  df['layer_units_num'].astype(str) + "_neurons_" + df['# of layers'].astype(str) + "_layers_" + df['input act. func.'].astype(str)+ "_act"
     
 
-    df = df.filter(['Cycle:', 'Combination', str(metricToGraph) + "_mean", str(metricToGraph) + "_stdev"])
+    df = df.filter(['Rotation:', 'Combination', str(metricToGraph) + "_mean", str(metricToGraph) + "_stdev"])
 
     
     # Clean the dataframe into something easier for the heatmap to see
@@ -419,13 +423,13 @@ def heatmap_plot(df, objective, leadtime, alltrials, metricToGraph, multiLoss, s
     
     # Nested for loop for iterating through data
     for item in meanDf.index.tolist():
-        for column in df['Cycle:'].unique():
+        for column in df['Rotation:'].unique():
             
             # Try catch for dealing with combinations that do not exist in other cycles
             try:
                 # Finds corresponding data
-                mean = df.loc[(df['Combination'] == item) & (df['Cycle:'] == column), metricToGraph + "_mean"].item()
-                stdev = df.loc[(df['Combination'] == item) & (df['Cycle:'] == column), metricToGraph + "_stdev"].item()
+                mean = df.loc[(df['Combination'] == item) & (df['Rotation:'] == column), metricToGraph + "_mean"].item()
+                stdev = df.loc[(df['Combination'] == item) & (df['Rotation:'] == column), metricToGraph + "_stdev"].item()
                 
                 # Places information into specific column at a specific row
                 meanDf.loc[item, str(column)] = mean
@@ -500,7 +504,7 @@ def hyperparameter_scatterplot(df, objective, leadtime, allTrials, byCycle, metr
 
     if byCycle == True:
         fig = go.Figure() # Creates graph object
-        cycleList = df['Cycle:'].unique().tolist() # Creates a list
+        cycleList = df['Rotation:'].unique().tolist() # Creates a list
     
         #Control for creating subplots
         row = 1
@@ -534,7 +538,7 @@ def hyperparameter_scatterplot(df, objective, leadtime, allTrials, byCycle, metr
                 # Check the current cycle and set the symbol
                 symbol = cycle_symbol_mapping.get(cycle, 'square')  # Default to 'square' if cycle is not in mapping
                 
-                temp = temp.loc[temp['Cycle:'] == cycle,:]
+                temp = temp.loc[temp['Rotation:'] == cycle,:]
 
                 num_data_points = len(temp[metricToGraph])  # Get the number of data points
 

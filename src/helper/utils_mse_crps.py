@@ -77,7 +77,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
         # elif independent_year == '2024':
         #     data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
 
-        
+
         year_independent = creatingAdditionalColumns(data_independent_year, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
         
         # Debug: inspect year_independent
@@ -88,7 +88,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
         print("Missing values in year_independent:\n", year_independent.isnull().sum())
         
         # Export to CSV for inspection
-        year_independent.to_csv('debug_year_independent.csv', index=False)
+        year_independent.to_csv('debug_hooplah/debug_year_independent.csv', index=False)
 
         # return
     
@@ -125,9 +125,9 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
 
     training_data, testing_data, validation_data = splittingData(data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
-    training_data.to_csv('debug_training_data.csv')
-    testing_data.to_csv('debug_testing_data.csv')
-    validation_data.to_csv('debug_validation_data.csv')
+    training_data.to_csv('debug_hooplah/debug_training_data.csv')
+    testing_data.to_csv('debug_hooplah/debug_testing_data.csv')
+    validation_data.to_csv('debug_hooplah/debug_validation_data.csv')
 
     # return
     
@@ -176,9 +176,9 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     print(f"Validation size: {validation.shape[0]} (was {validation_data.shape[0]})\n")
 
     # Save cleaned data for verification
-    training.to_csv('debug_training_data_CLEANED.csv')
-    testing.to_csv('debug_testing_data_CLEANED.csv')
-    validation.to_csv('debug_validation_data_CLEANED.csv')
+    training.to_csv('debug_hooplah/debug_training_data_CLEANED.csv')
+    testing.to_csv('debug_hooplah/debug_testing_data_CLEANED.csv')
+    validation.to_csv('debug_hooplah/debug_validation_data_CLEANED.csv')
     print("Saved cleaned data to debug_*_CLEANED.csv files for verification\n")
 
     dataframe_checker(-100, [training, testing, validation]) # checking for any rogue number less than -100
@@ -564,7 +564,7 @@ purpose:
 output: 
         df 
 ------------------------------------------------------------------------- '''
-def og_deletingMissingValues(df):
+def deletingMissingValues(df):
     valueRemove = [-999]
     # Exclude 'date' column from missing value checks
     cols_to_check = [col for col in df.columns if col != 'date']
@@ -572,65 +572,6 @@ def og_deletingMissingValues(df):
     df = df[~mask]
     df = df.dropna(subset=cols_to_check)
     return df
-
-'''  
--------------------------------------------------------------------------
-                        def deletingMissingValues
-input:
-        df - dataframe to clean
-purpose: 
-        delete the rows where at least one of the columns contain a missing value (-999).
-        This removes rows with incomplete sequences that were created during feature engineering.
-output: 
-        df - cleaned dataframe with rows containing -999 removed
-------------------------------------------------------------------------- '''
-def deletingMissingValues(df):
-    """
-    Robustly removes rows containing -999 sentinel values used for missing data.
-    Also removes rows with NaN values.
-    """
-    import pandas as pd
-    
-    if df.empty:
-        return df.copy()
-    
-    # Exclude 'date' column from missing value checks
-    cols_to_check = [col for col in df.columns if col != 'date']
-    
-    # Debug: show initial state
-    initial_rows = len(df)
-    
-    # Create a copy to avoid SettingWithCopyWarning
-    df = df.copy()
-    
-    # Remove rows with -999 or NaN in any column
-    # Using multiple conditions for robustness
-    mask_nan = df[cols_to_check].isna().any(axis=1)
-    mask_missing = (df[cols_to_check] == -999).any(axis=1)
-    
-    # Combine masks
-    rows_to_remove = mask_nan | mask_missing
-    
-    # Keep only rows without missing values
-    df = df[~rows_to_remove]
-    
-    # Final check: drop any remaining NaNs just to be safe
-    df = df.dropna(subset=cols_to_check, how='any')
-    
-    # Debug: show final state
-    final_rows = len(df)
-    rows_removed = initial_rows - final_rows
-    
-    if initial_rows > 0:
-        pct_removed = (rows_removed / initial_rows * 100)
-        rows_with_999_after = (df[cols_to_check] == -999).any(axis=1).sum() if len(df) > 0 else 0
-        print(f"  Rows: {initial_rows} → {final_rows} (removed {rows_removed}, {pct_removed:.1f}%)")
-        if rows_with_999_after > 0:
-            print(f"  ⚠️  WARNING: {rows_with_999_after} rows still contain -999 after deletion!")
-    
-    return df
-
-
 
 '''  
 -------------------------------------------------------------------------

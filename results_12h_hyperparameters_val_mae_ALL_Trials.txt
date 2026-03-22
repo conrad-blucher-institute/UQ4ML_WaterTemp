@@ -1,0 +1,6 @@
+Rotation: 0
+Iteration: 1
+Trial Number: 04
+val_maescore: 4.518842697143555
+{'neurons_': 32, 'act_': 'tanh', 'layers': 2}
+

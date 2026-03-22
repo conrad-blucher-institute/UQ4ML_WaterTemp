@@ -46,7 +46,7 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD / CURRENT WORKING DIRECTORY
 tune_train_test = "train"
 
 # model_name_list = ["MAPE"] 
-model_name = "MSE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
+model_name = "MAPE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
 
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
@@ -57,14 +57,14 @@ independent_year = "2021"
 """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
 # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
 # these will be re-named to rotations
-cycle_list = [0, 1, 2, 3] #[0, 1, 2, 3]
+cycle_list = [0] #[0, 1, 2, 3]
 
 """TRAINING ITERATIONS - CROSS VALIDATION"""
 start_iteration = 1 #1
 end_iteration = 30 #15
 
 # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
-lead_time_list = [12, 48, 96, 120] #[12, 48, 96, 120]
+lead_time_list = [12] #[12, 48, 96, 120]
 hours_back = 24  
 
 # list of temperature perturbations, "0.0" --> perfect prognosis
@@ -234,10 +234,14 @@ if tune_train_test == "train":
     for iteration in range(start_iteration, end_iteration, up_down):  
         for lead_time in lead_time_list:
             if lead_time == 12:
+                # if model_name == "MSE":
+                #     num_layers = 2
+                #     act_func = 'leaky_relu'
+                #     neurons = 16
                 if model_name == "MSE":
-                    num_layers = 2
+                    num_layers = 1
                     act_func = 'leaky_relu'
-                    neurons = 16
+                    neurons = 2
             elif lead_time == 48:
                 if model_name == "MSE":
                     num_layers = 3
@@ -253,11 +257,16 @@ if tune_train_test == "train":
                     num_layers = 2
                     act_func = 'leaky_relu'
                     neurons = 16
+            # if lead_time == 12:
+            #     if model_name == "MAPE":
+            #         num_layers = 1
+            #         act_func = 'leaky_relu'
+            #         neurons = 100
             if lead_time == 12:
                 if model_name == "MAPE":
                     num_layers = 1
                     act_func = 'leaky_relu'
-                    neurons = 100
+                    neurons = 2
             elif lead_time == 48:
                 if model_name == "MAPE":
                     num_layers = 3
@@ -408,7 +417,10 @@ if tune_train_test == "train":
                 """TRAINING COMPUTE TIME"""
                 train_time_end = datetime.now()
 
-                
+                # 
+                # look into re-loading models instead of re-training them again 
+                # use pickle
+                # need to do this for re-producing the bug 
 
                 with open(save_path / "train_compute_time.txt", 'w') as compute_time_file:
                     compute_time_file.write(f"Model Train Time: {train_time_end-train_time_start}")
@@ -425,12 +437,12 @@ if tune_train_test == "train":
                 losses['Val_Loss'] = val_loss
                 losses.to_csv(save_path / "losses.csv")
 
-
                 # saving the model to h5 file
                 model.save(save_path / f"model_{datetime.now().strftime('%Y%m%d-%H%M%S')}_.keras") 
                 
                 train_predictions = model.predict(x_train)
                 val_predictions = model.predict(x_val)
+                # put print here; focus on those 3 days during the cs event of 2021 to ease analysis
                 test_predictions = model.predict(x_test)
 
                 """SAVING PREDICTIONS AND OBSERVATIONS"""

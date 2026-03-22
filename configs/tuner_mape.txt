@@ -6,7 +6,6 @@ mae
 mae12
 me
 me12
-mae_builtin
 --num_output_neurons=1
 --epochs=20000
 --max_trials=30
@@ -19,8 +18,8 @@ mae_builtin
 128
 256
 --activation_function_list
-relu
-selu
+tanh
+sigmoid
 leaky_relu
 --leadtime
 12

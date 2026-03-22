@@ -98,7 +98,7 @@ def temp(args):
                         # storing location of specific file
                         # location = f"{dataset}/Iter_{str(r+1)}_{leadtime}h_Rotation_{rotation}/results/trial_{str(m)}/trial.json"
 
-                        location = f"{dataset}/mape_20251215-224822/Lead_Time_{leadtime}h_Rotation_{rotation}/results/trial_{str(m)}/trial.json"
+                        location = f"{dataset}/mape_20260309-003716/Lead_Time_{leadtime}h_Rotation_{rotation}/results/trial_{str(m)}/trial.json"
                         
                         # reading dictionary from JSON file
                         with open(location) as access_json:
@@ -134,7 +134,7 @@ def temp(args):
                             # Grabs the location of the min trial
                             # newLocation = location = f"{dataset}/Iter_{str(r+1)}_{leadtime}h_Rotation_{rotation}/results/trial_{str(trial)}/trial.json"
 
-                            newLocation = f"{dataset}/mape_20251215-224822/Lead_Time_{leadtime}h_Rotation_{rotation}/results/trial_{str(trial)}/trial.json"
+                            newLocation = f"{dataset}/mape_20260309-003716/Lead_Time_{leadtime}h_Rotation_{rotation}/results/trial_{str(trial)}/trial.json"
 
 
                             with open(newLocation) as newAccess_json:

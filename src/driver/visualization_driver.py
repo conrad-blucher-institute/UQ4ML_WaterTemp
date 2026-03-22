@@ -37,7 +37,7 @@ IMPORTANT:
 Set to False first to ensure the files are there, 
 this exists so you dont have to run the intensive functions again.
 """
-runAggregateCode = True #True
+runAggregateCode = False #True
 
 # Variable to save the plots will be set to True, otherwise False. 
 # Note: The plot files are not large, but I would keep this true so that you can look at your plots. 
@@ -53,14 +53,14 @@ leadTimes = [12, 48, 96, 120]#[12]
 architectures = ["mape"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 30
+iterations = 15
 
 """
 Should be set to either "val", "test", or "train" depending on what information
 you want to visualize. If you ran the 2021 or 2024 testing years please use 
 '2021' or '2024' to retrieve relevant information.
 """
-# obsVsPred = 'val' 
+# obsVsPred = 'val' 'test'
 obsVsPred = 'test'
 
 """

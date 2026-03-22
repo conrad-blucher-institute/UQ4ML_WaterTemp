@@ -137,7 +137,7 @@ def convert_metrics_to_callables(metric_list):
         'crps': crps,
         'mse': 'mse',  # keras built-in metric
         'mae_builtin': 'mae',  # keras built-in metric
-        'mape': 'mape',  # keras built-in metric
+        'mape': 'mape'  # keras built-in metric
     }
     
     converted_metrics = []
@@ -217,7 +217,7 @@ def temp(args):
             """ Manipulating data for AI Model """
             x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
                                                                                                                                         input_structure=args.input_structure,
-                                                                                                                                        independent_year="not used",
+                                                                                                                                        independent_year="cycle",
                                                                                                                                         input_hours_forecast=lead_time,
                                                                                                                                         atp_hours_back=args.atp_hours_back,
                                                                                                                                         wtp_hours_back=args.wtp_hours_back,
@@ -242,7 +242,7 @@ def temp(args):
 
                     # parameter search space
                     neurons = hp.Choice('neurons_', values=args.unit_list, default=128, ordered=False)
-                    act_func = hp.Choice('act_',values=args.activation_function_list, default='leaky_relu',ordered=False)
+                    act_func = hp.Choice('act_',values=args.activation_function_list, default='sigmoid',ordered=False)
                     # select a value from min_value to max_value
                     layers = hp.Int('layers', min_value=1, max_value=3, step=1, default=3)
 
@@ -364,7 +364,8 @@ def show_keys(args):
 from src.helper.my_parser import create_parser
 
 
-
+# make sure you type 
+# python -m src.driver.crps_mme_runner @configs/tuner_mape.txt
 if __name__ == "__main__":
 
     # Parse incoming command-line arguments
