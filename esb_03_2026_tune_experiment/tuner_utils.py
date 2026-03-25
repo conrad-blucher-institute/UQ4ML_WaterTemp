@@ -69,9 +69,11 @@ class ProgressTracker:
             with open(progress_path, 'r', newline='') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    config_key = self._make_key(row)
-                    self.completed.add(config_key)
                     self.results.append(row)
+                    status = str(row.get('status', '')).lower()
+                    if not status.startswith('error') and status != '':
+                        config_key = self._make_key(row)
+                        self.completed.add(config_key)
         else:
             # Create CSV with headers (include run_num so multiple runs append)
             with open(progress_path, 'w', newline='') as f:
@@ -84,28 +86,16 @@ class ProgressTracker:
     
     @staticmethod
     def _make_key(config: Dict[str, Any]) -> str:
-        """Create a unique key from a configuration."""
+        """Create a unique key from a configuration (includes run_num)."""
+        run_num = config.get('run_num', 0)
         return f"{config['model_type']}_{config['lead_time']}_{config['cycle']}_" \
-               f"{config['activation']}_{config['num_layers']}_{config['neurons']}"
-    
+               f"{config['activation']}_{config['num_layers']}_{config['neurons']}_{run_num}"
+
     def is_completed(self, model_type: str, lead_time: int, cycle: int,
                      activation: str, num_layers: int, neurons: int, run_num: int = 0) -> bool:
-        """Check if a configuration has been completed successfully."""
-        # Only consider rows that have status 'completed' (skip errored rows so they get retried)
-        if self.results:
-            for row in self.results:
-                try:
-                    status = str(row.get('status', '')).lower()
-                    if status.startswith('error') or status == '':
-                        continue
-                    if (row['model_type'] == str(model_type) and int(row['lead_time']) == int(lead_time)
-                        and int(row['cycle']) == int(cycle) and row['activation'] == str(activation)
-                        and int(row['num_layers']) == int(num_layers) and int(row['neurons']) == int(neurons)
-                        and int(row.get('run_num', 0)) == int(run_num)):
-                        return True
-                except Exception:
-                    continue
-        return False
+        """Check if a configuration has been completed successfully (O(1) set lookup)."""
+        key = f"{model_type}_{lead_time}_{cycle}_{activation}_{num_layers}_{neurons}_{run_num}"
+        return key in self.completed
     
     def log_result(self, model_type: str, lead_time: int, cycle: int,
                    activation: str, num_layers: int, neurons: int,
@@ -137,7 +127,8 @@ class ProgressTracker:
         }
 
         key = self._make_key(config)
-        self.completed.add(key)
+        if not status.lower().startswith('error') and status != '':
+            self.completed.add(key)
         self.results.append(config)
 
         # Append to CSV

@@ -302,6 +302,20 @@ class MSETuner(BaseHyperparameterTuner):
             with open(save_dir / f"{base_name}_history.json", 'w') as _hf:
                 _json.dump(hist, _hf, default=lambda o: float(o) if hasattr(o, 'item') else str(o))
 
+        # Free model and TF session memory to prevent OOM across iterations
+        del model, history, x_train, y_train
+        if 'x_2021' in dir():
+            del x_2021, y_2021
+        if validation is not None:
+            del validation
+        try:
+            import tensorflow as tf
+            tf.keras.backend.clear_session()
+        except Exception:
+            pass
+        import gc
+        gc.collect()
+
         return (val_loss, metrics_dict)
 
 

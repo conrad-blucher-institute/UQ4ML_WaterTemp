@@ -83,14 +83,6 @@ class BaseHyperparameterTuner:
         Tune a single configuration. Called by multiprocessing workers.
         """
         try:
-            # Check if already completed
-            if self.progress_tracker.is_completed(
-                config['model_type'], config['lead_time'], config['cycle'],
-                config['activation'], config['num_layers'], config['neurons'], run_num=self.run_num
-            ):
-                print(f"  SKIP: {config} (already completed)")
-                return config
-            
             print(f"  TUNING: {config}")
             
             # Defer model construction to the tuner's _train_model implementation.
@@ -191,42 +183,59 @@ class BaseHyperparameterTuner:
         # Optionally limit to a subset (debug)
         if max_configs is not None:
             configs = configs[:int(max_configs)]
+
+        # Filter out already-completed configs BEFORE submitting to workers
+        already_done = len(self.progress_tracker.completed)
+        configs = [
+            c for c in configs
+            if not self.progress_tracker.is_completed(
+                c['model_type'], c['lead_time'], c['cycle'],
+                c['activation'], c['num_layers'], c['neurons'],
+                run_num=c.get('run_num', 0)
+            )
+        ]
         total_configs = len(configs)
-        
+
         if max_configs is not None:
-            print(f"Total configurations (limited): {total_configs} / original {total_before}")
-        else:
-            print(f"Total configurations to explore: {total_configs}")
-        print(f"Already completed: {len(self.progress_tracker.completed)}")
-        print(f"Remaining: {total_configs - len(self.progress_tracker.completed)}")
+            print(f"Total configurations (limited from {total_before})")
+        print(f"Already completed: {already_done}")
+        print(f"Remaining to run: {total_configs}")
+        if total_configs == 0:
+            print("Nothing to do — all configs already completed.\n")
+            return
         print(f"Using {self.max_workers} parallel workers\n")
         
         completed_count = 0
         
-        # Run multiprocessing over all configurations
-        with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = {executor.submit(self._tune_single_config, config): config for config in configs}
-            
-            for future in as_completed(futures):
-                try:
-                    result = future.result()
-                    completed_count += 1
-                    
-                    if completed_count % 10 == 0:
-                        elapsed = time.time() - overall_start
-                        rate = completed_count / elapsed if elapsed > 0 else 0
-                        print(f"Progress: {completed_count}/{total_configs} ({rate:.2f} configs/sec)")
-                        
-                        # Log section time for every 10 configs
-                        self.timing_logger.log_section(
-                            f"{self.model_type}_batch_10",
-                            10.0,  # Approximate
-                            f"batch {completed_count // 10}"
-                        )
-                        
-                except Exception as e:
-                    print(f"Worker exception: {str(e)}")
-                    print(traceback.format_exc())
+        # Submit futures in batches to avoid holding all configs in memory at once.
+        # Each batch is at most (max_workers * 2) configs so the executor always
+        # has work queued without bloating memory.
+        batch_size = max(1, self.max_workers * 2)
+        for batch_start in range(0, total_configs, batch_size):
+            batch = configs[batch_start : batch_start + batch_size]
+
+            with ProcessPoolExecutor(max_workers=self.max_workers) as executor:
+                futures = {executor.submit(self._tune_single_config, config): config for config in batch}
+
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        completed_count += 1
+
+                        if completed_count % 10 == 0:
+                            elapsed = time.time() - overall_start
+                            rate = completed_count / elapsed if elapsed > 0 else 0
+                            print(f"Progress: {completed_count}/{total_configs} ({rate:.2f} configs/sec)")
+
+                            self.timing_logger.log_section(
+                                f"{self.model_type}_batch_10",
+                                10.0,
+                                f"batch {completed_count // 10}"
+                            )
+
+                    except Exception as e:
+                        print(f"Worker exception: {str(e)}")
+                        print(traceback.format_exc())
         
         # Final summary
         overall_time = time.time() - overall_start

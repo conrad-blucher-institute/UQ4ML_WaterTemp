@@ -228,6 +228,21 @@ def main(folder):
 
         print(f"\nDone. Generated {total_done} prediction files.")
 
+    # Generate air_temp.csv lookup from all raw CSVs
+    print("\nBuilding air_temp.csv lookup...")
+    csv_files = sorted(glob.glob(os.path.join(_DATA_PATH, '*.csv')))
+    air_frames = []
+    for cf in csv_files:
+        raw = pd.read_csv(cf)
+        raw['date'] = pd.to_datetime(raw['date'], utc=True)
+        air_frames.append(raw[['date', 'Air Average']].copy())
+    air_df = pd.concat(air_frames, ignore_index=True).drop_duplicates(subset='date').sort_values('date')
+    air_df.columns = ['date', 'air_temp']
+    air_df['date'] = air_df['date'].astype(str)
+    air_path = str(pred_dir / 'air_temp.csv')
+    air_df.to_csv(air_path, index=False)
+    print(f"Air temp lookup: {len(air_df)} rows -> {air_path}")
+
     # Build/rebuild index manifest from ALL prediction files
     print("\nBuilding _index.csv manifest...")
     progress_csvs = glob.glob(str(folder / '*_progress.csv'))
