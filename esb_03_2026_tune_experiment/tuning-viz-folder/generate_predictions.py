@@ -87,11 +87,9 @@ def parse_keras_filename(name):
     }
 
 
-def prepare_val_data(leadtime, cycle):
-    """Run the full data pipeline and return (X_val, y_val, val_dates) for a given leadtime+cycle."""
-    # Read years 2-5 (skipping year 1 = 2021 independent)
+def prepare_train_val_data(leadtime, cycle):
+    """Run the data pipeline and return training + validation tensors and dates."""
     year_dfs = readingData(_DATA_PATH)
-    # Feature engineering
     years = [
         creatingAdditionalColumns(
             df, _INPUT_STRUCTURE, leadtime,
@@ -100,17 +98,24 @@ def prepare_val_data(leadtime, cycle):
         )
         for df in year_dfs
     ]
-    # Split by cycle
-    _, _, validation_df = splittingData(years[0], years[1], years[2], years[3], cycle)
-    # Clean
+
+    training_df, _, validation_df = splittingData(years[0], years[1], years[2], years[3], cycle)
+
+    training_clean = deletingMissingValues(training_df)
     validation_clean = deletingMissingValues(validation_df)
-    # Dates
+
+    train_dates = dateTimeRetriever(training_clean.copy(), leadtime)
     val_dates = dateTimeRetriever(validation_clean.copy(), leadtime)
-    # X, y
+
     col_start = 1 if _INPUT_STRUCTURE == 'descending' else 3
+
+    X_train = training_clean.iloc[:, col_start:-1].values.astype(float)
+    y_train = training_clean.iloc[:, -1].values.astype(float)
+
     X_val = validation_clean.iloc[:, col_start:-1].values.astype(float)
     y_val = validation_clean.iloc[:, -1].values.astype(float)
-    return X_val, y_val, val_dates
+
+    return X_train, y_train, train_dates, X_val, y_val, val_dates
 
 
 def prepare_2021_data(leadtime):
@@ -183,11 +188,12 @@ def main(folder):
             X_2021, y_2021, dates_2021 = cache_2021[lt]
 
             if (lt, cy) not in cache_val:
-                print(f"  Preparing val data for leadtime={lt}h, cycle={cy}...")
-                cache_val[(lt, cy)] = prepare_val_data(lt, cy)
-            X_val, y_val, val_dates = cache_val[(lt, cy)]
+                print(f"  Preparing train/val data for leadtime={lt}h, cycle={cy}...")
+                cache_val[(lt, cy)] = prepare_train_val_data(lt, cy)
+            X_train, y_train, train_dates, X_val, y_val, val_dates = cache_val[(lt, cy)]
 
             # Pre-convert to tensors once per group (avoids re-creating each model)
+            X_train_t = tf.constant(X_train, dtype=tf.float32)
             X_val_t = tf.constant(X_val, dtype=tf.float32)
             X_2021_t = tf.constant(X_2021, dtype=tf.float32)
 
@@ -197,11 +203,19 @@ def main(folder):
 
                 try:
                     model = tf.keras.models.load_model(m['keras_path'], compile=False)
+                    y_pred_train = model(X_train_t, training=False).numpy().flatten()
                     y_pred_val = model(X_val_t, training=False).numpy().flatten()
                     y_pred_2021 = model(X_2021_t, training=False).numpy().flatten()
 
                     # Build CSV
                     rows = []
+                    for i in range(len(y_train)):
+                        rows.append({
+                            'date': str(train_dates[i]),
+                            'actual': float(y_train[i]),
+                            'predicted': float(y_pred_train[i]),
+                            'dataset': 'train',
+                        })
                     for i in range(len(y_val)):
                         rows.append({
                             'date': str(val_dates[i]),

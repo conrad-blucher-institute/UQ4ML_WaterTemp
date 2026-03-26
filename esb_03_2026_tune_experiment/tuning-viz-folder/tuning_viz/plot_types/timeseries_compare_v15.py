@@ -186,8 +186,10 @@ def plot_timeseries_compare_v15(predictions_dir: str, output_dir: str) -> Option
 
 <div class="right-panel">
     <div class="chart-header">
-        <span class="chart-label">Validation Period</span>
+        <span class="chart-label">Training Period</span>
     </div>
+    <div class="chart-container" id="chartTrain"></div>
+    <div class="chart-header" style="margin-top:4px;">
     <div class="chart-container" id="chartVal"></div>
     <div class="chart-header" style="margin-top:4px;">
         <span class="chart-label">2021 Independent Test</span>
@@ -394,15 +396,19 @@ function parseCSV(text) {{
 }}
 
 function processPredCSV(rows) {{
+    var train = {{ dates: [], actual: [], predicted: [] }};
     var val = {{ dates: [], actual: [], predicted: [] }};
     var test = {{ dates: [], actual: [], predicted: [] }};
     rows.forEach(function(r) {{
-        var target = r.dataset === 'val' ? val : test;
+        var target;
+        if (r.dataset === 'train') target = train;
+        else if (r.dataset === 'val') target = val;
+        else target = test; // '2021'
         target.dates.push(r.date);
         target.actual.push(parseFloat(r.actual));
         target.predicted.push(parseFloat(r.predicted));
     }});
-    return {{ val: val, '2021': test }};
+    return {{ train: train, val: val, '2021': test }};
 }}
 
 // --- Load air temp CSV ---
@@ -504,19 +510,23 @@ function buildAirTempTrace(dates, legendName, showInLegend) {{
 // --- Render charts ---
 function renderCharts() {{
     var noSel = document.getElementById('noSelection');
+    var chartTrain = document.getElementById('chartTrain');
     var chartVal = document.getElementById('chartVal');
     var chart2021 = document.getElementById('chart2021');
 
     if (selectedModels.length === 0) {{
         noSel.style.display = 'flex';
+        chartTrain.style.display = 'none';
         chartVal.style.display = 'none';
         chart2021.style.display = 'none';
         return;
     }}
     noSel.style.display = 'none';
+    chartTrain.style.display = 'block';
     chartVal.style.display = 'block';
     chart2021.style.display = 'block';
 
+    var trainTraces = [];
     var valTraces = [];
     var testTraces = [];
 
@@ -527,8 +537,26 @@ function renderCharts() {{
         var info = indexData.find(function(m) {{ return m.model_name === name; }});
         var label = info ? info.activation + ' ' + info.num_layers + 'L ' + info.neurons + 'N lt' + info.leadtime + ' c' + info.cycle : name;
 
-        // Always draw observation line
-        if (pred.val.dates.length > 0) {{
+        // Always draw observation line for train
+        if (pred.train && pred.train.dates.length > 0) {{
+            trainTraces.push({{
+                x: pred.train.dates, y: pred.train.actual,
+                mode: 'lines', name: 'Observed Water Temp',
+                line: {{ color: 'black', width: 1.5 }},
+                legendgroup: 'actual_train', showlegend: (idx === 0)
+            }});
+        }}
+        if (pred.train && pred.train.dates.length > 0) {{
+            trainTraces.push({{
+                x: pred.train.dates, y: pred.train.predicted,
+                mode: 'lines', name: label,
+                line: {{ color: color, width: 1.2 }},
+                legendgroup: name
+            }});
+        }}
+
+        // Always draw observation line for val
+        if (pred.val && pred.val.dates.length > 0) {{
             valTraces.push({{
                 x: pred.val.dates, y: pred.val.actual,
                 mode: 'lines', name: 'Observed Water Temp',
@@ -536,14 +564,16 @@ function renderCharts() {{
                 legendgroup: 'actual_val', showlegend: (idx === 0)
             }});
         }}
-        valTraces.push({{
-            x: pred.val.dates, y: pred.val.predicted,
-            mode: 'lines', name: label,
-            line: {{ color: color, width: 1.2 }},
-            legendgroup: name
-        }});
+        if (pred.val && pred.val.dates.length > 0) {{
+            valTraces.push({{
+                x: pred.val.dates, y: pred.val.predicted,
+                mode: 'lines', name: label,
+                line: {{ color: color, width: 1.2 }},
+                legendgroup: name
+            }});
+        }}
 
-        if (pred['2021'].dates.length > 0) {{
+        if (pred['2021'] && pred['2021'].dates.length > 0) {{
             testTraces.push({{
                 x: pred['2021'].dates, y: pred['2021'].actual,
                 mode: 'lines', name: 'Observed Water Temp',
@@ -551,19 +581,25 @@ function renderCharts() {{
                 legendgroup: 'actual_2021', showlegend: (idx === 0)
             }});
         }}
-        testTraces.push({{
-            x: pred['2021'].dates, y: pred['2021'].predicted,
-            mode: 'lines', name: label,
-            line: {{ color: color, width: 1.2 }},
-            legendgroup: name
-        }});
+        if (pred['2021'] && pred['2021'].dates.length > 0) {{
+            testTraces.push({{
+                x: pred['2021'].dates, y: pred['2021'].predicted,
+                mode: 'lines', name: label,
+                line: {{ color: color, width: 1.2 }},
+                legendgroup: name
+            }});
+        }}
     }});
 
     // Air temperature traces
     if (showAirTemp && airTempData) {{
         // Get date ranges from first selected model
         var firstPred = predCache[selectedModels[0]];
-        if (firstPred && firstPred.val.dates.length > 0) {{
+        if (firstPred && firstPred.train && firstPred.train.dates.length > 0) {{
+            var atTrain = buildAirTempTrace(firstPred.train.dates, 'Air Temp', true);
+            if (atTrain) trainTraces.push(atTrain);
+        }}
+        if (firstPred && firstPred.val && firstPred.val.dates.length > 0) {{
             var atVal = buildAirTempTrace(firstPred.val.dates, 'Air Temp', true);
             if (atVal) valTraces.push(atVal);
         }}
@@ -581,7 +617,11 @@ function renderCharts() {{
         xaxis: {{ type: 'date' }},
     }};
 
-    var h = (window.innerHeight - 80) / 2;
+    var h = (window.innerHeight - 100) / 3;
+
+    Plotly.newPlot('chartTrain', trainTraces,
+        Object.assign({{}}, layoutBase, {{ height: h }}),
+        {{ responsive: true }});
 
     Plotly.newPlot('chartVal', valTraces,
         Object.assign({{}}, layoutBase, {{ height: h }}),
