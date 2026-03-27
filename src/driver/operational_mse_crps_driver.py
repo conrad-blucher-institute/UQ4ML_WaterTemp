@@ -46,7 +46,7 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD / CURRENT WORKING DIRECTORY
 tune_train_test = "train"
 
 # model_name_list = ["MAPE"] 
-model_name = "MSE" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
+model_name = "CRPS" # turn this into a string list w/ "MSE", "MAPE", "NLL", "CRPS"
 
 # This determines if the models train normally or if the users wishes to test on independent testing years
 # Set this to be '2021' or '2024'
@@ -231,48 +231,71 @@ if tune_train_test == "train":
             #         print("error")
 
     # for model_name in model_name_list:
+
     for iteration in range(start_iteration, end_iteration, up_down):  
         for lead_time in lead_time_list:
             if lead_time == 12:
-                if model_name == "MSE":
-                    num_layers = 2
-                    act_func = 'leaky_relu'
-                    neurons = 16
-            elif lead_time == 48:
-                if model_name == "MSE":
-                    num_layers = 3
-                    act_func = 'leaky_relu'
-                    neurons = 16
-            elif lead_time == 96:
-                if model_name == "MSE":
-                    num_layers = 2
-                    act_func = 'leaky_relu'
-                    neurons = 32
-            elif lead_time == 120:
-                if model_name == "MSE":
-                    num_layers = 2
-                    act_func = 'leaky_relu'
-                    neurons = 16
-            if lead_time == 12:
-                if model_name == "MAPE":
-                    num_layers = 1
-                    act_func = 'leaky_relu'
-                    neurons = 100
-            elif lead_time == 48:
-                if model_name == "MAPE":
-                    num_layers = 3
-                    act_func = 'leaky_relu'
-                    neurons = 32
-            elif lead_time == 96:
-                if model_name == "MAPE":
-                    num_layers = 1
-                    act_func = 'leaky_relu'
-                    neurons = 256
-            elif lead_time == 120:
-                if model_name == "MAPE":
+                if model_name == "CRPS":
                     num_layers = 3
                     act_func = 'relu'
-                    neurons = 256
+                    neurons = 32
+            elif lead_time == 48:
+                if model_name == "CRPS":
+                    num_layers = 3
+                    act_func = 'selu'
+                    neurons = 64     
+            elif lead_time == 96:
+                if model_name == "CRPS":
+                    num_layers = 3
+                    act_func = 'relu'
+                    neurons = 100
+            elif lead_time == 120:
+                if model_name == "CRPS":
+                    num_layers = 3
+                    act_func = 'relu'
+                    neurons = 100
+
+# ---------------------------------------------------- mse/mape hyperparameters ----------------------------------------------------
+            # if lead_time == 12:
+            #     if model_name == "MSE":
+            #         num_layers = 2
+            #         act_func = 'leaky_relu'
+            #         neurons = 16
+            # elif lead_time == 48:
+            #     if model_name == "MSE":
+            #         num_layers = 3
+            #         act_func = 'leaky_relu'
+            #         neurons = 16
+            # elif lead_time == 96:
+            #     if model_name == "MSE":
+            #         num_layers = 2
+            #         act_func = 'leaky_relu'
+            #         neurons = 32
+            # elif lead_time == 120:
+            #     if model_name == "MSE":
+            #         num_layers = 2
+            #         act_func = 'leaky_relu'
+            #         neurons = 16
+            # if lead_time == 12:
+            #     if model_name == "MAPE":
+            #         num_layers = 1
+            #         act_func = 'leaky_relu'
+            #         neurons = 100
+            # elif lead_time == 48:
+            #     if model_name == "MAPE":
+            #         num_layers = 3
+            #         act_func = 'leaky_relu'
+            #         neurons = 32
+            # elif lead_time == 96:
+            #     if model_name == "MAPE":
+            #         num_layers = 1
+            #         act_func = 'leaky_relu'
+            #         neurons = 256
+            # elif lead_time == 120:
+            #     if model_name == "MAPE":
+            #         num_layers = 3
+            #         act_func = 'relu'
+            #         neurons = 256
                
 # # mape hyperparameters
 # 12H - 100 units, leaky relu, 1 layer
