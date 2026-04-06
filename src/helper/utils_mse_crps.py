@@ -229,25 +229,41 @@ output:
         data_list - a list of dataframes for each year 
 ------------------------------------------------------------------------- '''
 def readingData(path_to_data):
+    '''readingData() reads the data for each year'''
 
-
-    import os
     import glob
     import pandas as pd
+    import os
+    import re
 
-    # find all CSV files and sort them 
-    csv_files = sorted(glob.glob(os.path.join(path_to_data, "*.csv")))
+    csvs = glob.glob(f"{path_to_data}/*.csv")
+    # print(csvs)
+    print(f"Found {len(csvs)} CSV files in the directory.")
 
-    print(f"Found {len(csv_files)} CSV files.")
-    print("Files:", [os.path.basename(f) for f in csv_files])
+    pattern = re.compile(r'(\d{4})_(\d{4})')
 
-    # skip the first file; the first is our winter storm uri independent testing year
-    csv_files_to_read = csv_files[1:]
+    year_dict = {}
 
-    # Load each CSV into a DataFrame
-    data_list = [pd.read_csv(f) for f in csv_files_to_read]
+    for csv in csvs:
+        match = pattern.search(csv)
+        if match:
+            year_range = f"{match.group(1)}_{match.group(2)}"  # e.g., "2022_2023"
+            year_dict[year_range] = pd.read_csv(csv)  # Read CSV into DataFrame
 
-    return data_list
+
+    # csvs = glob.glob(f"{path_to_data}/*csv")
+    data_year1 = year_dict['2022_2023']  # Read the first CSV into a DataFrame
+    data_year2 = year_dict['2012_2013']  # Read the second CSV into a DataFrame
+    data_year3 = year_dict['2013_2014']  # Read the third CSV into a DataFrame
+    data_year4 = year_dict['2014_2015']  # Read the fourth CSV into a DataFrame
+    data_year5 = year_dict['2015_2016']  # Read the fifth CSV into a DataFrame
+    data_year6 = year_dict['2016_2017']  # Read the sixth CSV into a DataFrame
+    data_year7 = year_dict['2017_2018']  # Read the seventh CSV into a DataFrame
+    data_year8 = year_dict['2018_2019']  # Read the eighth CSV into a DataFrame
+    data_year9 = year_dict['2019_2020']  # Read the ninth CSV into a DataFrame
+    data_year10 = year_dict['2021_2022']  # Read the tenth CSV into a DataFramw
+    
+    return data_year1, data_year2, data_year3, data_year4, data_year5, data_year6, data_year7, data_year8, data_year9, data_year10
 
 '''  
 -------------------------------------------------------------------------
