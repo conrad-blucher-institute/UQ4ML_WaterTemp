@@ -1,0 +1,347 @@
+<mxfile host="65bd71144e">
+    <diagram id="repo-arch" name="Repository Architecture">
+        <mxGraphModel dx="2334" dy="1677" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="grp_data" value="Raw Data" style="group;rounded=1;fillColor=#F5F5F5;strokeColor=#666666;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="450" y="-520" width="220" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="JM" value="June_May_Datasets" style="rounded=1;fillColor=#9E9E9E;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_data" vertex="1">
+                    <mxGeometry x="20" y="40" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="ESB_DATA" value="ESB_datasets" style="rounded=1;fillColor=#9E9E9E;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_data" vertex="1">
+                    <mxGeometry x="20" y="80" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="D2025" value="2020_2025_Datasets" style="rounded=1;fillColor=#9E9E9E;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_data" vertex="1">
+                    <mxGeometry x="20" y="120" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_config" value="Configuration" style="group;rounded=1;fillColor=#F5F5F5;strokeColor=#666666;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="-600" width="220" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="PNN12" value="pnn_12h.txt" style="rounded=1;fillColor=#E0E0E0;strokeColor=#333333;" parent="grp_config" vertex="1">
+                    <mxGeometry x="20" y="40" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="PNN48" value="pnn_48h.txt" style="rounded=1;fillColor=#E0E0E0;strokeColor=#333333;" parent="grp_config" vertex="1">
+                    <mxGeometry x="20" y="80" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="PNN96" value="pnn_96h.txt" style="rounded=1;fillColor=#E0E0E0;strokeColor=#333333;" parent="grp_config" vertex="1">
+                    <mxGeometry x="20" y="120" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_helper" value="src/helper - Shared Utilities" style="group;rounded=1;fillColor=#E3F2FD;strokeColor=#1565C0;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="-300" width="240" height="370" as="geometry"/>
+                </mxCell>
+                <mxCell id="UTILS_MSE" value="utils_mse_crps.py&#xa;preparingData, crps_loss, metrics" style="rounded=1;fillColor=#2196F3;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_helper" vertex="1">
+                    <mxGeometry x="20" y="40" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="UTILS_PNN" value="utils_pnn.py&#xa;preparingData for PNN" style="rounded=1;fillColor=#2196F3;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_helper" vertex="1">
+                    <mxGeometry x="20" y="90" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="UTILS" value="utils.py&#xa;crps_loss legacy, weighted_mse" style="rounded=1;fillColor=#2196F3;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_helper" vertex="1">
+                    <mxGeometry x="20" y="140" width="200" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="LOGGER" value="Logger.py" style="rounded=1;fillColor=#2196F3;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_helper" vertex="1">
+                    <mxGeometry x="20" y="190" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="PARSER" value="my_parser.py" style="rounded=1;fillColor=#2196F3;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_helper" vertex="1">
+                    <mxGeometry x="20" y="230" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="JOBITER" value="job_iterator.py" style="rounded=1;fillColor=#2196F3;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_helper" vertex="1">
+                    <mxGeometry x="20" y="270" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="PNN2CSV" value="pnn_to_csv.py" style="rounded=1;fillColor=#2196F3;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_helper" vertex="1">
+                    <mxGeometry x="20" y="310" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_driver" value="src/driver - Entry Points" style="group;rounded=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="-300" width="280" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="OP_DRIVER" value="operational_mse_crps_driver.py&#xa;PRIMARY: Train MSE/CRPS models" style="rounded=1;fillColor=#4CAF50;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_driver" vertex="1">
+                    <mxGeometry x="20" y="40" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="PNN_DRIVER" value="pnn_mme_driver.py&#xa;PRIMARY: Train PNN models" style="rounded=1;fillColor=#4CAF50;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_driver" vertex="1">
+                    <mxGeometry x="20" y="90" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="VIZ_DRIVER" value="visualization_driver.py&#xa;PRIMARY: Evaluate and visualize" style="rounded=1;fillColor=#4CAF50;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_driver" vertex="1">
+                    <mxGeometry x="20" y="140" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="CRPS_RUNNER" value="crps_mme_runner.py&#xa;Legacy CRPS trainer" style="rounded=1;fillColor=#66BB6A;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_driver" vertex="1">
+                    <mxGeometry x="20" y="200" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="TUNER_RET" value="tuner_retreiver.py" style="rounded=1;fillColor=#66BB6A;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_driver" vertex="1">
+                    <mxGeometry x="20" y="250" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_eval" value="src/evaluations - Post-Training Analysis" style="group;rounded=1;fillColor=#FFF3E0;strokeColor=#E65100;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="1290" y="-250" width="630" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="CROSSVAL" value="cross_validation_visuals_paper.py&#xa;aggregate metrics, time-series plots" style="rounded=1;fillColor=#FF9800;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_eval" vertex="1">
+                    <mxGeometry x="45" y="40" width="265" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="AGGTBL" value="aggregate_tables.py&#xa;summary tables for paper" style="rounded=1;fillColor=#FF9800;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_eval" vertex="1">
+                    <mxGeometry x="45" y="150" width="265" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="BOXPLOT" value="boxplot_figures.py&#xa;Figures 5, 6, 7, 13" style="rounded=1;fillColor=#FF9800;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_eval" vertex="1">
+                    <mxGeometry x="45" y="200" width="265" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_tuning" value="esb_03_2026_tune_experiment - Grid Search" style="group;rounded=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="100" width="280" height="340" as="geometry"/>
+                </mxCell>
+                <mxCell id="ORCHESTRATOR" value="run_all_tuners.py&#xa;Master orchestrator" style="rounded=1;fillColor=#4CAF50;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_tuning" vertex="1">
+                    <mxGeometry x="20" y="40" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="MSE_TUNER" value="mse_tuner.py" style="rounded=1;fillColor=#AB47BC;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_tuning" vertex="1">
+                    <mxGeometry x="20" y="100" width="110" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="MAPE_TUNER" value="mape_tuner.py" style="rounded=1;fillColor=#AB47BC;strokeColor=#333333;fontColor=#FFFFFF;" parent="grp_tuning" vertex="1">
+                    <mxGeometry x="150" y="100" width="110" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="CRPS_TUNER" value="crps_tuner.py&#xa;BROKEN" style="rounded=1;fillColor=#F44336;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_tuning" vertex="1">
+                    <mxGeometry x="20" y="150" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="BASE" value="base_tuner.py&#xa;grid search, multiprocessing, checkpointing" style="rounded=1;fillColor=#AB47BC;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_tuning" vertex="1">
+                    <mxGeometry x="20" y="200" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="TUNER_UTILS" value="tuner_utils.py&#xa;GridSearchConfig, ProgressTracker, TimingLogger" style="rounded=1;fillColor=#AB47BC;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="grp_tuning" vertex="1">
+                    <mxGeometry x="20" y="260" width="240" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_esb" value="esb2020_2021_experiment - Case Study" style="group;rounded=1;fillColor=#FFF9C4;strokeColor=#F9A825;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="-90" y="-250" width="240" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="ESB_INF" value="run_esb2020_2021_inference.py" style="rounded=1;fillColor=#FDD835;strokeColor=#333333;whiteSpace=wrap;" parent="grp_esb" vertex="1">
+                    <mxGeometry x="20" y="40" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="ESB_CRPS" value="run_esb2020_2021_crps_experiment.py" style="rounded=1;fillColor=#FDD835;strokeColor=#333333;whiteSpace=wrap;" parent="grp_esb" vertex="1">
+                    <mxGeometry x="20" y="80" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="ESB_VIZ" value="quick_viz scripts" style="rounded=1;fillColor=#FDD835;strokeColor=#333333;" parent="grp_esb" vertex="1">
+                    <mxGeometry x="20" y="120" width="200" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="grp_output" value="Output: Models, Predictions, and Paper" style="group;rounded=1;fillColor=#E8F5E9;strokeColor=#388E3C;fontStyle=1;fontSize=14;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="760" y="120" width="280" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="MSE_RES" value="mse_Results" style="rounded=1;fillColor=#8BC34A;strokeColor=#333333;" parent="grp_output" vertex="1">
+                    <mxGeometry x="20" y="40" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="CRPS_RES" value="crps_Results" style="rounded=1;fillColor=#8BC34A;strokeColor=#333333;" parent="grp_output" vertex="1">
+                    <mxGeometry x="20" y="80" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="PNN_RES" value="pnn_Results" style="rounded=1;fillColor=#8BC34A;strokeColor=#333333;" parent="grp_output" vertex="1">
+                    <mxGeometry x="20" y="120" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="TUNE_RES" value="tune_experiment_results" style="rounded=1;fillColor=#8BC34A;strokeColor=#333333;" parent="grp_output" vertex="1">
+                    <mxGeometry x="20" y="160" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="FIGS" value="Paper Figures (PNG/PDF)" style="rounded=1;fillColor=#8BC34A;strokeColor=#333333;" parent="grp_output" vertex="1">
+                    <mxGeometry x="20" y="210" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="TBLS" value="Paper Tables (CSV)" style="rounded=1;fillColor=#8BC34A;strokeColor=#333333;" parent="grp_output" vertex="1">
+                    <mxGeometry x="20" y="250" width="240" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;" parent="1" source="JM" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="270" y="-465"/>
+                            <mxPoint x="270" y="-260"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;" parent="1" source="ESB_DATA" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="300" y="-425"/>
+                            <mxPoint x="300" y="-260"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;" parent="1" source="JM" target="UTILS_PNN" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="250" y="-465"/>
+                            <mxPoint x="250" y="-200"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#666666;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="grp_config" target="PNN_DRIVER" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="900" y="-340"/>
+                            <mxPoint x="1050" y="-340"/>
+                            <mxPoint x="1050" y="-190"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="OP_DRIVER" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="PNN_DRIVER" target="UTILS_PNN" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="PNN_DRIVER" target="LOGGER" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="PNN_DRIVER" target="PARSER" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="PNN_DRIVER" target="JOBITER" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="CRPS_RUNNER" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e16" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="CRPS_RUNNER" target="PARSER" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="VIZ_DRIVER" target="CROSSVAL" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1130" y="-140"/>
+                            <mxPoint x="1130" y="-180"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="VIZ_DRIVER" target="AGGTBL" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1140" y="-140"/>
+                            <mxPoint x="1140" y="-80"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e22" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#4CAF50;" parent="1" source="VIZ_DRIVER" target="BOXPLOT" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1130" y="-140"/>
+                            <mxPoint x="1130" y="-30"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e30" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9C27B0;" parent="1" source="ORCHESTRATOR" target="MSE_TUNER" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e31" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9C27B0;" parent="1" source="ORCHESTRATOR" target="MAPE_TUNER" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e32" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9C27B0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" parent="1" source="MSE_TUNER" target="BASE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="220" y="215"/>
+                            <mxPoint x="220" y="290"/>
+                            <mxPoint x="290" y="290"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e33" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9C27B0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" parent="1" source="MAPE_TUNER" target="BASE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="480" y="215"/>
+                            <mxPoint x="480" y="290"/>
+                            <mxPoint x="410" y="290"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e34" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=2;dashed=1;" parent="1" source="CRPS_TUNER" target="BASE" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e35" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9C27B0;" parent="1" source="BASE" target="TUNER_UTILS" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e36" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9C27B0;dashed=1;" parent="1" source="MSE_TUNER" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="320" y="-250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e37" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#9C27B0;dashed=1;" parent="1" source="MAPE_TUNER" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="430" y="-250"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e40" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F9A825;" parent="1" source="ESB_CRPS" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="210" y="-160"/>
+                            <mxPoint x="210" y="-230"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e41" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F9A825;" parent="1" source="ESB_INF" target="UTILS_MSE" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="210" y="-190"/>
+                            <mxPoint x="210" y="-230"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e50" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=2;" parent="1" source="OP_DRIVER" target="MSE_RES" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1060" y="-240"/>
+                            <mxPoint x="1060" y="175"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e51" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=2;" parent="1" source="OP_DRIVER" target="CRPS_RES" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1060" y="-240"/>
+                            <mxPoint x="1060" y="215"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e52" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=2;" parent="1" source="PNN_DRIVER" target="PNN_RES" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="750" y="-190"/>
+                            <mxPoint x="750" y="255"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e53" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=2;" parent="1" source="ORCHESTRATOR" target="TUNE_RES" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="710" y="160"/>
+                            <mxPoint x="710" y="295"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e54" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=2;" parent="1" source="VIZ_DRIVER" target="FIGS" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1080" y="-130"/>
+                            <mxPoint x="1080" y="345"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e55" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=2;" parent="1" source="VIZ_DRIVER" target="TBLS" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1080" y="-130"/>
+                            <mxPoint x="1080" y="385"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="EVALFN" value="evaluation_functions.py&#xa;mae, mae12, rmse, crps_gaussian,&#xa;pitd, spread-skill ratio" style="rounded=1;fillColor=#FF9800;strokeColor=#333333;fontColor=#FFFFFF;whiteSpace=wrap;" parent="1" vertex="1">
+                    <mxGeometry x="1660" y="-160" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e25" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF9800;" parent="1" source="CROSSVAL" target="EVALFN" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1620" y="-190"/>
+                            <mxPoint x="1620" y="-135"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e26" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF9800;" parent="1" source="BOXPLOT" target="EVALFN" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1640" y="-30"/>
+                            <mxPoint x="1640" y="-135"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

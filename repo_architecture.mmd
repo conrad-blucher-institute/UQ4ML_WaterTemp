@@ -1,0 +1,116 @@
+graph TB
+    subgraph CONFIG[Configuration Layer]
+        PNN12[configs pnn_12h.txt]
+        PNN48[configs pnn_48h.txt]
+        PNN96[configs pnn_96h.txt]
+        CONDA[setup UQ4ML_2025.yml]
+    end
+
+    subgraph DATA[Raw Data]
+        JM[June_May_Datasets]
+        ESB_DATA[ESB_datasets]
+        D2025[2020_2025_Datasets]
+    end
+
+    subgraph HELPERS[src helper - Shared Utilities]
+        UTILS_MSE[utils_mse_crps.py]
+        UTILS_PNN[utils_pnn.py]
+        UTILS[utils.py]
+        LOGGER[Logger.py]
+        PARSER[my_parser.py]
+        JOBITER[job_iterator.py]
+        PNN2CSV[pnn_to_csv.py]
+    end
+
+    subgraph DRIVERS[src driver - Entry Points]
+        OP_DRIVER[operational_mse_crps_driver.py]
+        PNN_DRIVER[pnn_mme_driver.py]
+        VIZ_DRIVER[visualization_driver.py]
+        CRPS_RUNNER[crps_mme_runner.py]
+        TUNER_RET[tuner_retreiver.py]
+    end
+
+    subgraph EVALS[src evaluations - Analysis]
+        CROSSVAL[cross_validation_visuals_paper.py]
+        EVALFN[evaluation_functions.py]
+        AGGTBL[aggregate_tables.py]
+        BOXPLOT[boxplot_figures.py]
+    end
+
+    subgraph TUNING[esb_03_2026_tune_experiment]
+        BASE[base_tuner.py]
+        TUNER_UTILS[tuner_utils.py]
+        MSE_TUNER[mse_tuner.py]
+        MAPE_TUNER[mape_tuner.py]
+        CRPS_TUNER[crps_tuner.py - BROKEN]
+        ORCHESTRATOR[run_all_tuners.py]
+        TUNEVIZ[tuning-viz-folder]
+    end
+
+    subgraph ESB_EXP[esb2020_2021_experiment]
+        ESB_INF[run_esb2020_2021_inference.py]
+        ESB_CRPS[run_esb2020_2021_crps_experiment.py]
+        ESB_VIZ[quick_viz scripts]
+    end
+
+    subgraph OUTPUTS[Output]
+        MSE_RES[mse_Results]
+        CRPS_RES[crps_Results]
+        PNN_RES[pnn_Results]
+        TUNE_RES[tune_experiment_results]
+        FIGS[Paper Figures]
+        TBLS[Paper Tables]
+    end
+
+    DATA --> UTILS_MSE
+    DATA --> UTILS_PNN
+    CONFIG --> PNN_DRIVER
+    CONFIG --> PARSER
+
+    OP_DRIVER --> UTILS_MSE
+    PNN_DRIVER --> UTILS_PNN
+    PNN_DRIVER --> LOGGER
+    PNN_DRIVER --> PARSER
+    PNN_DRIVER --> JOBITER
+    VIZ_DRIVER --> CROSSVAL
+    VIZ_DRIVER --> AGGTBL
+    VIZ_DRIVER --> BOXPLOT
+    CRPS_RUNNER --> UTILS_MSE
+    CRPS_RUNNER --> PARSER
+
+    CROSSVAL --> EVALFN
+    BOXPLOT --> EVALFN
+
+    ORCHESTRATOR --> MSE_TUNER
+    ORCHESTRATOR --> MAPE_TUNER
+    MSE_TUNER --> BASE
+    MAPE_TUNER --> BASE
+    CRPS_TUNER --> BASE
+    BASE --> TUNER_UTILS
+    MSE_TUNER --> UTILS_MSE
+    MAPE_TUNER --> UTILS_MSE
+
+    ESB_CRPS --> UTILS_MSE
+    ESB_INF --> UTILS_MSE
+
+    OP_DRIVER --> MSE_RES
+    OP_DRIVER --> CRPS_RES
+    PNN_DRIVER --> PNN_RES
+    ORCHESTRATOR --> TUNE_RES
+    VIZ_DRIVER --> FIGS
+    VIZ_DRIVER --> TBLS
+    TUNEVIZ --> TUNE_RES
+
+    classDef entry fill:#4CAF50,stroke:#333,color:#fff
+    classDef helper fill:#2196F3,stroke:#333,color:#fff
+    classDef eval fill:#FF9800,stroke:#333,color:#fff
+    classDef dataStyle fill:#9E9E9E,stroke:#333,color:#fff
+    classDef broken fill:#F44336,stroke:#333,color:#fff
+    classDef output fill:#8BC34A,stroke:#333,color:#000
+
+    class OP_DRIVER,PNN_DRIVER,VIZ_DRIVER,ORCHESTRATOR entry
+    class UTILS_MSE,UTILS_PNN,UTILS,LOGGER,PARSER,JOBITER,PNN2CSV helper
+    class CROSSVAL,EVALFN,AGGTBL,BOXPLOT eval
+    class JM,ESB_DATA,D2025 dataStyle
+    class CRPS_TUNER broken
+    class MSE_RES,CRPS_RES,PNN_RES,TUNE_RES,FIGS,TBLS output
