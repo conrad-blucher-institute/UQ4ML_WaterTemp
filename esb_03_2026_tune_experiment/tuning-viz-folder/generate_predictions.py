@@ -225,37 +225,20 @@ def main(folder):
                     y_pred_2021 = model(X_2021_t, training=False).numpy().flatten()
 
                     # Build CSV
-                    rows = []
-                    for i in range(len(y_train)):
-                        rows.append({
-                            'date': str(train_dates[i]),
-                            'actual': float(y_train[i]),
-                            'predicted': float(y_pred_train[i]),
-                            'dataset': 'train',
-                        })
-                    for i in range(len(y_test)):
-                        rows.append({
-                            'date': str(test_dates[i]),
-                            'actual': float(y_test[i]),
-                            'predicted': float(y_pred_test[i]),
-                            'dataset': 'test',
-                        })
-                    for i in range(len(y_val)):
-                        rows.append({
-                            'date': str(val_dates[i]),
-                            'actual': float(y_val[i]),
-                            'predicted': float(y_pred_val[i]),
-                            'dataset': 'val',
-                        })
-                    for i in range(len(y_2021)):
-                        rows.append({
-                            'date': str(dates_2021[i]),
-                            'actual': float(y_2021[i]),
-                            'predicted': float(y_pred_2021[i]),
-                            'dataset': '2021',
-                        })
-
-                    df = pd.DataFrame(rows)
+                    frames = []
+                    for dates, y_true, y_pred, label in [
+                        (train_dates, y_train, y_pred_train, 'train'),
+                        (test_dates, y_test, y_pred_test, 'test'),
+                        (val_dates, y_val, y_pred_val, 'val'),
+                        (dates_2021, y_2021, y_pred_2021, '2021'),
+                    ]:
+                        frames.append(pd.DataFrame({
+                            'date': [str(d) for d in dates],
+                            'actual': y_true.astype(float),
+                            'predicted': y_pred.astype(float),
+                            'dataset': label,
+                        }))
+                    df = pd.concat(frames, ignore_index=True)
                     df.to_csv(m['pred_path'], index=False)
                     total_done += 1
 

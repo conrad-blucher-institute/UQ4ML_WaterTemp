@@ -49,14 +49,13 @@ def find_html_files(folder):
 
 
 def main(folder=None, port=8765):
-    parser = argparse.ArgumentParser(description="Serve tuning visualization HTML files")
-    parser.add_argument('--folder', type=str, default=None,
-                        help="Path to visuals folder (skip GUI picker)")
-    parser.add_argument('--port', type=int, default=8765,
-                        help="Port for local server (default: 8765)")
-    args = parser.parse_args()
-
     if folder is None:
+        parser = argparse.ArgumentParser(description="Serve tuning visualization HTML files")
+        parser.add_argument('--folder', type=str, default=None,
+                            help="Path to visuals folder (skip GUI picker)")
+        parser.add_argument('--port', type=int, default=8765,
+                            help="Port for local server (default: 8765)")
+        args = parser.parse_args()
         folder = Path(args.folder) if args.folder else pick_folder()
         port = args.port
     else:

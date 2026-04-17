@@ -125,7 +125,7 @@ def merge_predictions(experiment_dir):
     Input format:  (index), date_time, target, pred_1
     Output format: date, actual, predicted, dataset
     """
-    rows = []
+    frames = []
 
     for split_name, dataset_label in [('train', 'train'), ('test', 'test'), ('val', 'val'), ('2021', '2021')]:
         if split_name == '2021':
@@ -137,15 +137,14 @@ def merge_predictions(experiment_dir):
             continue
 
         df = pd.read_csv(csv_path)
-        for _, row in df.iterrows():
-            rows.append({
-                'date': str(row['date_time']),
-                'actual': float(row['target']),
-                'predicted': float(row['pred_1']),
-                'dataset': dataset_label,
-            })
+        frames.append(pd.DataFrame({
+            'date': df['date_time'].astype(str),
+            'actual': df['target'].astype(float),
+            'predicted': df['pred_1'].astype(float),
+            'dataset': dataset_label,
+        }))
 
-    return pd.DataFrame(rows)
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
 def compute_mae(y_true, y_pred):
