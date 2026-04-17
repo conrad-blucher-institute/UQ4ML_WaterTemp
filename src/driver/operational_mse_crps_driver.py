@@ -343,10 +343,6 @@ if tune_train_test == "train":
                     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
 
                     model_callbacks = [early_stopping, reduce_lr, tensorboard_callback, logger]
-
-                    # Training the model
-                    history = model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs=epochs, 
-                                        batch_size=batch_size, callbacks=model_callbacks, verbose=2) 
                     
                     """TRAINING COMPUTE TIME"""
                     train_time_end = datetime.now()

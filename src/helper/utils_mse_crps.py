@@ -45,8 +45,8 @@ output:
         testingDates - list of datetime objects for testing data
         testingAirTemps - list of air temperatures for testing data
 ------------------------------------------------------------------------- '''
-def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back, 
-                  wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0):
+def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back,
+                  wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0, scale=False):
     
     '''preparingData() is the driver function'''
     # Importing libraries
@@ -193,6 +193,17 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     _dlog(f'after reshaping: x_train={x_train.shape}, y_train={y_train.shape}, '
           f'x_val={x_val.shape}, y_val={y_val.shape}, x_test={x_test.shape}, y_test={y_test.shape}')
 
+    # Optional StandardScaler normalization on X only (fit on training data)
+    scaler = None
+    if scale:
+        from sklearn.preprocessing import StandardScaler
+        scaler = StandardScaler()
+        scaler.fit(x_train)
+        x_train = scaler.transform(x_train)
+        x_val = scaler.transform(x_val)
+        x_test = scaler.transform(x_test)
+        _dlog('StandardScaler applied: fit on x_train, transformed x_train/x_val/x_test')
+
     if verbose == 3:
         print("NaNs in x_train:", np.isnan(x_train).sum())
         print("NaNs in y_train:", np.isnan(y_train).sum())
@@ -207,9 +218,11 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
         print("Infs in x_test:", np.isinf(x_test).sum())
         print("Infs in y_test:", np.isinf(y_test).sum())
 
+    if scale:
+        return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps, scaler
     return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps
 
-'''  
+'''
 -------------------------------------------------------------------------
                             def readingData
 input:
@@ -574,12 +587,22 @@ def reshaping(input_structure, training, testing, validation, model):
 
 def prepare_independent_year(csv_path, input_structure, lead_time,
                              atp_hours_back, wtp_hours_back,
-                             pred_atp_interval=1, IPPOffset=0.0):
+                             pred_atp_interval=1, IPPOffset=0.0, scaler=None,
+                             column_map=None):
     """Prepare the independent test year (e.g. esb_2020_2021.csv) for evaluation.
 
     Runs the same feature-engineering pipeline as preparingData() but on a single
     CSV that readingData() intentionally skips. Returns numpy arrays ready for
     model.evaluate() or model.predict(), plus datetime labels.
+
+    Args:
+        scaler: A fitted StandardScaler. When provided, X is transformed before
+                returning so inference uses the same scaling as training.
+        column_map: Dict mapping source column names to ESB column names,
+                    e.g. {'dateAndTime': 'date', 'packeryATP_lighthouse': 'Air Average',
+                          'npsbiWTP_lighthouse': 'Water Average'}.
+                    Applied before feature engineering so non-ESB datasets work
+                    with the same pipeline.
 
     Returns:
         (X, y, dates) where X has shape (n_samples, n_features),
@@ -588,6 +611,10 @@ def prepare_independent_year(csv_path, input_structure, lead_time,
     import pandas as pd
 
     df_raw = pd.read_csv(csv_path)
+
+    if column_map is not None:
+        df_raw = df_raw.rename(columns=column_map)
+
     df_features = creatingAdditionalColumns(
         df=df_raw,
         input_structure=input_structure,
@@ -605,6 +632,9 @@ def prepare_independent_year(csv_path, input_structure, lead_time,
     col_start = 1 if input_structure == 'descending' else 3
     X = df_clean.iloc[:, col_start:-1].values.astype(float)
     y = df_clean.iloc[:, -1].values.astype(float)
+
+    if scaler is not None:
+        X = scaler.transform(X)
 
     return X, y, dates
 
