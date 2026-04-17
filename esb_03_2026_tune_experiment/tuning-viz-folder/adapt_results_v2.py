@@ -3,7 +3,7 @@ Adapter v2: convert coworker's experiment results structure into the tuning-viz 
 
 Supports MAPE, MSE, and CRPS model types (auto-detected from experiment folder names).
 
-Creates a copy of the data in a new folder with suffix '_adapted-to-HyperView',
+Creates a copy of the data in a new folder with suffix '_adapted-to-VE',
 restructured to match the flat layout that run_v16.py and generate_predictions.py expect.
 
 Coworker structure (input):
@@ -20,7 +20,7 @@ Coworker structure (input):
     where {type} is one of: mape, mse, crps
 
 Tuning-viz structure (output):
-    {source}_adapted-to-HyperView/
+    {source}_adapted-to-VE/
       {TYPE}_progress.csv                   (grid-search summary, e.g. mape_progress.csv)
       keras_files/
         {TYPE}_{lt}h_cycle{c}_{act}_{layers}L_{neurons}N_run{i}.keras
@@ -54,7 +54,7 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = (_SCRIPT_DIR / '../..').resolve()
 _DEFAULT_RESULTS = str((_REPO_ROOT / 'results').resolve())
 _DATA_PATH = str(_REPO_ROOT / 'data' / 'ESB_datasets')
-_ADAPTER_SUFFIX = '_adapted-to-HyperView'
+_ADAPTER_SUFFIX = '_adapted-to-VE'
 
 # Supported model type prefixes in coworker folder names
 _SUPPORTED_TYPES = ('mape', 'mse', 'crps')
@@ -147,6 +147,23 @@ def merge_predictions(experiment_dir):
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
+def load_inference_predictions(inference_dir, cycle, iteration):
+    """Load predictions from an inference folder (e.g. inference_esb2021/).
+
+    Inference CSVs have columns: date_time, target, prediction
+    Returns a DataFrame with: date, actual, predicted  (no dataset label yet).
+    """
+    csv_path = inference_dir / f'cycle_{cycle}-iteration_{iteration}' / 'predictions.csv'
+    if not csv_path.exists():
+        return pd.DataFrame()
+    df = pd.read_csv(csv_path)
+    return pd.DataFrame({
+        'date': df['date_time'].astype(str),
+        'actual': df['target'].astype(float),
+        'predicted': df['prediction'].astype(float),
+    })
+
+
 def compute_mae(y_true, y_pred):
     return float(np.mean(np.abs(np.array(y_true) - np.array(y_pred))))
 
@@ -161,8 +178,13 @@ def compute_mae12(y_true, y_pred):
     return float(np.mean(np.abs(y_true[mask] - y_pred[mask])))
 
 
-def compute_metrics_from_predictions(experiment_dir, losses_csv_path):
-    """Compute val_mae, val_mae12, mae_2021, mae12_2021 from prediction CSVs."""
+def compute_metrics_from_predictions(experiment_dir, losses_csv_path,
+                                     esb2021_csv=None, lm2021_csv=None):
+    """Compute val_mae, val_mae12, mae_2021, mae12_2021 from prediction CSVs.
+
+    esb2021_csv / lm2021_csv: optional paths to inference prediction CSVs
+    (columns: date_time, target, prediction) from separate inference folders.
+    """
     metrics = {}
 
     # Validation
@@ -172,12 +194,23 @@ def compute_metrics_from_predictions(experiment_dir, losses_csv_path):
         metrics['val_mae'] = compute_mae(df['target'], df['pred_1'])
         metrics['val_mae12'] = compute_mae12(df['target'], df['pred_1'])
 
-    # 2021
-    csv_2021 = experiment_dir / '2021_datetime_obsv_predictions.csv'
-    if csv_2021.exists():
-        df = pd.read_csv(csv_2021)
-        metrics['mae_2021'] = compute_mae(df['target'], df['pred_1'])
-        metrics['mae12_2021'] = compute_mae12(df['target'], df['pred_1'])
+    # 2021 — prefer inference folder CSV, fall back to experiment dir CSV
+    if esb2021_csv is not None and esb2021_csv.exists():
+        df = pd.read_csv(esb2021_csv)
+        metrics['mae_2021'] = compute_mae(df['target'], df['prediction'])
+        metrics['mae12_2021'] = compute_mae12(df['target'], df['prediction'])
+    else:
+        csv_2021 = experiment_dir / '2021_datetime_obsv_predictions.csv'
+        if csv_2021.exists():
+            df = pd.read_csv(csv_2021)
+            metrics['mae_2021'] = compute_mae(df['target'], df['pred_1'])
+            metrics['mae12_2021'] = compute_mae12(df['target'], df['pred_1'])
+
+    # Laguna Madre 2021
+    if lm2021_csv is not None and lm2021_csv.exists():
+        df = pd.read_csv(lm2021_csv)
+        metrics['mae_lm2021'] = compute_mae(df['target'], df['prediction'])
+        metrics['mae12_lm2021'] = compute_mae12(df['target'], df['prediction'])
 
     # Last val_loss from losses.csv
     if losses_csv_path.exists():
@@ -287,6 +320,12 @@ def adapt(source_dir):
             else:
                 print(f"  WARNING: No .keras file in {exp_dir.name}, skipping model copy")
 
+            # Copy scaler (.joblib) if present (for scaled models)
+            scaler_files = list(exp_dir.glob('scaler_*.joblib'))
+            if scaler_files:
+                scaler_dest = keras_dir / f"{basename}_scaler.joblib"
+                shutil.copy2(scaler_files[0], scaler_dest)
+
             # Convert losses.csv -> history.json
             losses_csv = exp_dir / 'losses.csv'
             if losses_csv.exists():
@@ -295,14 +334,32 @@ def adapt(source_dir):
                 with open(history_path, 'w') as f:
                     json.dump(history, f)
 
-            # Merge predictions (now includes train + test)
+            # Merge predictions (train + test + val + 2021 from experiment dir)
             pred_df = merge_predictions(exp_dir)
+
+            # Append inference predictions (ESB 2021, LM 2021) from separate folders
+            for inf_name, dataset_label in [('inference_esb2021', 'esb2021'), ('inference_lm2021', 'lm2021')]:
+                inf_dir = lt_dir / inf_name
+                if inf_dir.is_dir():
+                    inf_df = load_inference_predictions(inf_dir, cfg['cycle'], cfg['iteration'])
+                    if len(inf_df) > 0:
+                        inf_df['dataset'] = dataset_label
+                        pred_df = pd.concat([pred_df, inf_df], ignore_index=True)
+
             if len(pred_df) > 0:
                 pred_path = pred_dir / f"{basename}_pred.csv"
                 pred_df.to_csv(pred_path, index=False)
 
+            # Resolve inference CSV paths
+            esb2021_csv = lt_dir / 'inference_esb2021' / f'cycle_{cfg["cycle"]}-iteration_{cfg["iteration"]}' / 'predictions.csv'
+            lm2021_csv = lt_dir / 'inference_lm2021' / f'cycle_{cfg["cycle"]}-iteration_{cfg["iteration"]}' / 'predictions.csv'
+
             # Compute metrics
-            metrics = compute_metrics_from_predictions(exp_dir, losses_csv)
+            metrics = compute_metrics_from_predictions(
+                exp_dir, losses_csv,
+                esb2021_csv=esb2021_csv,
+                lm2021_csv=lm2021_csv,
+            )
 
             # Build metrics JSON blob (for the progress CSV)
             metrics_json = json.dumps({
@@ -312,6 +369,8 @@ def adapt(source_dir):
                 'val_mae12': metrics.get('val_mae12', None),
                 'mae_2021': metrics.get('mae_2021', None),
                 'mae12_2021': metrics.get('mae12_2021', None),
+                'mae_lm2021': metrics.get('mae_lm2021', None),
+                'mae12_lm2021': metrics.get('mae12_lm2021', None),
                 'epochs_trained': metrics.get('epochs_trained', None),
             })
 
@@ -328,6 +387,8 @@ def adapt(source_dir):
                 'val_mae12': metrics.get('val_mae12', None),
                 'mae_2021': metrics.get('mae_2021', None),
                 'mae12_2021': metrics.get('mae12_2021', None),
+                'mae_lm2021': metrics.get('mae_lm2021', None),
+                'mae12_lm2021': metrics.get('mae12_lm2021', None),
                 'metrics': metrics_json,
                 'timestamp': '',
                 'status': 'completed',
@@ -345,6 +406,8 @@ def adapt(source_dir):
                 'val_mae12': metrics.get('val_mae12', None),
                 'mae_2021': metrics.get('mae_2021', None),
                 'mae12_2021': metrics.get('mae12_2021', None),
+                'mae_lm2021': metrics.get('mae_lm2021', None),
+                'mae12_lm2021': metrics.get('mae12_lm2021', None),
             })
 
             total_models += 1

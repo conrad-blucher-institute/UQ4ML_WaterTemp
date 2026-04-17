@@ -50,7 +50,7 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = (_SCRIPT_DIR / '../..').resolve()
 _DEFAULT_RESULTS = str((_REPO_ROOT / 'results').resolve())
 _DATA_PATH = str(_REPO_ROOT / 'data' / 'ESB_datasets')
-_ADAPTER_SUFFIX = '_adapted-to-HyperView'
+_ADAPTER_SUFFIX = '_adapted-to-VE'
 
 
 def pick_folder():

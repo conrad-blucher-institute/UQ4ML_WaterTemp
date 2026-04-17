@@ -156,6 +156,9 @@ def main(folder):
             continue
         cfg['keras_path'] = kf
         cfg['pred_path'] = str(pred_dir / f"{cfg['basename']}_pred.csv")
+        # Check for a scaler file (scaled models)
+        scaler_path = str(keras_dir / f"{cfg['basename']}_scaler.joblib")
+        cfg['scaler_path'] = scaler_path if os.path.exists(scaler_path) else None
         models.append(cfg)
 
     # Check which already have predictions (with train+test datasets)
@@ -183,8 +186,9 @@ def main(folder):
         for m in todo:
             groups[(m['leadtime'], m['cycle'])].append(m)
 
-        # Lazy import tensorflow
+        # Lazy import tensorflow + joblib
         import tensorflow as tf
+        import joblib
         tf.get_logger().setLevel('ERROR')
 
         # Cache 2021 data per leadtime
@@ -219,10 +223,21 @@ def main(folder):
 
                 try:
                     model = tf.keras.models.load_model(m['keras_path'], compile=False)
-                    y_pred_train = model(X_train_t, training=False).numpy().flatten()
-                    y_pred_test = model(X_test_t, training=False).numpy().flatten()
-                    y_pred_val = model(X_val_t, training=False).numpy().flatten()
-                    y_pred_2021 = model(X_2021_t, training=False).numpy().flatten()
+
+                    # Apply scaler if this model was trained with scaled inputs
+                    if m['scaler_path']:
+                        scaler = joblib.load(m['scaler_path'])
+                        X_tr_use = tf.constant(scaler.transform(X_train), dtype=tf.float32)
+                        X_te_use = tf.constant(scaler.transform(X_test), dtype=tf.float32)
+                        X_va_use = tf.constant(scaler.transform(X_val), dtype=tf.float32)
+                        X_21_use = tf.constant(scaler.transform(X_2021), dtype=tf.float32)
+                    else:
+                        X_tr_use, X_te_use, X_va_use, X_21_use = X_train_t, X_test_t, X_val_t, X_2021_t
+
+                    y_pred_train = model(X_tr_use, training=False).numpy().flatten()
+                    y_pred_test = model(X_te_use, training=False).numpy().flatten()
+                    y_pred_val = model(X_va_use, training=False).numpy().flatten()
+                    y_pred_2021 = model(X_21_use, training=False).numpy().flatten()
 
                     # Build CSV
                     frames = []

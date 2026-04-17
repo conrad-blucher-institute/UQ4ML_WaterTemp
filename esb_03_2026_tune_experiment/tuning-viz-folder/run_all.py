@@ -22,7 +22,7 @@ from tkinter import filedialog
 
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _DEFAULT_RESULTS = str((_SCRIPT_DIR / '../../results').resolve())
-_ADAPTER_SUFFIX = '_adapted-to-HyperView'
+_ADAPTER_SUFFIX = '_adapted-to-VE'
 
 
 def pick_folder():
