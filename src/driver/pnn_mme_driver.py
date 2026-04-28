@@ -47,6 +47,7 @@ plt.rcParams['ytick.labelsize'] = FONTSIZE
 ##################
 
 #
+
 def create_classifier_network_generic_probability(  input_shape=None,
                                 
                                 nchannels=None, # for CNN ; conv layers
@@ -119,15 +120,16 @@ def create_classifier_network_generic_probability(  input_shape=None,
 
     return model
 
+
 def load_MLP_dataset(args):
-    ins, outs, ins_validation, outs_validation, x_test, y_test, date_time, _, val_date_time = preparingData(input_hours_forecast=args.c_leadtime, 
+    x_train, y_train, x_val, y_val, x_test, y_test, date_time, _, val_date_time = preparingData(input_hours_forecast=args.c_leadtime, 
                                                                                 atp_hours_back=args.atp_hours_back, 
                                                                                 wtp_hours_back=args.wtp_hours_back,
                                                                                 cycle=args.c_cycle,
                                                                                 path_to_data=args.data_set,
                                                                                 date_time=True,
                                                                                 val_date_time=True)
-    return ins, outs, ins_validation, outs_validation, x_test, y_test, date_time, val_date_time
+    return x_train, y_train, x_val, y_val, x_test, y_test, date_time, val_date_time
 
 #fname functions needs to be updated
 def generate_fname_folder(args):

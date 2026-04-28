@@ -3,14 +3,14 @@
 --data_set=data/ESB_datasets
 --atp_hours_back=24
 --wtp_hours_back=24
---batch_size=
+--batch_size= -1 
 --lrate=0.01
 --loss_function=mape
 --activation_function=leaky_relu
---patience=
+--lr_reducer_patience=15
+--early_stop_patience=25
 --min_delta=0.001
 --num_output_neurons=1
-
 --leadtime
 12
 --cycle

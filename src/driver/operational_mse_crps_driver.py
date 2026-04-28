@@ -343,16 +343,12 @@ if tune_train_test == "train":
 
                 inputShape = x_train[0].shape
                 
-                if model_name == "MSE":
-                    batch_size = x_train.shape[0]
-                
-                elif model_name == "MAPE":
+                if args.batch_size = -1:
                     batch_size = x_train.shape[0]
 
-                elif model_name == "CRPS":
-                    batch_size = 512
-                inputShape = x_train[0].shape
-                
+                else:
+                    batch_size = args.batch_size
+                    
                 if model_name == "MSE":
                     batch_size = x_train.shape[0]
 

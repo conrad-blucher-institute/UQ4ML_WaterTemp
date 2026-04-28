@@ -127,7 +127,13 @@ def model_selection_conditional(leadTime, architecture):
     elif leadTime == 96 and architecture == "CRPS":
         
         model_names = ['3_layers-relu-100_neurons']
+        
     
+    elif leadTime == 120 and architecture == "CRPS":
+        
+        model_names = ['3_layers-relu-100_neurons']
+        
+
     elif leadTime == 12 and architecture == "PNN":
 
         model_names = ['combo2']  

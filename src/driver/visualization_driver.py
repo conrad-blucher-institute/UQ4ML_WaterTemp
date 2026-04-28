@@ -47,13 +47,13 @@ save = True
 cycles = [0, 1, 2, 3]
 
 # List of leadTimes to make visuals and tables for models at different lead times. 
-leadTimes = [12, 48, 96, 120]#[12]
+leadTimes = [120]#[12]
 
 # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
-architectures = ["mape"] #['mse','PNN',"CRPS"]
+architectures = ["CRPS"] #['mse','PNN',"CRPS"]
 
 # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 15
+iterations = 30
 
 """
 Should be set to either "val", "test", or "train" depending on what information
@@ -61,7 +61,7 @@ you want to visualize. If you ran the 2021 or 2024 testing years please use
 '2021' or '2024' to retrieve relevant information.
 """
 # obsVsPred = 'val' 'test'
-obsVsPred = 'test'
+obsVsPred = '2021'
 
 """
 Set to true if you want csvs outputted that contain all of the predictions 
