@@ -70,8 +70,6 @@ hours_back = 24
 # list of temperature perturbations, "0.0" --> perfect prognosis
 temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
 
-# number of epochs
-# epochs = 2000
 epochs = 20000
 
 
@@ -128,110 +126,14 @@ compute_times = {}
 
 # column names for the saving of the model predictions later within "train"
 prediction_column_names = []
-for k in range(output_units):
+for k in range(args.num_output_neurons):
     prediction_column_names.append(f'pred_{k+1}')   
 
-if tune_train_test == "train":
+if args.tune_train_test == "train":
     print("\n\n----------------------------- TRAINING ! -----------------------------\n\n")
 
-    # dont worry about this for now :) legacy code
-            # if lead_time == 12:
-            #     cross_val_combinations = [1]
-            # elif lead_time == 48:
-            #     cross_val_combinations = [2]
-            # elif lead_time == 96:
-            #     cross_val_combinations = [2]
-            # for combination in cross_val_combinations:
-            # if lead_time == 12:
-            # #     if model_name == "CRPS":
-            # #         if combination == 1:
-            # #             num_layers = 3
-            # #             act_func = 'relu'
-            # #             neurons = 32
-
-            # #         elif combination == 2:
-            # #             num_layers = 2
-            # #             act_func = 'leaky_relu'
-            # #             neurons = 256 
-
-            # #     elif model_name == "MSE":
-            # #         if combination == 1:
-            # #             num_layers = 3
-            # #             act_func = 'leaky_relu'
-            # #             neurons = 32
-            #     if model_name == "MAPE":
-            #         num_layers = 1
-            #         act_func = 'leaky_relu'
-            #         neurons = 100
-            #     else:
-            #         print("error")
-
-            # elif lead_time == 48:
-
-            #     # if model_name == "CRPS":
-            #     #     if combination == 1:
-            #     #         num_layers = 3
-            #     #         act_func = 'relu'
-            #     #         neurons = 32
-
-            #     #     elif combination == 2:
-            #     #         num_layers = 3
-            #     #         act_func = 'selu'
-            #     #         neurons = 64
-
-            #     # elif model_name == "MSE":
-            #     #     if combination == 2:
-            #     #         num_layers = 2
-            #     #         act_func = 'leaky_relu'
-            #     #         neurons = 16
-                
-            #     if model_name == "MAPE":
-            #         num_layers = 3
-            #         act_func = 'relu'
-            #         neurons = 32
-
-            #     else:
-            #         print("error")
-
-            # elif lead_time == 96:
-
-            #     # if model_name == "CRPS":
-            #     #     if combination == 1:
-            #     #         num_layers = 3
-            #     #         act_func = 'selu'
-            #     #         neurons = 32 
-
-            #     #     elif combination == 2:
-            #     #         num_layers = 3
-            #     #         act_func = 'relu'
-            #     #         neurons = 100
-                        
-            #     # elif model_name == "MSE":
-            #     #     if combination == 2:
-            #     #         num_layers = 2
-            #     #         act_func = 'leaky_relu'
-            #     #         neurons = 16
-                
-            #     if model_name == "MAPE":
-            #         num_layers = 1
-            #         act_func = 'leaky_relu'
-            #         neurons = 256
-
-            #     else:
-            #         print("error")
-                    
-            # elif lead_time == 120:  
-
-            #     if model_name == "MAPE":   
-            #         num_layers = 3
-            #         act_func = 'relu'
-            #         neurons = 256
-
-            #     else:
-            #         print("error")
-
     # for model_name in model_name_list:
-    for iteration in range(start_iteration, end_iteration, up_down):  
+    for iteration in range(args.start_iteration, args.end_iteration, up_down):  
         for lead_time in lead_time_list:
             if lead_time == 12:
                 # if model_name == "MSE":
@@ -266,7 +168,7 @@ if tune_train_test == "train":
                 if model_name == "MAPE":
                     num_layers = 1
                     act_func = 'leaky_relu'
-                    neurons = 2
+                    neurons = 100
             elif lead_time == 48:
                 if model_name == "MAPE":
                     num_layers = 3
@@ -282,25 +184,11 @@ if tune_train_test == "train":
                     num_layers = 3
                     act_func = 'relu'
                     neurons = 256
-               
-# # mape hyperparameters
-# 12H - 100 units, leaky relu, 1 layer
-# 48H - 32 units, leaky relu. 3 layers
-# 96H - 256 units, leaky relu, 1 layer
-# 120H - 256 units, relu, 3 layers
+            
+            combo_name = f"{args.model_type.lower()}-{args.num_layers}_layers-{args.activation_function}-{args.neurons}_neurons"
 
-
-# temp: delete later. mse hyperparameters
-# 12-HR: 16 units, leaky_relu, 2 layers
-# 48-HR:  16 units, leaky_relu, 3 layers
-# 96-HR: 32 units, leaky_relu, 2 layers
-# 120-HR: 16 units, leaky_relu, 2 layers
-
-
-            combo_name = f"{model_name.lower()}-{num_layers}_layers-{act_func}-{neurons}_neurons"
-
-            for cycle in cycle_list:
-                print(f"RUNNING {lead_time}h, {combo_name}-cycle_{cycle}-iteration_{iteration} ...\n")
+            for rotation in args.rotation_list:
+                print(f"RUNNING {args.c_leadtime}h, {combo_name}-cycle_{rotation}-iteration_{iteration} ...\n")
                 
                 cycle_time_start = datetime.now()
                 
@@ -318,22 +206,22 @@ if tune_train_test == "train":
                 K.clear_session()
 
                 """ Manipulating data for AI Model """
-                x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(path_to_data,
-                                                                                                                            input_structure,
-                                                                                                                            independent_year,
+                x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
+                                                                                                                            args.input_structure,
+                                                                                                                            args.independent_year,
                                                                                                                             input_hours_forecast,
-                                                                                                                            atp_hours_back,
-                                                                                                                            wtp_hours_back,
-                                                                                                                            pred_atp_interval,
+                                                                                                                            args.atp_hours_back,
+                                                                                                                            args.wtp_hours_back,
+                                                                                                                            args.pred_atp_interval,
                                                                                                                             IPPOffset = temperature_list[0],
-                                                                                                                            cycle=cycle,
-                                                                                                                            model=model_name) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
+                                                                                                                            rotation=rotation,
+                                                                                                                            model=args.model_type) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
                 
                 """PREPARINGDATA FUNCTION COMPUTE TIME"""
                 data_prep_time_end = datetime.now()
 
                 # Path to folder for visualization results
-                save_path = Path("src") / "results" / f"{model_name.lower()}_results" / f"{lead_time}h" / f"{combo_name}-cycle_{cycle}-iteration_{iteration}"
+                save_path = Path("src") / "results" / f"{args.model_type.lower()}_results" / f"{args.c_leadtime}h" / f"{combo_name}-rotation_{rotation}-iteration_{iteration}"
                 save_path.mkdir(parents=True, exist_ok=True)
 
                 with open(save_path / "data_prep_compute_time.txt", 'w') as compute_time_file:
@@ -343,7 +231,7 @@ if tune_train_test == "train":
 
                 inputShape = x_train[0].shape
                 
-                if args.batch_size = -1:
+                if args.batch_size == -1:
                     batch_size = x_train.shape[0]
 
                 else:
@@ -366,16 +254,16 @@ if tune_train_test == "train":
                 model.add(Input(shape=(inputShape)))
 
                 # hidden layer(s)
-                for _ in range(num_layers):
-                    model.add(Dense(units=neurons, 
-                                    activation=act_func, 
-                                    kernel_regularizer=kernel_regularizer))
+                for _ in range(args.num_layers):
+                    model.add(Dense(units=args.neurons, 
+                                    activation=args.activation_function, 
+                                    kernel_regularizer=args.kernel_regularizer))
                 
                 # last layer = output layer
-                model.add(Dense(output_units, activation=output_activation))
+                model.add(Dense(args.num_output_neurons, activation=args.output_activation))
 
-                model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=learning_rate), 
-                            loss=loss_function, metrics=metrics)
+                model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=args.lrate), 
+                            loss=args.loss_function, metrics=args.metrics)
             
             
                 # grabbing the epoch logs to save after training
@@ -384,17 +272,15 @@ if tune_train_test == "train":
                 logger = TrainingLogger(save_path / "std_output.txt")
 
                 
-                
-                
                 # Learning rate reducer
-                reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor=call_back_monitor, min_delta=0.001,
-                                                                factor=0.1, patience=15, min_lr=0.00001)
+                reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor=args.call_back_monitor, min_delta=args.min_delta,
+                                                                factor=args.factor, patience=args.lr_reducer_patience, min_lr=args.min_lr)
                 
                 # Defining the early stopping
-                early_stopping = EarlyStopping(monitor=call_back_monitor,
-                                                    min_delta=0.001,
-                                                    patience=25,
-                                                    verbose=2,
+                early_stopping = EarlyStopping(monitor=args.call_back_monitor,
+                                                    min_delta=args.min_delta,
+                                                    patience=args.early_stop_patience,
+                                                    verbose=args.verbose,
                                                     mode='auto',
                                                     restore_best_weights=True)
                 
@@ -407,8 +293,8 @@ if tune_train_test == "train":
 
                 
                 # Training the model
-                history = model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs=epochs, 
-                                    batch_size=batch_size, callbacks=model_callbacks, verbose=2) 
+                history = model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs=args.epochs, 
+                                    batch_size=batch_size, callbacks=model_callbacks, verbose=args.verbose) 
                 
                 """TRAINING COMPUTE TIME"""
                 train_time_end = datetime.now()

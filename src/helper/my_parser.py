@@ -95,6 +95,17 @@ def create_parser():
     parser.add_argument('--input_structure',                    type=str,           default="descending",               help="placeholder text")
     parser.add_argument('--optimizer',                          type=str,           default="adam",                     help="placeholder text")
     parser.add_argument('--kernel_regularizer',                 type=str,           default="l2",                       help="placeholder text")
+    parser.add_argument('--tune_train_test',                    type=str,           default="train",                    help="if train, we're training a model using hyperparameters gained from tuning")
+    parser.add_argument('--num_layers',                         type=int,           default=1,                          help="number of hidden layers")
+    parser.add_argument('--neurons',                            type=int,           default=32,                         help="neurons per layer")
+    parser.add_argument('--start_iteration',                    type=int,           default=1,                          help="placeholder text")
+    parser.add_argument('--end_iteration',                      type=int,           default=30,                         help="placeholder text")
+    parser.add_argument('--independent_year',                   type=str,           default="cycle",                    help="placeholder text")
+    parser.add_argument('--loss_function',                      type=str,           default="mape",                     help="placeholder text")
+    parser.add_argument('--output_activation',                  type=str,           default="linear",                   help="placeholder text")
+    parser.add_argument('--pred_atp_interval',                  type=int,           default=1,                          help="placeholder text")
+    parser.add_argument('--factor',                             type=int,           default=0.1,                        help="placeholder text")
+
 
 
     return parser
