@@ -98,13 +98,15 @@ def create_parser():
     parser.add_argument('--tune_train_test',                    type=str,           default="train",                    help="if train, we're training a model using hyperparameters gained from tuning")
     parser.add_argument('--num_layers',                         type=int,           default=1,                          help="number of hidden layers")
     parser.add_argument('--neurons',                            type=int,           default=32,                         help="neurons per layer")
-    parser.add_argument('--start_iteration',                    type=int,           default=1,                          help="placeholder text")
-    parser.add_argument('--end_iteration',                      type=int,           default=30,                         help="placeholder text")
-    parser.add_argument('--independent_year',                   type=str,           default="cycle",                    help="placeholder text")
+    parser.add_argument('--start_iteration',                    type=int,           default=1,                          help="starting training iteration")
+    parser.add_argument('--end_iteration',                      type=int,           default=30,                         help="ending training iteration")
+    parser.add_argument('--independent_year',                   type=str,           default="cycle",                    help="Determines if it's regular-cycle testing or independent year testing. Set to cycle if regular. Else set to 2021 or 2024.")
     parser.add_argument('--loss_function',                      type=str,           default="mape",                     help="placeholder text")
     parser.add_argument('--output_activation',                  type=str,           default="linear",                   help="placeholder text")
     parser.add_argument('--pred_atp_interval',                  type=int,           default=1,                          help="placeholder text")
-    parser.add_argument('--factor',                             type=int,           default=0.1,                        help="placeholder text")
+    parser.add_argument('--factor',                             type=float,         default=0.1,                        help="placeholder text")
+    parser.add_argument('--min_lr',                             type=float,         default=0.00001,                    help="placeholder text")
+    parser.add_argument('--temperature_list', nargs='+',        type=float,         default=None,                       help="List of temperature perturbations. For perfect prognosis, set to 0.0.")
 
 
 

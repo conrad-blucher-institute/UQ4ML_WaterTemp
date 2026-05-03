@@ -36,3 +36,6 @@ mape
 --kernel_regularizer=12
 --call_back_monitor=val_loss
 --pred_atp_interval=1
+--verbose=2
+--temperature_list
+0.0
