@@ -55,12 +55,12 @@ RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD / CURRENT WORKING DIRECTORY
 
 def temp(args):
 
-    independent_year = "2021"
+    # independent_year = "2021"
 
     """ MODEL ARCHITECTURE VARIABLES and HYPERPARAMETERS """
     # 1, 3, 6, 7, 9 are the cycles with a cold stunning event in the validation set (hyperparameter tuning)
     # these will be re-named to rotations
-    cycle_list = [0] #[0, 1, 2, 3]
+    # cycle_list = [0] #[0, 1, 2, 3]
 
     """TRAINING ITERATIONS - CROSS VALIDATION"""
     start_iteration = args.start_iteration#1
@@ -68,10 +68,10 @@ def temp(args):
 
     # 12, 48, 96 are our main;  leadtimes: 12, 24, 48, 72, 96, 108, 120
     lead_time_list = [12] #[12, 48, 96, 120]
-    hours_back = 24  
+    # hours_back = 24  
 
     # list of temperature perturbations, "0.0" --> perfect prognosis
-    temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
+    # temperature_list = [0.0] #, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5] 
 
     # epochs = args.epochs
 
@@ -80,14 +80,15 @@ def temp(args):
     # output_activation = 'linear'
 
     # starting with 0.01, the LEARNING RATE REDUCER reduces this value by 0.01 incrementally later within code # 1e-1, 1e-2, 1e-3, 1e-4, 1e-5
-    learning_rate = 0.01 
+    # learning_rate = 0.01 
 
-    optimizer = 'adam' 
-    kernel_regularizer = 'l2'
+    # optimizer = 'adam' 
+    # kernel_regularizer = 'l2'
 
-    #change this here
-    path_to_data = "data\ESB_datasets"
+    # #change this here
+    # path_to_data = "data\ESB_datasets"
 
+    # DELETE COMMENTED-OUT DEAD VARIABLES ONCE YOU CONFIRM THEY'RE NO LONGER NEEDED
 
     """TRAINING ITERATIONS - CROSS VALIDATION"""
     if start_iteration > end_iteration:
@@ -125,7 +126,7 @@ def temp(args):
 
     #def runner_function():
     # dicitonary to hold the computation time per loop (cycle, leadtime, iteration)
-    compute_times = {}
+    # compute_times = {}
 
     # column names for the saving of the model predictions later within "train"
     prediction_column_names = []
@@ -136,8 +137,8 @@ def temp(args):
         print("\n\n----------------------------- TRAINING ! -----------------------------\n\n")
 
         # for model_name in model_name_list:
-        for lead_time in lead_time_list:
-            for iteration in range(args.start_iteration, args.end_iteration, up_down):  
+        for leadtime in lead_time_list:
+            for iteration in range(start_iteration, end_iteration, up_down):  
             # for lead_time in lead_time_list:
                 # if lead_time == 12:
                     # if model_name == "MSE":
@@ -192,7 +193,7 @@ def temp(args):
                 combo_name = f"{args.model_type.lower()}-{args.num_layers}_layers-{args.activation_function}-{args.neurons}_neurons"
 
                 for rotation in args.rotation_list:
-                    print(f"RUNNING {args.c_leadtime}h, {combo_name}-cycle_{rotation}-iteration_{iteration} ...\n")
+                    print(f"RUNNING {leadtime}h, {combo_name}-cycle_{rotation}-iteration_{iteration} ...\n")
                     
                     cycle_time_start = datetime.now()
                     
@@ -218,14 +219,14 @@ def temp(args):
                                                                                                                                 args.wtp_hours_back,
                                                                                                                                 args.pred_atp_interval,
                                                                                                                                 IPPOffset = args.temperature_list[0],
-                                                                                                                                rotation=rotation,
+                                                                                                                                cycle=rotation,
                                                                                                                                 model=args.model_type) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
                     
                     """PREPARINGDATA FUNCTION COMPUTE TIME"""
                     data_prep_time_end = datetime.now()
 
                     # Path to folder for visualization results
-                    save_path = Path("src") / "results" / f"{args.model_type.lower()}_results" / f"{args.c_leadtime}h" / f"{combo_name}-rotation_{rotation}-iteration_{iteration}"
+                    save_path = Path("src") / "results" / f"{args.model_type.lower()}_results" / f"{args.leadtime}h" / f"{combo_name}-rotation_{rotation}-iteration_{iteration}"
                     save_path.mkdir(parents=True, exist_ok=True)
 
                     with open(save_path / "data_prep_compute_time.txt", 'w') as compute_time_file:
@@ -349,8 +350,8 @@ def temp(args):
                     train_path = save_path / "train_datetime_obsv_predictions.csv"
                     val_path = save_path / "val_datetime_obsv_predictions.csv"
 
-                    if independent_year != "cycle":
-                        test_path = save_path / f"{independent_year}_datetime_obsv_predictions.csv"
+                    if args.independent_year != "cycle":
+                        test_path = save_path / f"{args.independent_year}_datetime_obsv_predictions.csv"
                     else:
 
                         test_path = save_path / "test_datetime_obsv_predictions.csv"
@@ -360,8 +361,8 @@ def temp(args):
                     val_vs_preds.to_csv(val_path)
                     test_vs_preds.to_csv(test_path)
                     
-                    """TOTAL CYCLE MODEL COMPUTE TIME"""
-                    cycle_time_end = datetime.now()
+                    # """TOTAL CYCLE MODEL COMPUTE TIME"""
+                    # cycle_time_end = datetime.now() why is this here twice? delete later if it's for sure not needed
 
                     with open(save_path / "cycle_compute_time.txt", 'w') as compute_time_file:
                         compute_time_file.write(f"Total Cycle Time: {cycle_time_end-cycle_time_start}")

@@ -22,7 +22,7 @@ mape
 --tune_train_test=train
 --atp_hours_back=24
 --wtp_hours_back=24
---batch_size= -1 
+--batch_size=-1 
 --lrate=0.01
 --lr_reducer_patience=15
 --early_stop_patience=25
@@ -33,7 +33,7 @@ mape
 --input_structure=descending
 --output_activation=linear
 --optimizer=adam
---kernel_regularizer=12
+--kernel_regularizer=l2
 --call_back_monitor=val_loss
 --pred_atp_interval=1
 --verbose=2
