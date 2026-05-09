@@ -7,9 +7,9 @@
 --num_layers=1
 --activation_function=leaky_relu
 --neurons=100
---epochs=20000
+--epochs=2
 --start_iteration=1
---end_iteration=30
+--end_iteration=2
 --independent_year=cycle
 --metrics
 mae
@@ -22,7 +22,7 @@ mape
 --tune_train_test=train
 --atp_hours_back=24
 --wtp_hours_back=24
---batch_size=-1 
+--batch_size=-1
 --lrate=0.01
 --lr_reducer_patience=15
 --early_stop_patience=25
@@ -36,6 +36,6 @@ mape
 --kernel_regularizer=l2
 --call_back_monitor=val_loss
 --pred_atp_interval=1
---vv
+-vv
 --temperature_list
 0.0

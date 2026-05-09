@@ -1,51 +1,39 @@
 
 """
-Author(s): Christian Duff
+Created by: Christian Duff
 
-Modified by: Jarett Woodall
+Modified by: Jarett Woodall, Hector Marrero-Colominas, Ayesha Khan
 
+Last update: 5/8/2026
 
 The purpose of this script is to tune, train, and/or test cool turtle machine learning model(s) 
-for predicting water temperature in the Laguna Madre, TX for Cold Stunning Events
+for predicting water temperature for cold-stunning events.
 """
 
 
-# Import packages
-from src.helper.utils_mse_crps import crps_loss, crps
-from src.helper.utils_mse_crps import preparingData
-
-# for manipulating paths
 from pathlib import Path
+from datetime import datetime
 
 import keras
-
+import pandas as pd
 import tensorflow as tf
+import tensorflow.keras.backend as K
+from keras.callbacks import TensorBoard, EarlyStopping
+from keras.layers import Input, Dense
+from keras.models import Sequential
+
+from src.helper.utils_mse_crps import TrainingLogger
+from src.helper.my_parser import create_parser
+from src.helper.utils_mse_crps import preparingData
 
 tf.config.threading.set_intra_op_parallelism_threads(2)
 tf.config.threading.set_inter_op_parallelism_threads(2)
-
-from keras.callbacks import TensorBoard
-
-from keras.layers import Input, Dense
-
-from keras.models import Sequential
-
-from keras.callbacks import EarlyStopping
-
-import pandas as pd
-
-from datetime import datetime
-
-import tensorflow.keras.backend as K
-
-# for grabbing the epoch logs to save after training
-from src.helper.utils_mse_crps import TrainingLogger
 
 """
 RUN SCRIPT WITH UQ4ML_WaterTemperature AS YOUR CWD / CURRENT WORKING DIRECTORY
 """
 
-def temp(args):
+def train_models(args):
 
     """TRAINING ITERATIONS - CROSS VALIDATION"""
     start_iteration = args.start_iteration
@@ -58,15 +46,6 @@ def temp(args):
         up_down = 1
         end_iteration += 1
 
-
-    # batch size was determined to utilize the entire dataset... when left undeclared, the batch defaults to 32 
-    #batch_size_list = [4096] # 4096, 2048, 1024, 512, 256, 128, 64
-
-    #def runner_function():
-    # dicitonary to hold the computation time per loop (cycle, leadtime, iteration)
-    # compute_times = {}
-
-    # column names for the saving of the model predictions later within "train"
     prediction_column_names = []
     for k in range(args.num_output_neurons):
         prediction_column_names.append(f'pred_{k+1}')   
@@ -81,13 +60,9 @@ def temp(args):
                 print(f"RUNNING {args.c_leadtime}h, {combo_name}-cycle_{rotation}-iteration_{iteration} ...\n")
                 
                 cycle_time_start = datetime.now()
-                
 
                 """ Model Input Variables """
                 input_hours_forecast = args.c_leadtime
-                # atp_hours_back = hours_back
-                # wtp_hours_back = hours_back
-                # pred_atp_interval = 1                   
 
                 data_prep_time_start = datetime.now()
 
@@ -126,15 +101,6 @@ def temp(args):
 
                 else:
                     batch_size = args.batch_size
-                    
-                if args.model_type == "MSE":
-                    batch_size = x_train.shape[0]
-
-                elif args.model_type == "MAPE":
-                    batch_size = x_train.shape[0] 
-                
-                elif args.model_type == "CRPS":
-                    batch_size = 512
 
                 """TRAINING THE MODEL"""
 
@@ -154,11 +120,9 @@ def temp(args):
 
                 model.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=args.lrate), 
                             loss=args.loss_function, metrics=args.metrics)
-            
 
                 logger = TrainingLogger(save_path / "std_output.txt")
 
-                
                 # Learning rate reducer
                 reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor=args.call_back_monitor, min_delta=args.min_delta,
                                                                 factor=args.factor, patience=args.lr_reducer_patience, min_lr=args.min_lr)
@@ -178,7 +142,6 @@ def temp(args):
 
                 model_callbacks = [early_stopping, reduce_lr, tensorboard_callback, logger]
 
-                
                 # Training the model
                 history = model.fit(x_train, y_train, validation_data=(x_val, y_val), epochs=args.epochs, 
                                     batch_size=batch_size, callbacks=model_callbacks, verbose=args.verbose) 
@@ -186,7 +149,6 @@ def temp(args):
                 """TRAINING COMPUTE TIME"""
                 train_time_end = datetime.now()
 
-                # 
                 # look into re-loading models instead of re-training them again 
                 # use pickle
                 # need to do this for re-producing the bug 
@@ -194,13 +156,10 @@ def temp(args):
                 with open(save_path / "train_compute_time.txt", 'w') as compute_time_file:
                     compute_time_file.write(f"Model Train Time: {train_time_end-train_time_start}")
                 
-
-
                 """LOSS INFORMATION"""
                 loss = history.history['loss']
                 val_loss = history.history['val_loss']
             
-
                 losses = pd.DataFrame(columns=['Loss', 'Val_Loss']) 
                 losses['Loss'] = loss
                 losses['Val_Loss'] = val_loss
@@ -246,8 +205,6 @@ def temp(args):
                 with open(save_path / "cycle_compute_time.txt", 'w') as compute_time_file:
                     compute_time_file.write(f"Total Cycle Time: {cycle_time_end-cycle_time_start}")
 
-from src.helper.my_parser import create_parser
-
 def main():
     print("yippee!")
     pass
@@ -267,4 +224,4 @@ if __name__ == "__main__":
     #checking what keys we have in our parser
     show_keys(args)
     main()
-    temp(args)
+    train_models(args)

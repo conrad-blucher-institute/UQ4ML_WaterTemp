@@ -26,6 +26,8 @@ from evaluations.aggregate_tables import aggregateTable
 
 from evaluations.boxplot_figures import figure_5_plot, figure_6_7_plot, figure_13_plot, existance_checker
 
+from src.helper.my_parser import create_parser
+
 ######## Variables ########
 """
 This variable will be set to False to run the needed files for the aggregate table.
@@ -37,135 +39,155 @@ IMPORTANT:
 Set to False first to ensure the files are there, 
 this exists so you dont have to run the intensive functions again.
 """
-runAggregateCode = False #True
+def temp(args):
+    runAggregateCode = False #True
 
-# Variable to save the plots will be set to True, otherwise False. 
-# Note: The plot files are not large, but I would keep this true so that you can look at your plots. 
-save = True
+    # Variable to save the plots will be set to True, otherwise False. 
+    # Note: The plot files are not large, but I would keep this true so that you can look at your plots. 
+    save = True
 
-# List of cycles to create necessary files for plotting and aggregate tables 
-cycles = [0, 1, 2, 3]
+    # List of cycles to create necessary files for plotting and aggregate tables 
+    cycles = args.rotations
 
-# List of leadTimes to make visuals and tables for models at different lead times. 
-leadTimes = [120]#[12]
+    # List of leadTimes to make visuals and tables for models at different lead times. 
+    leadTimes = [120]#[12]
 
-# Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
-architectures = ["CRPS"] #['mse','PNN',"CRPS"]
+    # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
+    architectures = ["CRPS"] #['mse','PNN',"CRPS"]
 
-# This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-iterations = 30
+    # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
+    iterations = 30
 
-"""
-Should be set to either "val", "test", or "train" depending on what information
-you want to visualize. If you ran the 2021 or 2024 testing years please use 
-'2021' or '2024' to retrieve relevant information.
-"""
-# obsVsPred = 'val' 'test'
-obsVsPred = '2021'
-
-"""
-Set to true if you want csvs outputted that contain all of the predictions 
-instead of having just summary statistics.
-
-WARNING if this is set to True, the files will grow to very large sizes, 
-particularly for CRPS.
-"""
-expanded = False
-
-###################################################################
-
-##### CODE EXECUTION for Plotting and Calculation Files
-
-# set to true run again
-if runAggregateCode == False:
     """
-    This line is ran so that the files needed to create the pltos are created and retrieved.
-    If you want to modify only the graph code and  if the files have been created you can uncomment this line. 
-    It will save you time. The loop below assumes that the files created by this function exist.
+    Should be set to either "val", "test", or "train" depending on what information
+    you want to visualize. If you ran the 2021 or 2024 testing years please use 
+    '2021' or '2024' to retrieve relevant information.
     """
-    mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred, expanded)
-    
-    # For loop to loop through leadtimes and create plots for each cycle (rotation)
-    for leadTime in leadTimes:
+    # obsVsPred = 'val' 'test'
+    obsVsPred = '2021'
 
-        # This Line Will need to be ran to plot the graphs
-        decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
+    """
+    Set to true if you want csvs outputted that contain all of the predictions 
+    instead of having just summary statistics.
 
-else:
-    ##### Aggregate Table Execution Code #######
+    WARNING if this is set to True, the files will grow to very large sizes, 
+    particularly for CRPS.
     """
-    Set to false if you wish to run byCombo code. 
-    NOTE: If you decided to save all of the predictions to the files, this process will take time to load and execute calculations.
-    Mainly this note is only for the CRPS model. 
-    """
+    expanded = False
 
-    # change this to false next
-    byCycle = True
-    
-    # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified.
-    threshold = 12
-    """
-    Controls how many hours before and after Winter Storm URI should be included in calculations.
-    NOTE: This variable only matters if you are working with the 2021 testing year.
-    """
-    padding = 24
-    
-    """
-    This if sturcture was designed so that the relevant box plot functions (Figures for the paper) 
-    only run if byCycle Aggregate Tables have been created. Within each condition the aggregate table 
-    function runs to create these tables.
-    """
-    # Conditional to run function if you are working with the 2021 year; obsVsPred must be set to '2021' to pass if-structure.
-    if obsVsPred == '2021' and byCycle == True:
+    ###################################################################
+
+    ##### CODE EXECUTION for Plotting and Calculation Files
+
+    # set to true run again
+    if runAggregateCode == False:
+        """
+        This line is ran so that the files needed to create the pltos are created and retrieved.
+        If you want to modify only the graph code and  if the files have been created you can uncomment this line. 
+        It will save you time. The loop below assumes that the files created by this function exist.
+        """
+        mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred, expanded)
         
-        # Driver function call to include files for URI.
-        aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
-        
-        # Outputs Figure 13 to a folder called "Paper_Figures".
-        # 2026-01-15 ayesha: commenting this out because this is a boxplot; dont think i need this right now
-        # figure_13_plot(padding)
+        # For loop to loop through leadtimes and create plots for each cycle (rotation)
+        for leadTime in leadTimes:
 
-    # This elif is here to ensure the URI code in the aggregate table function is ran when byUQMethod is selected.
-    elif obsVsPred == '2021' and byCycle == False:
+            # This Line Will need to be ran to plot the graphs
+            decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
 
-        # Driver Function call to create byUQMethod tables.
-         aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
-        
-    elif obsVsPred == '2024' and byCycle == True:
-    
-        # Runs the function helper to get byCycle tables. 
-        aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
-        
-         # Outputs Figure 7 to a folder called "Paper_Figures".
-        figure_6_7_plot(obsVsPred, threshold)
-    
-    elif obsVsPred == 'test' and byCycle == True:
-    
-         # Runs the function helper to get byCycle tables. 
-        aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
-        
-         # Outputs Figure 6 to a folder called "Paper_Figures".
-        figure_6_7_plot(obsVsPred, threshold)
-        
     else:
-         # Runs the function helper to get byCycle tables, or if byCycle is set to False it will get the byUQMethod tables. 
-        aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
+        ##### Aggregate Table Execution Code #######
+        """
+        Set to false if you wish to run byCombo code. 
+        NOTE: If you decided to save all of the predictions to the files, this process will take time to load and execute calculations.
+        Mainly this note is only for the CRPS model. 
+        """
+
+        # change this to false next
+        byCycle = True
         
-########################################################################
-""" This code checks to make sure the aggregate tables for val and test
- exist so that Figure 4 can be created. If the aggregate tables do not exist
- please run the above script to output the correct outputs so that figure 4 
-code can run."""
-
-# Set to true to get this figure to be saved; ensure you have the files described above.
-runFig5 = False
-
-if runFig5:
-    if existance_checker():
+        # Chnage this variable if you wish to see metrics for predictions below a certain threshold specified.
+        threshold = 12
+        """
+        Controls how many hours before and after Winter Storm URI should be included in calculations.
+        NOTE: This variable only matters if you are working with the 2021 testing year.
+        """
+        padding = 24
         
-        # Function to run figure 5
-        figure_5_plot()
+        """
+        This if sturcture was designed so that the relevant box plot functions (Figures for the paper) 
+        only run if byCycle Aggregate Tables have been created. Within each condition the aggregate table 
+        function runs to create these tables.
+        """
+        # Conditional to run function if you are working with the 2021 year; obsVsPred must be set to '2021' to pass if-structure.
+        if obsVsPred == '2021' and byCycle == True:
+            
+            # Driver function call to include files for URI.
+            aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
+            
+            # Outputs Figure 13 to a folder called "Paper_Figures".
+            # 2026-01-15 ayesha: commenting this out because this is a boxplot; dont think i need this right now
+            # figure_13_plot(padding)
+
+        # This elif is here to ensure the URI code in the aggregate table function is ran when byUQMethod is selected.
+        elif obsVsPred == '2021' and byCycle == False:
+
+            # Driver Function call to create byUQMethod tables.
+            aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, True, padding)
+            
+        elif obsVsPred == '2024' and byCycle == True:
+        
+            # Runs the function helper to get byCycle tables. 
+            aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
+            
+            # Outputs Figure 7 to a folder called "Paper_Figures".
+            figure_6_7_plot(obsVsPred, threshold)
+        
+        elif obsVsPred == 'test' and byCycle == True:
+        
+            # Runs the function helper to get byCycle tables. 
+            aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
+            
+            # Outputs Figure 6 to a folder called "Paper_Figures".
+            figure_6_7_plot(obsVsPred, threshold)
+            
+        else:
+            # Runs the function helper to get byCycle tables, or if byCycle is set to False it will get the byUQMethod tables. 
+            aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred)
+            
+    ########################################################################
+    """ This code checks to make sure the aggregate tables for val and test
+    exist so that Figure 4 can be created. If the aggregate tables do not exist
+    please run the above script to output the correct outputs so that figure 4 
+    code can run."""
+
+    # Set to true to get this figure to be saved; ensure you have the files described above.
+    runFig5 = False
+
+    if runFig5:
+        if existance_checker():
+            
+            # Function to run figure 5
+            figure_5_plot()
 
 
+def main():
+    print("yippee!")
+    pass
 
+def show_keys(args):
+    args_dict = vars(args)
+    for key, value in args_dict.items():
+        print(f"{key}: {value}")
+        
+# make sure you run
+# python -m src.driver.operational_mse_crps_driver @configs/mape_12h.txt 
+if __name__ == "__main__":
+    # parse incoming command-line arguments
+    parser = create_parser()
+    args = parser.parse_args()
+
+    #checking what keys we have in our parser
+    show_keys(args)
+    main()
+    temp(args)
  
