@@ -29,7 +29,7 @@ def create_parser():
     parser.add_argument('--leadtime_list',                nargs='+', type=int,           default=[12],                       help="Leadtime we are predicting")
     parser.add_argument('--repetitions',                        type=int,           default=1,                          help="Number of times to repeat this experiment")
 
-    parser.add_argument('--c_cycle',                            type=int,           default=0,                          help="current experiments: Leadtime we are predicting")
+    parser.add_argument('--c_cycle',                            type=int,           default=0,                          help="current experiments: Rotation we are predicting")
     parser.add_argument('--c_leadtime',                         type=int,           default=12,                         help="current experiments: Leadtime we are predicting")
     parser.add_argument('--c_repetitions',                      type=int,           default=1,                          help="current experiments: Number of times to repeat this experiment")
 
@@ -85,7 +85,7 @@ def create_parser():
     parser.add_argument('--mu_threshold',                       type=float,         default=0.5,                        help="Threshold for mu modification to loss func.")
     parser.add_argument('--mu_regularization_parameter',        type=float,         default=0.2,                        help="Regularization Parameter for mu loss func modification")
 
-
+    # this should probably be a sub parser -hector
     parser.add_argument('--max_trials',                         type=int,           default=30,                         help="Sets the maximum number of trials for the tuner to use. Implemented specifically for random search. Can be reused.")
     parser.add_argument('--executions_per_trial',               type=int,           default=2,                          help="sets how many models one trial of the tuner computes, returns the average of all models")
     parser.add_argument('--unit_list',             nargs='+',   type=int,           default=None,                       help="options for hidden layer sizes, part of tuner hyperparameter search space")
@@ -101,7 +101,6 @@ def create_parser():
     parser.add_argument('--start_iteration',                    type=int,           default=1,                          help="starting training iteration")
     parser.add_argument('--end_iteration',                      type=int,           default=30,                         help="ending training iteration")
     parser.add_argument('--independent_year',                   type=str,           default="cycle",                    help="Determines if it's regular-cycle testing or independent year testing. Set to cycle if regular. Else set to 2021 or 2024.")
-    # parser.add_argument('--loss_function',                      type=str,           default="mape",                     help="placeholder text")
     parser.add_argument('--output_activation',                  type=str,           default="linear",                   help="placeholder text")
     parser.add_argument('--pred_atp_interval',                  type=int,           default=1,                          help="placeholder text")
     parser.add_argument('--factor',                             type=float,         default=0.1,                        help="placeholder text")

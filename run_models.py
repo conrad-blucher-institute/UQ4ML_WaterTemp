@@ -6,10 +6,10 @@ from datetime import datetime, timedelta
 if __name__ == "__main__":
     # add whatever models you want to run to this list
     configs = [
-        "configs/mape_12h.txt",
-        "configs/mape_48h.txt",
-        "configs/mape_96h.txt",
-        "configs/mape_120h.txt"
+        "mape/configs/mape_12h.txt",
+        "mape/configs/mape_48h.txt",
+        "mape/configs/mape_96h.txt",
+        "mape/configs/mape_120h.txt"
     ]
 
     run_summary = [] # contains each config file name; if it succeeded; and time it took to train

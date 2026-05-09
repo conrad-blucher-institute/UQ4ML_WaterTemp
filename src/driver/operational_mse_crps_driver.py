@@ -61,9 +61,6 @@ def train_models(args):
                 
                 cycle_time_start = datetime.now()
 
-                """ Model Input Variables """
-                input_hours_forecast = args.c_leadtime
-
                 data_prep_time_start = datetime.now()
 
                 # clearing stale nodes that might be persisting in the 
@@ -71,17 +68,23 @@ def train_models(args):
                 K.clear_session()
 
                 """ Manipulating data for AI Model """
+                
                 x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
                                                                                                                             args.input_structure,
                                                                                                                             args.independent_year,
-                                                                                                                            input_hours_forecast,
-                                                                                                                            args.atp_hours_back,
-                                                                                                                            args.wtp_hours_back,
-                                                                                                                            args.pred_atp_interval,
+                                                                                                                            input_hours_forecast=args.c_leadtime,
+                                                                                                                            atp_hours_back=args.atp_hours_back,
+                                                                                                                            wtp_hours_back=args.wtp_hours_back,
+                                                                                                                            pred_atp_interval=args.pred_atp_interval,
                                                                                                                             IPPOffset = args.temperature_list[0],
                                                                                                                             cycle=rotation,
                                                                                                                             model=args.model_type) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
                 
+                # here you would import keras standardscaler
+                # and then calibrate on x_train
+                # it would look like scaler = standardscaler(x_train)
+                # and then scale x_val x_test and any independent tests 
+
                 """PREPARINGDATA FUNCTION COMPUTE TIME"""
                 data_prep_time_end = datetime.now()
 
@@ -165,7 +168,7 @@ def train_models(args):
                 losses['Val_Loss'] = val_loss
                 losses.to_csv(save_path / "losses.csv")
 
-                # saving the model to h5 file
+                # saving the model to keras file
                 model.save(save_path / f"model_{datetime.now().strftime('%Y%m%d-%H%M%S')}_.keras") 
                 
                 train_predictions = model.predict(x_train)
@@ -194,14 +197,12 @@ def train_models(args):
                 if args.independent_year != "cycle":
                     test_path = save_path / f"{args.independent_year}_datetime_obsv_predictions.csv"
                 else:
-
                     test_path = save_path / "test_datetime_obsv_predictions.csv"
 
                 train_vs_preds.to_csv(train_path)
                 val_vs_preds.to_csv(val_path)
                 test_vs_preds.to_csv(test_path)
     
-
                 with open(save_path / "cycle_compute_time.txt", 'w') as compute_time_file:
                     compute_time_file.write(f"Total Cycle Time: {cycle_time_end-cycle_time_start}")
 
