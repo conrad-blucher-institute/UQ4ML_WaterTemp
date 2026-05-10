@@ -124,7 +124,7 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
 
 
-    training_data, testing_data, validation_data = splittingData(data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
+    training_data, testing_data, validation_data = splittingData(year2, year3, year4, year5, year_independent, cycle)
     training_data.to_csv('debug_hooplah/debug_training_data.csv')
     testing_data.to_csv('debug_hooplah/debug_testing_data.csv')
     validation_data.to_csv('debug_hooplah/debug_validation_data.csv')
