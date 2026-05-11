@@ -8,6 +8,9 @@ Last update: 5/8/2026
 
 The purpose of this script is to tune, train, and/or test cool turtle machine learning model(s) 
 for predicting water temperature for cold-stunning events.
+
+To run this file, run python run_models.py.
+To change what models you want to run, go to run_models.py and adjust the config files accordingly. 
 """
 
 
@@ -15,6 +18,7 @@ from pathlib import Path
 from datetime import datetime
 
 import keras
+import joblib # standard tool for serializing scikit-learn objects 
 import pandas as pd
 import tensorflow as tf
 import tensorflow.keras.backend as K
@@ -69,22 +73,26 @@ def train_models(args):
 
                 """ Manipulating data for AI Model """
                 
-                x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData(args.data_set,
-                                                                                                                            args.input_structure,
-                                                                                                                            args.independent_year,
-                                                                                                                            input_hours_forecast=args.c_leadtime,
-                                                                                                                            atp_hours_back=args.atp_hours_back,
-                                                                                                                            wtp_hours_back=args.wtp_hours_back,
-                                                                                                                            pred_atp_interval=args.pred_atp_interval,
-                                                                                                                            IPPOffset = args.temperature_list[0],
-                                                                                                                            cycle=rotation,
-                                                                                                                            model=args.model_type) # "model" variable only mattered for when we used lstm; lstm resuired a transofmration of dimensions of input shape
+                preparingData_result = preparingData(
+                    args.data_set,
+                    args.input_structure,
+                    args.independent_year,
+                    args.c_leadtime,
+                    args.atp_hours_back,
+                    args.wtp_hours_back,
+                    args.pred_atp_interval,
+                    IPPOffset=args.temperature_list[0],
+                    cycle=rotation,
+                    model=args.model_type,
+                    scale=args.scale
+                )
                 
-                # here you would import keras standardscaler
-                # and then calibrate on x_train
-                # it would look like scaler = standardscaler(x_train)
-                # and then scale x_val x_test and any independent tests 
-
+                if args.scale:
+                    x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir, scaler = preparingData_result
+                else:
+                    x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAir = preparingData_result
+                    scaler = None
+                
                 """PREPARINGDATA FUNCTION COMPUTE TIME"""
                 data_prep_time_end = datetime.now()
 
@@ -171,6 +179,10 @@ def train_models(args):
                 # saving the model to keras file
                 model.save(save_path / f"model_{datetime.now().strftime('%Y%m%d-%H%M%S')}_.keras") 
                 
+                if scaler is not None:
+                    scaler_filename = f"scaler_{args.model_type}_{args.c_leadtime}h_cycle{rotation}_iter{iteration}.joblib"
+                    joblib.dump(scaler, save_path / scaler_filename)
+
                 train_predictions = model.predict(x_train)
                 val_predictions = model.predict(x_val)
                 # put print here; focus on those 3 days during the cs event of 2021 to ease analysis
@@ -215,8 +227,6 @@ def show_keys(args):
     for key, value in args_dict.items():
         print(f"{key}: {value}")
         
-# make sure you run
-# python -m src.driver.operational_mse_crps_driver @configs/mape_12h.txt 
 if __name__ == "__main__":
     # parse incoming command-line arguments
     parser = create_parser()

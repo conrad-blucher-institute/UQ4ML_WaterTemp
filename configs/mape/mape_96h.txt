@@ -1,4 +1,4 @@
---results_folder=results/mape_results
+--results_folder=results/mape_scaled_results
 --data_set=data/ESB_datasets
 --model_type=mape
 --loss_function=mape
@@ -39,3 +39,4 @@ mape
 -vv
 --temperature_list
 0.0
+--scale

@@ -46,13 +46,15 @@ output:
         testingAirTemps - list of air temperatures for testing data
 ------------------------------------------------------------------------- '''
 def preparingData(path_to_data, input_structure, independent_year, input_hours_forecast, atp_hours_back, 
-                  wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0):
+                  wtp_hours_back, pred_atp_interval, IPPOffset = 0.0, cycle = 0, model="MLP", verbose=0, scale=False):
     
     '''preparingData() is the driver function'''
+    # this will be its own file 
     # Importing libraries
     from datetime import datetime
     import pandas as pd
     import numpy as np
+    from sklearn.preprocessing import StandardScaler
 
     # Function call to read the data
     # excluding data_year1, which is the independent testing data
@@ -74,23 +76,14 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
         if independent_year == '2021':
             data_independent_year = pd.read_csv("data/ESB_datasets/esb_2020_2021.csv")
+        else:
+            raise ValueError(f"Currently unsupported independent_year: {independent_year}")
         # elif independent_year == '2024':
         #     data_independent_year = pd.read_csv("../UQ4ML_WaterTemp/data/June_May_Datasets/june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
 
 
         year_independent = creatingAdditionalColumns(data_independent_year, input_structure, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval, IPPOffset)
         
-        # Debug: inspect year_independent
-        print("year_independent shape:", year_independent.shape)
-        print("year_independent columns:", year_independent.columns.tolist())
-        print("year_independent head:\n", year_independent.head())
-        print("year_independent tail:\n", year_independent.tail())
-        print("Missing values in year_independent:\n", year_independent.isnull().sum())
-        
-        # Export to CSV for inspection
-        year_independent.to_csv('debug_hooplah/debug_year_independent.csv', index=False)
-
-        # return
     
     elif independent_year == 'cycle':
         year_independent = independent_year
@@ -122,12 +115,8 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
 
     # training_data, testing_data, validation_data = splittingData(data_year1, data_year2, data_year3, data_year4, data_year5, year_independent, cycle)
-
-
     training_data, testing_data, validation_data = splittingData(year2, year3, year4, year5, year_independent, cycle)
-    training_data.to_csv('debug_hooplah/debug_training_data.csv')
-    testing_data.to_csv('debug_hooplah/debug_testing_data.csv')
-    validation_data.to_csv('debug_hooplah/debug_validation_data.csv')
+    
 
     # return
     
@@ -157,33 +146,12 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     
     dataframe_checker(-999, [training_data, testing_data, validation_data]) # checking for any rogue number less than -999
 
-    # Function call to delete the rows that at least one of the columns contain a missing value (-999)
-    print("\n*** BEFORE DELETION ***")
-    print(f"Training rows with -999: {(training_data == -999).any(axis=1).sum()}")
-    print(f"Testing rows with -999: {(testing_data == -999).any(axis=1).sum()}")
-    print(f"Validation rows with -999: {(validation_data == -999).any(axis=1).sum()}")
-    
     training = deletingMissingValues(training_data)
     testing = deletingMissingValues(testing_data)
     validation = deletingMissingValues(validation_data)
 
-    print("\n*** AFTER DELETION ***")
-    print(f"Training rows with -999: {(training == -999).any(axis=1).sum()}")
-    print(f"Testing rows with -999: {(testing == -999).any(axis=1).sum()}")
-    print(f"Validation rows with -999: {(validation == -999).any(axis=1).sum()}")
-    print(f"Training size: {training.shape[0]} (was {training_data.shape[0]})")
-    print(f"Testing size: {testing.shape[0]} (was {testing_data.shape[0]})")
-    print(f"Validation size: {validation.shape[0]} (was {validation_data.shape[0]})\n")
-
-    # Save cleaned data for verification
-    training.to_csv('debug_hooplah/debug_training_data_CLEANED.csv')
-    testing.to_csv('debug_hooplah/debug_testing_data_CLEANED.csv')
-    validation.to_csv('debug_hooplah/debug_validation_data_CLEANED.csv')
-    print("Saved cleaned data to debug_*_CLEANED.csv files for verification\n")
-
     dataframe_checker(-100, [training, testing, validation]) # checking for any rogue number less than -100
     
-
     # For new calculations created in the Summer of 2023
     training_dates = dateTimeRetriever(training, input_hours_forecast) if not training.empty else []
     validation_dates = dateTimeRetriever(validation, input_hours_forecast) if not validation.empty else []
@@ -198,21 +166,26 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     
     # Function call to reshpe the dataset and prepare it to be used as in input for the neural network
     x_train, y_train, x_val, y_val, x_test, y_test = reshaping(input_structure, training, testing, validation, model) 
+    # scaler goes here
+
+    scaler = None # guarantees the variable exists regardless of whether scaling ran 
+    if scale:
+        scaler = StandardScaler()
+        scaler.fit(x_train)
+        x_train = scaler.transform(x_train)
+        x_val = scaler.transform(x_val)
+        x_test = scaler.transform(x_test)
+    # left off here
 
     if verbose == 3:
-        print("NaNs in x_train:", np.isnan(x_train).sum())
-        print("NaNs in y_train:", np.isnan(y_train).sum())
-        print("Infs in x_train:", np.isinf(x_train).sum())
-        print("Infs in y_train:", np.isinf(y_train).sum())
-        print("NaNs in x_val:", np.isnan(x_val).sum())
-        print("NaNs in y_val:", np.isnan(y_val).sum())
-        print("NaNs in x_test:", np.isnan(x_test).sum())
-        print("NaNs in y_test:", np.isnan(y_test).sum())
-        print("Infs in x_val:", np.isinf(x_val).sum())
-        print("Infs in y_val:", np.isinf(y_val).sum())
-        print("Infs in x_test:", np.isinf(x_test).sum())
-        print("Infs in y_test:", np.isinf(y_test).sum())
+        for name, arr in [("x_train", x_train), ("y_train", y_train), ("x_val", x_val),
+                          ("y_val", y_val), ("x_test", x_test), ("y_test", y_test)]:
+            print(f"NaNs in {name}:", np.isnan(arr).sum())
+            print(f"Infs in {name}:", np.isinf(arr).sum())
 
+    if scale:
+        return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps, scaler
+    
     return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps
 
 '''  

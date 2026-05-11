@@ -106,6 +106,7 @@ def create_parser():
     parser.add_argument('--factor',                             type=float,         default=0.1,                        help="placeholder text")
     parser.add_argument('--min_lr',                             type=float,         default=0.00001,                    help="placeholder text")
     parser.add_argument('--temperature_list', nargs='+',        type=float,         default=None,                       help="List of temperature perturbations. For perfect prognosis, set to 0.0.")
+    parser.add_argument('--scale',                              action='store_true',                                    help="flag whether we want to scale the data using StandardScaler.")
 
 
 

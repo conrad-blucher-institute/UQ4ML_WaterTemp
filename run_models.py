@@ -6,10 +6,10 @@ from datetime import datetime, timedelta
 if __name__ == "__main__":
     # add whatever models you want to run to this list
     configs = [
-        "mape/configs/mape_12h.txt",
-        "mape/configs/mape_48h.txt",
-        "mape/configs/mape_96h.txt",
-        "mape/configs/mape_120h.txt"
+        "configs/mape/mape_12h.txt",
+        "configs/mape/mape_48h.txt",
+        "configs/mape/mape_96h.txt",
+        "configs/mape/mape_120h.txt"
     ]
 
     run_summary = [] # contains each config file name; if it succeeded; and time it took to train
@@ -40,9 +40,8 @@ if __name__ == "__main__":
     print(f"{len(run_summary) - len(failed_runs)}/{len(run_summary)} configs succeeded.")
     print(f"Total elapsed time: {total_elapsed}")
 
-    if failed_runs is None:
-        sys.exit(0)
-
     for fail in failed_runs:
         print(f"Failed runs: {fail['config']} | returncode = {fail['returncode']} | elapsed time = {str(fail['elapsed']).split('.')[0]}")
+    
+    if failed_runs:
         sys.exit(1)
