@@ -615,6 +615,46 @@ def reshaping(input_structure, training, testing, validation, model):
 
     return x_train, y_train, x_val, y_val, x_test, y_test
 
+def prepare_independent_year(csv_path, input_structure, lead_time,
+                             atp_hours_back, wtp_hours_back,
+                             pred_atp_interval=1, IPPOffset=0.0, scaler=None,
+                             column_map=None):
+
+    import pandas as pd
+
+    df_raw = pd.read_csv(csv_path)
+    if column_map is not None:
+        df_raw = df_raw.rename(columns=column_map) # if column_map is provided then rename first
+        # if no column_map the csv is assumed to already use esb column names
+        
+    df_features = creatingAdditionalColumns(
+        df = df_raw,
+        input_structure=input_structure,
+        input_hours_forecast=lead_time,
+        atp_hours_back=atp_hours_back,
+        wtp_hours_back=wtp_hours_back,
+        pred_atp_interval=pred_atp_interval,
+        IPPOffset=IPPOffset,
+    )
+
+    df_clean = deletingMissingValues(df_features)
+    
+    dates = dateTimeRetriever(df_clean.copy(), lead_time) # passing copy protects df_clean from being modified
+    # since you still need the original column for the X/y extraction below
+
+    # different input_structure values stack columns differently
+    # descending puts the date in column 0 and features starting at column 1;
+    # alternative ordering puts features starting at column 3
+    col_start = 1 if input_structure == 'descending' else 3
+    X = df_clean.iloc[:, col_start:-1].values.astype(float)
+    y = df_clean.iloc[:, -1].values.astype(float) # convert pandas df to numpy float array since that's what keras expects for model.predict
+
+    # uses the training-fit scaler to apply the same scaling to inference X 
+    if scaler is not None:
+        X = scaler.transform(X)
+
+    return X, y, dates
+
 
 '''  
 -------------------------------------------------------------------------

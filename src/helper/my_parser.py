@@ -108,6 +108,9 @@ def create_parser():
     parser.add_argument('--temperature_list', nargs='+',        type=float,         default=None,                       help="List of temperature perturbations. For perfect prognosis, set to 0.0.")
     parser.add_argument('--scale',                              action='store_true',                                    help="flag whether we want to scale the data using StandardScaler.")
 
+    parser.add_argument('--inference_csv',                      type=str,        default=None,                        help="the csv to predict on")
+    parser.add_argument('--inference_output_folder',            type=str,        default=None,                        help="where to write predictins")
+    parser.add_argument('--column_map_path',                    type=str,        default=None,                        help="path to json for column renames; optional")
 
 
     return parser

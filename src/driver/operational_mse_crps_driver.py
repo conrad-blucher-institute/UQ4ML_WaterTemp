@@ -97,7 +97,7 @@ def train_models(args):
                 data_prep_time_end = datetime.now()
 
                 # Path to folder for visualization results
-                save_path = Path("src") / "results" / f"{args.model_type.lower()}_results" / f"{args.c_leadtime}h" / f"{combo_name}-rotation_{rotation}-iteration_{iteration}"
+                save_path = Path(args.results_folder) / f"{args.c_leadtime}h" / f"{combo_name}-rotation_{rotation}-iteration_{iteration}"
                 save_path.mkdir(parents=True, exist_ok=True)
 
                 with open(save_path / "data_prep_compute_time.txt", 'w') as compute_time_file:

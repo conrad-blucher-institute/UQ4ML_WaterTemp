@@ -1,5 +1,7 @@
 --results_folder=results/mape_scaled_results
 --data_set=data/ESB_datasets
+--inference_csv=data/ESB_datasets/esb_2020_2021.csv
+--inference_output_folder=results/mape_inference_esb_2021
 --model_type=mape
 --loss_function=mape
 --c_leadtime
@@ -7,9 +9,9 @@
 --num_layers=3
 --activation_function=leaky_relu
 --neurons=32
---epochs=2
+--epochs=20000
 --start_iteration=1
---end_iteration=2
+--end_iteration=30
 --independent_year=cycle
 --metrics
 mae

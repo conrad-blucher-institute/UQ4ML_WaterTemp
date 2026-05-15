@@ -50,13 +50,13 @@ def temp(args):
     cycles = args.rotations
 
     # List of leadTimes to make visuals and tables for models at different lead times. 
-    leadTimes = [120]#[12]
+    leadTimes = args.c_leadtime
 
     # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
-    architectures = ["CRPS"] #['mse','PNN',"CRPS"]
+    architectures = args.model_type
 
     # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
-    iterations = 30
+    iterations = args.end_iteration
 
     """
     Should be set to either "val", "test", or "train" depending on what information
@@ -65,7 +65,7 @@ def temp(args):
     """
     # obsVsPred = 'val' 'test'
     obsVsPred = '2021'
-
+    
     """
     Set to true if you want csvs outputted that contain all of the predictions 
     instead of having just summary statistics.
