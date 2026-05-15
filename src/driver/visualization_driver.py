@@ -40,20 +40,20 @@ Set to False first to ensure the files are there,
 this exists so you dont have to run the intensive functions again.
 """
 def temp(args):
-    runAggregateCode = False #True
+    runAggregateCode = True #True
 
     # Variable to save the plots will be set to True, otherwise False. 
     # Note: The plot files are not large, but I would keep this true so that you can look at your plots. 
     save = True
 
     # List of cycles to create necessary files for plotting and aggregate tables 
-    cycles = args.rotations
+    cycles = args.rotation_list
 
     # List of leadTimes to make visuals and tables for models at different lead times. 
     leadTimes = args.c_leadtime
 
     # Architecture lists; code will only work if you use these three types, any deviation will require refactoring.
-    architectures = args.model_type
+    architectures = [args.model_type]
 
     # This should match the number of iterations you ran while training, you can also have this number set to something smaller, if you wish to see fewer models.
     iterations = args.end_iteration
@@ -64,8 +64,8 @@ def temp(args):
     '2021' or '2024' to retrieve relevant information.
     """
     # obsVsPred = 'val' 'test'
-    obsVsPred = '2021'
-    
+    obsVsPred = 'val'
+
     """
     Set to true if you want csvs outputted that contain all of the predictions 
     instead of having just summary statistics.
@@ -86,13 +86,10 @@ def temp(args):
         If you want to modify only the graph code and  if the files have been created you can uncomment this line. 
         It will save you time. The loop below assumes that the files created by this function exist.
         """
-        mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred, expanded)
+        mme_mse_crps_PNN_lead_times_singlePlot(architectures, cycles, leadTimes, obsVsPred, expanded, args.results_folder)
         
-        # For loop to loop through leadtimes and create plots for each cycle (rotation)
-        for leadTime in leadTimes:
-
-            # This Line Will need to be ran to plot the graphs
-            decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
+        # This Line Will need to be ran to plot the graphs
+        decentralized_graphing_driver(architectures, leadTimes, cycles, obsVsPred, save, args.results_folder)
 
     else:
         ##### Aggregate Table Execution Code #######

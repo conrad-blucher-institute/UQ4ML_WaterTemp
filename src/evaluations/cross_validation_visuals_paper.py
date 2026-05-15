@@ -26,7 +26,7 @@ from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian
 
 ########### Data Retrieval Code ############
 
-def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cycle, leadTime):
+def model_parser(results_folder, architecture, obsVsPred, cycle, leadTimes):
     """
     function to grab corressponding combination information
     Inputs:
@@ -44,34 +44,36 @@ def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cyc
     # Creates empty dataframe
     mainDf = pd.DataFrame()
     
-    # Loop for parsing data and grabbing data
-    for i in range(iterations):
-        
-        # Increment to start at 1
-        i+=1
-        
-        # Reads dataframes in regardless of macOS or Windows
-        file_path = Path("src") /  MAIN_DIRECTORY / f"{leadTime}h" / f"{architecture.lower()}-{model}-cycle_{cycle}-iteration_{i}" / f"{obsVsPred}_datetime_obsv_predictions.csv"
+    leadtime_dir = Path(results_folder) / f"{leadTimes}h"
 
-        df = pd.read_csv(file_path)
-        if i == 1:
-            
+    if not leadtime_dir.exists():
+        print(f"Warning: {leadtime_dir} does not exist. No models trained for this leadtime?")
+        return mainDf # empty df
+    
+    # find all iteration folders for this architecture + rotation/cycle
+    model_dirs = sorted(leadtime_dir.glob(f"{architecture.lower()}-*-rotation_{cycle}-iteration_*"))
+    
+
+    for idx, model_dir in enumerate(model_dirs):
+         # ... existence check ...
+        csv_path = model_dir / f"{obsVsPred}_datetime_obsv_predictions.csv"
+        if not csv_path.exists():
+            print(f"Skipping {model_dir.name} - no {obsVsPred} CSV")
+            continue
+
+        iteration_num = int(model_dir.name.split('iteration_')[-1])
+        df = pd.read_csv(csv_path)
+
+        if mainDf.empty:
             mainDf["target"] = df['target']
             mainDf['date_time'] = df['date_time']
             mainDf.set_index('date_time', inplace=True)
-            
-        # Sets index
+
         df.set_index('date_time', inplace=True)
-            
-        # Drops target and date_time
         df.drop(['target'], axis=1, inplace=True)
-        
-        #Adds string identifiers to the end
-        df = df.add_suffix('_iteration_' + str(i))
-        
-        # Combine data
-        mainDf = pd.concat([mainDf, df], axis=1)
-     
+        df = df.add_suffix(f'_iteration_{iteration_num}')
+        mainDf = pd.concat([mainDf, df], axis=1) 
+
     # Drops unnamed columns
     mainDf = mainDf.loc[:, ~mainDf.columns.str.contains('^Unnamed')]
         
@@ -79,103 +81,11 @@ def model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cyc
         
 # END: def model_parser()
 
-######### Helper Function Code ########
 
-def model_selection_conditional(leadTime, architecture):
-    
-    """
-    Helper function for grabbing the model names for file reference.
-    
-    Inputs:
-        
-        leadTime: integer
-        architecture: string
-        
-    returns:
-        
-        list of models
-    """
-    
-    # if leadTime == 12 and architecture == "mse":
-        
-    #     model_names = ['2_layers-leaky_relu-16_neurons']
-   
-    if leadTime == 12 and architecture == "mse":
-        
-        model_names = ['1_layers-leaky_relu-2_neurons']
-
-    elif leadTime == 48 and architecture == "mse":
-        
-        model_names = ['3_layers-leaky_relu-16_neurons']
-
-    elif leadTime == 96 and architecture == "mse":
-        
-        model_names = ['2_layers-leaky_relu-32_neurons']
-    
-    elif leadTime == 120 and architecture == "mse":
-
-        model_names = ['2_layers-leaky_relu-16_neurons']
-        
-    elif leadTime == 12 and architecture == "CRPS":
-        
-        model_names = ['3_layers-relu-32_neurons']
-        
-    elif leadTime == 48 and architecture == "CRPS":
-        
-        model_names = ['3_layers-selu-64_neurons']
-        
-    elif leadTime == 96 and architecture == "CRPS":
-        
-        model_names = ['3_layers-relu-100_neurons']
-        
-    
-    elif leadTime == 120 and architecture == "CRPS":
-        
-        model_names = ['3_layers-relu-100_neurons']
-        
-
-    elif leadTime == 12 and architecture == "PNN":
-
-        model_names = ['combo2']  
-
-    elif leadTime == 48 and architecture == "PNN":
-        
-        model_names = ['combo1']  
-
-    elif leadTime == 96 and architecture == "PNN":
-        
-        model_names = ['combo1']  
-        
-    # elif leadTime == 12 and architecture == "mape":
-        
-    #     model_names = ['1_layers-leaky_relu-100_neurons']
-        
-    elif leadTime == 12 and architecture == "mape":
-        
-        model_names = ['1_layers-sigmoid-128_neurons']
-        
-    elif leadTime == 48 and architecture == "mape":
-        
-        model_names = ['2_layers-sigmoid-256_neurons']
-
-    elif leadTime == 96 and architecture == "mape":
-        
-        model_names = ['2_layers-sigmoid-256_neurons']
-         
-    elif leadTime == 120 and architecture == "mape":
-        
-        model_names = ['3_layers-sigmoid-256_neurons']
-         
-    else:
-        model_names = []
-        
-    return model_names
-
-# END: def model_selection_conditional()
 
 ########## Driver Code ############
 
-def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred, expanded):
+def mme_mse_crps_PNN_lead_times_singlePlot(architectures, cycles, leadTimes, obsVsPred, expanded, results_folder):
     
     """
         Process the hyperparameter combinations and metrics, and then for each cycle produce one
@@ -210,58 +120,47 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
         
         # Loop over each architecture.
         for architecture in architectures:
-            
-            # Grabs the corresponding directory where training information was stored
-            MAIN_DIRECTORY = 'results/' + str(architecture.lower()) + "_results"
-
             # For every lead time, grab data for each hyperparameter combo.
-            for leadTime in leadTimes:
+            # Loop over each hyperparameter combo.
+                # Grab and process the data for this model, cycle, leadTime, and architecture.
+            df = model_parser(results_folder, architecture, obsVsPred, cycle, leadTimes)
                 
-                # Calls helper function for conditional tree for models
-                model_list = model_selection_conditional(leadTime, architecture)
+            # Remove any duplicate indices. # Unnecessary
+            df = df[~df.index.duplicated(keep='first')]
+            
+            # Calculate basic metrics and additional metrics.
+            modDf1 = visualization_metric_calcs(df, architecture, expanded)
+            
+            print("Before Metrics")
+            
+            if architecture == 'CRPS':
+
+                modDf2 = crps_metrics(modDf1)
                 
-                # Loop over each hyperparameter combo.
-                for model in model_list:
+            elif architecture == 'PNN':
+                
+                # Runs calc on PNN MME
+                modDf2 = pnn_metrics(modDf1)  
+                
+            elif architecture == "mse":
+                modDf2 = mse_metrics(modDf1)
 
-                    # Grab and process the data for this model, cycle, leadTime, and architecture.
-                    df = model_parser(MAIN_DIRECTORY, model, architecture, obsVsPred, iterations, cycle, leadTime)
-                    
-                    # Remove any duplicate indices. # Unnecessary
-                    df = df[~df.index.duplicated(keep='first')]
-                    
-                    # Calculate basic metrics and additional metrics.
-                    modDf1 = visualization_metric_calcs(df, architecture, expanded)
-                    
-                    print("Before Metrics")
-                    
-                    if architecture == 'CRPS':
+            elif architecture == "mape":
+                modDf2 = mse_metrics(modDf1)
 
-                        modDf2 = crps_metrics(modDf1)
-                        
-                    elif architecture == 'PNN':
-                        
-                        # Runs calc on PNN MME
-                        modDf2 = pnn_metrics(modDf1)  
-                        
-                    elif architecture == "mse":
-                        modDf2 = mse_metrics(modDf1)
+            # To ensure cross compatability
+            base_dir = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"
 
-                    elif architecture == "mape":
-                        modDf2 = mse_metrics(modDf1)
+            # Create the directories if they do not exist
+            base_dir.mkdir(parents=True, exist_ok=True)
 
-                    # To ensure cross compatability
-                    base_dir = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"
-
-                    # Create the directories if they do not exist
-                    base_dir.mkdir(parents=True, exist_ok=True)
-
-                    # Now define the output path
-                    output_path = base_dir / f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
-                    modDf2.to_csv(output_path)
+            # Now define the output path
+            output_path = base_dir / f"{obsVsPred}_{leadTimes}h_{architecture}_Cycle_{cycle}.csv"
+            modDf2.to_csv(output_path)
 
 # END: def mme_mse_crps_PNN_lead_times_singlePlot()
 
-def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save):
+def decentralized_graphing_driver(architectures, leadTimes, cycles, obsVsPred, save, results_folder):
     """
     This function serves as a driver that will retrieve the created files and 
     plot standard deviation plots.
@@ -283,27 +182,19 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
         modelsDict_cycle = {}
         
         # Loop over each architecture.
-        for architecture in architectures:
-                            
-            model_list = model_selection_conditional(leadTime, architecture)
-                
+        for architecture in architectures:                
             # For this leadTime, initialize a temporary dictionary.
             modelsDict = {}
-            
-            # Loop over each hyperparameter combo.
-            for model in model_list:
+            input_path = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTimes}h_{architecture}_Cycle_{cycle}.csv"
+            df = pd.read_csv(input_path)
 
-                # Utilizes Path for cross compatability regardless of macOs or Windows
-                input_path = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
-                df = pd.read_csv(input_path)
+            df['date_time'] = pd.to_datetime(df["date_time"])
 
-                df['date_time'] = pd.to_datetime(df["date_time"])
+            df = df.set_index('date_time')
 
-                df = df.set_index('date_time')
-
-                # Create a key that encodes the combo, architecture, and leadTime.
-                key = f"{architecture}-{leadTime}h"
-                modelsDict[key] = df
+            # Create a key that encodes the combo, architecture, and leadTime.
+            key = f"{architecture}-{leadTimes}h"
+            modelsDict[key] = df
                 
             # Update the cycle-level dictionary with the lead time–specific data.
             modelsDict_cycle.update(modelsDict)
@@ -318,15 +209,15 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
             arch_title = architectures[0]
         
         # Call the boxplot function with the aggregated data.
-        standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTime, arch_title, cycle, obsVsPred, save)
+        standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTimes, arch_title, cycle, obsVsPred, save)
 
-        print(f"Plot_Created_{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}")
+        print(f"Plot_Created_{obsVsPred}_{leadTimes}h_{architecture}_Cycle_{cycle}")
     
 # END: def decentralized_graphing_driver()
 
 ########### Graphing Function ############
 
-def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsVsPred, save):
+def standardDeviationFan_leadTime_plot(dfDict, leadTimes, arch_title, cycle, obsVsPred, save):
     
     """
     This function serves as the plotting function for a standard deviation fan.
@@ -474,8 +365,8 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
     fig.add_hline(y=8, line_dash="dot", line_color="red", annotation_text="Turtle Threshold", annotation_position="top left", annotation_font_size=26, annotation_font_color="red")
 
     # Labeling 
-    title_text = f"Stdev_plot_{leadTime}h_Cycle_{cycle}"
-    save_path = f"{obsVsPred}_{arch_title}_{leadTime}h_Cycle_{cycle}"
+    title_text = f"Stdev_plot_{leadTimes}h_Cycle_{cycle}"
+    save_path = f"{obsVsPred}_{arch_title}_{leadTimes}h_Cycle_{cycle}"
 
     # Plot adjustments
     fig.update_layout(
@@ -824,10 +715,8 @@ if __name__ == "__main__":
     mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, leadTimes, obsVsPred, expanded)
     
     # For loop to loop through leadtimes and create plots for each cycle (rotation)
-    for leadTime in leadTimes:
-        
-        # This Line Will need to be ran to plot the graphs
-        decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save)
+    # This Line Will need to be ran to plot the graphs
+    decentralized_graphing_driver(architectures, leadTimes, cycles, obsVsPred, save)
         
 else:
     

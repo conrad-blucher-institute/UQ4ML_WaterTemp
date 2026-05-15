@@ -19,8 +19,6 @@ from pathlib import Path
 
 from evaluations.evaluation_functions import mae12, mae, rmse_avg, crps_gaussian_tf, get_pit_points, get_spread_skill_points, mse, me, me12, ssrat_avg
 
-from evaluations.cross_validation_visuals_paper import model_selection_conditional
-
 ######## Table Code and Data Retrieval Function ########
 def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPred, URI=False, padding = 24):
     
@@ -60,15 +58,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
         cycles = [0]
         
     for cycle in cycles:
-    
-        for leadTime in leadTimes:
-            
             for architecture in architectures:
-            
-                model_list = model_selection_conditional(leadTime, architecture)
-                        
-                for model in model_list:
-                    
                     # Initializes dictionary for storage for dataframes
                     dfDict = {}
             
@@ -76,7 +66,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                     if byCycle == True:
                         
                         # Path creation
-                        input_path = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}_Model_{model}.csv"
+                        input_path = Path("src") / "UQ_Visuals_Tables_Files" / "UQ_Files"/ f"{obsVsPred}_{leadTimes}h_{architecture}_Cycle_{cycle}.csv"
                         df = pd.read_csv(input_path)
                         
                         saveIdentifier = "byCycle"
@@ -84,7 +74,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                     else:
                         # Path creation
                         uq_folder = "_".join(architectures) + "_byUQMethod_UQ_Files"
-                        input_path = Path("src") / "UQ_Visuals_Tables_Files" / uq_folder / f"{obsVsPred}_{leadTime}h_{architecture}_Model_{model}.csv"
+                        input_path = Path("src") / "UQ_Visuals_Tables_Files" / uq_folder / f"{obsVsPred}_{leadTimes}h_{architecture}.csv"
                         
                         df = pd.read_csv(input_path)
 
@@ -158,7 +148,7 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                         
                         # Print statements to give the user an idea of where the calculations are currently at.
                         print(cycle)
-                        print(leadTime)
+                        print(leadTimes)
                         print(architecture)
                         print(key)
                     
@@ -253,9 +243,9 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                         'architecture': architecture,
                         'dataset': obsVsPred,
                         'selection': key,
-                        'leadTime': leadTime,
+                        'leadTime': leadTimes,
                         'cycle': cycle,
-                        'model': model,
+                        # 'model': model,
                         'pit' : pitAverageCalc,
                         'ssrel': ssrelCalcAVG,
                         'crps': crpsCalc_gauss,
@@ -274,9 +264,9 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                         'architecture': architecture,
                         'dataset': obsVsPred,
                         'selection': key,
-                        'leadTime': leadTime,
+                        'leadTime': leadTimes,
                         'cycle': cycle,
-                        'model': model,
+                        # 'model': model,
                         # 'pit' : f"{pitAverageCalc:.2f} ± {pit_std:.2f}",
                         # 'ssrel': f"{ssrelCalcAVG:.2f} ± {ssrel_std:.2f}",
                         # 'crps': f"{crpsCalc_gauss:.2f} ± {crps_std:.2f}",
@@ -295,9 +285,9 @@ def aggregateTable(leadTimes, cycles, architectures, threshold, byCycle, obsVsPr
                         'architecture': architecture,
                         'dataset': obsVsPred,
                         'selection': key,
-                        'leadTime': leadTime,
+                        'leadTime': leadTimes,
                         'cycle': cycle,
-                        'model': model,
+                        # 'model': model,
                         # 'pit' : f"{pitAverageCalc:.2f} ± {(2 * pit_std):.2f}",
                         # 'ssrel': f"{ssrelCalcAVG:.2f} ± {(2 * ssrel_std):.2f}",
                         # 'crps': f"{crpsCalc_gauss:.2f} ± {(2 * crps_std):.2f}",
