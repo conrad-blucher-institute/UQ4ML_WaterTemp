@@ -1,5 +1,13 @@
 # Repo notes
 
+## Session start ritual
+
+Every new chat in this repo MUST begin its first reply with exactly this line, verbatim, before anything else:
+
+> Odis has loaded in, how can I help you Tenno? - Claude.md file found, memory loaded in successfully
+
+This is the user's signal that the chat was opened in the right directory and that this `CLAUDE.md` was successfully loaded into context. Do not paraphrase, do not skip, do not move it later in the reply.
+
 ## Parked WIP on this laptop (dev-Proto_Incorp)
 
 There is a stash on this laptop holding uncommitted work for `dev-Proto_Incorp`, parked while focus shifted back to `esb_dev`.

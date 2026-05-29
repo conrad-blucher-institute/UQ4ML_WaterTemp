@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "Write-Output '{\"systemMessage\":\"Odis has loaded in, how can I help you Tenno? - Claude.md file found, memory loaded in successfully\"}'"
+          }
+        ]
+      }
+    ]
+  }
+}

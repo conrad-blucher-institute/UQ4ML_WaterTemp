@@ -1,0 +1,119 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Current State" id="current">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="CURRENT STATE — God modules + wrong-axis driver split" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="800" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="utils" value="src/helper/utils.py&#10;2925 lines — GOD MODULE&#10;&#10;• custom losses (CRPS, weighted MSE)&#10;• model classes (mlp_model, mme_crps_model)&#10;• data loading / splitting / reshaping&#10;• missing-value handling&#10;• ~20 metric functions&#10;• plotting (fanGraph, time_series_grapher)&#10;• onset/offset event detection&#10;• threshold calculation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="340" height="220" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cool" value="src/helper/utils_from_coolturtles.py&#10;3393 lines&#10;58 top-level defs&#10;(likely overlaps with utils.py)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="80" y="350" width="340" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="drivers" value="src/driver/ — 8 driver files&#10;&#10;• pnn_mme_driver.py (532)&#10;• crps_mme_runner.py (378)&#10;• crps_mme_runner copy.py (993) ← duplicate&#10;• operational_mse_crps_driver.py (493)&#10;• tuner_retriever.py (306)&#10;• tuner_models_retriever.py (243)&#10;• tunerResults.py (302)&#10;• visualization_driver.py (171)&#10;&#10;Split along the WRONG axis:&#10;adding one new experiment touches several files." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="500" y="100" width="380" height="270" as="geometry" />
+        </mxCell>
+
+        <mxCell id="evals" value="src/evaluations/&#10;aggregate_tables, boxplot_figures,&#10;cross_validation_visuals_paper, evaluation_functions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="950" y="100" width="300" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="logger" value="Logger.py (28 lines)&#10;✓ Deep enough — keep" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="950" y="230" width="300" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e1" style="endArrow=classic;html=1;strokeColor=#b85450;strokeWidth=2" edge="1" parent="1" source="drivers" target="utils">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="endArrow=classic;html=1;strokeColor=#b85450;strokeWidth=2" edge="1" parent="1" source="drivers" target="cool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" style="endArrow=classic;html=1;strokeColor=#b85450;strokeWidth=2" edge="1" parent="1" source="evals" target="utils">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="legend" value="🔴 RED = god module / mixed concerns&#10;🟡 YELLOW = split on wrong axis&#10;🟢 GREEN = healthy boundary" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;align=left;spacingLeft=10" vertex="1" parent="1">
+          <mxGeometry x="500" y="420" width="380" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram name="Target State" id="target">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title2" value="TARGET STATE — Deep modules, each hides one secret" style="text;html=1;align=center;verticalAlign=middle;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="800" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="losses" value="losses.py&#10;&#10;Hides: how CRPS and weighted-MSE&#10;are computed in TF.&#10;&#10;Interface: crps_loss, weighted_mse" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="80" y="90" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="models" value="models.py&#10;&#10;Hides: layer wiring, build/compile&#10;quirks of MLP / MME-CRPS.&#10;&#10;Interface: build_mlp(), build_mme_crps()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="80" y="230" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="data" value="data.py&#10;&#10;Hides: CSV layout, year splits,&#10;reshaping, missing-value rules.&#10;&#10;Interface: load_data(), prepare(args)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="80" y="370" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="metrics" value="metrics.py&#10;&#10;Hides: the ~20 metric formulas&#10;(MAE, RMSE, SSRAT, SSREL, …).&#10;&#10;Interface: one dict of named metrics" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="400" y="90" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="events" value="events.py&#10;&#10;Hides: cold-snap threshold logic,&#10;onset/offset detection.&#10;&#10;Interface: detect_events(df, threshold)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="400" y="230" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="plots" value="plotting.py&#10;&#10;Hides: matplotlib styling,&#10;fan-graph / time-series layouts.&#10;&#10;Interface: fan_graph(), time_series()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="400" y="370" width="280" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="experiment" value="experiment.py&#10;&#10;Hides: HOW an experiment runs&#10;end-to-end (data → model → train → eval).&#10;&#10;Interface: run_experiment(config)&#10;&#10;One file per experiment TYPE, not per&#10;sub-step. Adding a new experiment&#10;= adding one file." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="740" y="90" width="320" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cli" value="run.py (CLI entry)&#10;&#10;parse args → call run_experiment(config)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;verticalAlign=top;spacingLeft=10;spacingTop=10" vertex="1" parent="1">
+          <mxGeometry x="740" y="290" width="320" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ee1" style="endArrow=classic;html=1;strokeColor=#6c8ebf" edge="1" parent="1" source="experiment" target="losses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ee2" style="endArrow=classic;html=1;strokeColor=#6c8ebf" edge="1" parent="1" source="experiment" target="models">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ee3" style="endArrow=classic;html=1;strokeColor=#6c8ebf" edge="1" parent="1" source="experiment" target="data">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ee4" style="endArrow=classic;html=1;strokeColor=#6c8ebf" edge="1" parent="1" source="experiment" target="metrics">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ee5" style="endArrow=classic;html=1;strokeColor=#6c8ebf" edge="1" parent="1" source="experiment" target="events">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ee6" style="endArrow=classic;html=1;strokeColor=#6c8ebf" edge="1" parent="1" source="experiment" target="plots">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ee7" style="endArrow=classic;html=1;strokeColor=#d6b656;strokeWidth=2" edge="1" parent="1" source="cli" target="experiment">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="note" value="Each green box = ONE secret hidden, SIMPLE interface.&#10;The blue 'experiment' box is the only place that knows the workflow.&#10;Adding a new experiment = one new file that imports from the green modules." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=11;align=left;spacingLeft=10" vertex="1" parent="1">
+          <mxGeometry x="80" y="520" width="980" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

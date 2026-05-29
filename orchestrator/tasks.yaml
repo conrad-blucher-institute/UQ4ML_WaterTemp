@@ -1,0 +1,27 @@
+# Example task definitions for the orchestrator.
+# Each task spawns one `claude` CLI subprocess on its own git branch.
+#
+# Fields:
+#   name         Short id used for branch suffix and log filenames.
+#   branch       Git branch the agent commits to. Created from `base_branch`.
+#   model        Model id passed to `claude --model`. Swappable string.
+#   prompt_file  Path (relative to this file) to the agent's instruction markdown.
+#   max_turns    Hard cap on agent turns (passed to `claude --max-turns`).
+#   timeout_sec  Wall-clock timeout for the agent subprocess.
+
+base_branch: esb_dev_auto_agent
+
+tasks:
+  - name: dummy_docs
+    branch: agent/dummy-docs
+    model: claude-haiku-4-5-20251001
+    prompt_file: prompts/docs.md
+    max_turns: 20
+    timeout_sec: 600
+
+  - name: dummy_optimize
+    branch: agent/dummy-optimize
+    model: claude-haiku-4-5-20251001
+    prompt_file: prompts/optimize.md
+    max_turns: 20
+    timeout_sec: 600
