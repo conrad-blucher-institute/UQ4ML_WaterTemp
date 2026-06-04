@@ -773,9 +773,16 @@ def dataframe_checker(checkNum, dfList):
             exit("Error! DataFrame testing contains numbers lower than " + str(checkNum))
 
 
-def crps_loss(y_true, y_pred):
-    import tensorflow as tf
-    return tf.reduce_mean(tf.abs(y_pred - y_true))
+# NOTE: This module previously defined its own crps_loss as:
+#     return tf.reduce_mean(tf.abs(y_pred - y_true))
+# That is mean absolute error (MAE) math, NOT the Continuous Ranked
+# Probability Score, despite the name. The real CRPS now lives in
+# src/helper/losses.py and is re-exported here so existing imports keep
+# working. Behavior change: callers now train against true CRPS, not MAE.
+try:
+    from src.helper.losses import crps_loss
+except ImportError:
+    from losses import crps_loss
 
 
 def crps(y_true, y_pred):
