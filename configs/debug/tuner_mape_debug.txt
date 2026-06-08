@@ -1,0 +1,15 @@
+--model_type=mape
+--metrics
+mae
+mae12
+me
+me12
+--num_output_neurons=1
+--epochs=5
+--max_trials=2
+--executions_per_trial=1
+--unit_list
+16
+32
+--data_set=data/ESB_datasets
+--results_folder=results/_smoke_mape_tuner

@@ -1,14 +1,79 @@
+"""
+CommentArgumentParser - Custom ArgumentParser with Comment Support
+
+This module extends Python's argparse.ArgumentParser to support comments in
+argument configuration files. Comments can be added using the '#' character,
+either on their own line or at the end of an argument line.
+
+Usage:
+    if __name__ == "__main__":
+        parser = create_parser()
+        args = parser.parse_args() # Can use: python script.py @config.txt
+
+Example config file (config.txt):
+    # This is a full-line comment
+    --learning-rate 0.001  # This is an inline comment
+    --batch-size 32
+    # --old-arg 123  # You can comment out arguments too!
+
+Author: Hector Marrero-Colominas
+Date: December 2025
+"""
 
 import argparse
+
+class CommentArgumentParser(argparse.ArgumentParser):
+    """
+    ArgumentParser that supports comments in config files.
+    
+    Comments start with '#' and can appear:
+    - On their own line (entire line is ignored)
+    - At the end of an argument line (everything after '#' is ignored)
+    """
+    
+    def convert_arg_line_to_args(self, arg_line):
+        """
+        Process each line from the config file to handle comments.
+        
+        This method is automatically called by argparse for each line when you
+        use @config.txt syntax. It runs once per line in your file.
+        
+        Args:
+            arg_line (str): One line from the config file
+            
+        Returns:
+            list: A list containing the cleaned argument, or empty list to skip
+        
+        Example:
+            Input:  "--learning-rate 0.001  # best value"
+            Output: ["--learning-rate 0.001"]
+            
+            Input:  "# this is just a comment"
+            Output: []
+        """
+        # Step 1: Remove everything after '#' (the comment part)
+        # split('#') breaks the line into parts: ["before #", "after #"]
+        # [0] takes only the first part (before the #)
+        arg_line = arg_line.split('#')[0].strip()
+        
+        # Step 2: Check if the line is now empty
+        # This happens when the line was blank or only had a comment
+        if not arg_line:
+            return []  # Return empty list to tell argparse "skip this line"
+        
+        # Step 3: Return the cleaned line as a single item in a list
+        # argparse expects a list, even if it's just one argument
+        return [arg_line]
 
 
 def create_parser():
     '''
     Create argument parser
     '''
-    # Parse the command-line arguments
-    parser = argparse.ArgumentParser(description='AI Model Maker', fromfile_prefix_chars='@')
-
+    # Type annotation tells VS Code what type 'parser' is, enabling autocomplete/tooltips
+    # Syntax: variable_name: Type = value
+    parser: CommentArgumentParser = CommentArgumentParser(description='AI Model Maker', fromfile_prefix_chars='@')
+    
     # High-level commands
     parser.add_argument('--environment',                         type=str,           default='schooner',                 help="Sets where we are running this on to set the std.out and std.err saving files.")
     parser.add_argument('--nogo',                               action='store_true',                                    help='Do not perform the experiment')

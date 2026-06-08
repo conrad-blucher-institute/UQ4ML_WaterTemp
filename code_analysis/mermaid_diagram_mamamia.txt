@@ -1,0 +1,87 @@
+graph TB
+    subgraph "src/driver (Entry Points)"
+        CRPS["crps_mme_runner.py<br/>(CRPS Ensemble)"]
+        OPMS["operational_mse_crps_driver.py<br/>(Main Trainer)"]
+        PNN["pnn_mme_driver.py<br/>(PNN Ensemble)"]
+        VIZ["visualization_driver.py<br/>(Viz Orchestrator)"]
+    end
+
+    subgraph "src/driver (Utilities)"
+        TR["tuner_retriever.py<br/>(Model Loader)"]
+        TMR["tuner_models_retriever.py<br/>(Model Loader)<br/>- DUPLICATE -"]
+        TUNR["tunerResults.py<br/>(Results Parser)"]
+        HV["hyperparameter_visualizations.py<br/>(Plot Generator)"]
+    end
+
+    subgraph "src/helper (Support Libraries)"
+        UTILS["utils_mse_crps.py<br/>(CRPS loss, metrics,<br/>data prep)"]
+        UTPNN["utils_pnn.py<br/>(PNN data prep)"]
+        LOG["Logger.py<br/>(Experiment logging)"]
+        JOB["job_iterator.py<br/>(Param combinations)"]
+        PARSER["my_parser.py<br/>(CLI args)"]
+        UTIL["utils.py<br/>(General metrics)"]
+    end
+
+    subgraph "src/evaluations (Analysis Modules)"
+        CVPLT["cross_validation_visuals"]
+        AGREG["aggregate_tables"]
+        BXPLT["boxplot_figures"]
+    end
+
+    subgraph "External Libraries"
+        TF["TensorFlow/Keras"]
+        KT["keras-tuner"]
+        PLOTLY["Plotly"]
+        PD["Pandas"]
+    end
+
+    subgraph "Obsolete Files :x:"
+        COPY["crps_mme_runner copy.py"]
+        OG["og_operational_mse_crps_driver.py"]
+    end
+
+    %% Entry Point Dependencies
+    CRPS -->|"imports"| UTILS
+    CRPS -->|"imports"| PARSER
+    CRPS -->|"imports"| KT
+    CRPS -->|"imports"| TF
+
+    OPMS -->|"uses"| UTILS
+    OPMS -->|"imports"| TF
+    
+    PNN -->|"uses"| UTPNN
+    PNN -->|"uses"| LOG
+    PNN -->|"uses"| JOB
+    PNN -->|"uses"| PARSER
+    PNN -->|"uses"| UTILS
+    PNN -->|"imports"| TF
+
+    VIZ -->|"calls"| CVPLT
+    VIZ -->|"calls"| AGREG
+    VIZ -->|"calls"| BXPLT
+
+    %% Utility Dependencies
+    TR -->|"uses"| UTILS
+    TR -->|"uses"| UTIL
+    
+    TMR -->|"uses"| UTILS
+
+    HV -->|"uses"| PLOTLY
+    HV -->|"uses"| PD
+
+    %% Obsolete dependencies (soft links)
+    COPY -.->|"duplicate of"| CRPS
+    OG -.->|"duplicate of"| OPMS
+
+    %% Styling
+    classDef duplicate fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    classDef highCoupling fill:#fff3cd,stroke:#ff9800,stroke-width:2px
+    classDef entryPoint fill:#e3f2fd,stroke:#2196f3,stroke-width:2px
+    classDef utility fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px
+    classDef external fill:#e8f5e9,stroke:#4caf50,stroke-width:2px
+
+    class CRPS,OPMS,PNN,VIZ entryPoint
+    class TR,TMR,TUNR,HV utility
+    class UTILS,UTPNN,LOG,JOB,PARSER,UTIL,TF,KT,PLOTLY,PD external
+    class COPY,OG duplicate
+    class PNN,VIZ highCoupling
