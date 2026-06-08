@@ -92,7 +92,6 @@ def prepare_val_data(leadtime, cycle):
     X_test, y_test, test_dates, X_val, y_val, val_dates) for a given leadtime+cycle."""
     # Read years 2-5 (skipping year 1 = 2021 independent)
     year_dfs = readingData(_DATA_PATH)
-    # Feature engineering
     years = [
         creatingAdditionalColumns(
             df, _INPUT_STRUCTURE, leadtime,
@@ -111,7 +110,7 @@ def prepare_val_data(leadtime, cycle):
     train_dates = dateTimeRetriever(training_clean.copy(), leadtime)
     test_dates = dateTimeRetriever(testing_clean.copy(), leadtime)
     val_dates = dateTimeRetriever(validation_clean.copy(), leadtime)
-    # X, y
+
     col_start = 1 if _INPUT_STRUCTURE == 'descending' else 3
     X_train = training_clean.iloc[:, col_start:-1].values.astype(float)
     y_train = training_clean.iloc[:, -1].values.astype(float)

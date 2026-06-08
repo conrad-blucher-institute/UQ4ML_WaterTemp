@@ -696,6 +696,7 @@ function renderCharts() {{
     section2021.style.display = chartVisible['2021'] ? '' : 'none';
 
     var trainTraces = [];
+    var trainTraces = [];
     var valTraces = [];
     var testTraces = [];
     var y2021Traces = [];
