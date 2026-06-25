@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(du -b \"c:/Users/hmarrero/.claude/projects/c--Users-hmarrero-Documents-GitHub-Repos-UQ4ML-WaterTemp/memory/\"*)",
+      "Bash(find /c/Users/hmarrero/Documents/GitHub_Repos/UQ4ML_WaterTemp -type f -name *progress.csv)"
+    ]
+  }
+}
