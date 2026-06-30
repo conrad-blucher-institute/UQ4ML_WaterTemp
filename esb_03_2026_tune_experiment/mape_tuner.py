@@ -202,22 +202,30 @@ class MAPETuner(BaseHyperparameterTuner):
             else:
                 raise RuntimeError('batch_size not specified in config and cannot be inferred from x_train')
 
+        # Callback knobs (R5): read from config so they are honest/overridable.
+        # Defaults equal the previous hardcoded literals, so a default run is
+        # byte-identical.
+        monitor = config.get('call_back_monitor', 'val_loss')
+        es_patience = int(config.get('early_stop_patience', 25))
+        lr_patience = int(config.get('lr_reducer_patience', 15))
+        min_delta = float(config.get('min_delta', 0.001))
+
         # Callbacks (best-effort import)
         callbacks = []
         try:
             from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
             callbacks = [
-                EarlyStopping(monitor='val_loss', 
-                            min_delta=0.001,
-                            patience=25,
+                EarlyStopping(monitor=monitor,
+                            min_delta=min_delta,
+                            patience=es_patience,
                             verbose=2,
                             mode='auto', restore_best_weights=True),
 
-                ReduceLROnPlateau(monitor='val_loss',
-                                min_delta=0.001,
-                                factor=0.1, 
-                                patience=15,
-                                min_lr=0.00001, 
+                ReduceLROnPlateau(monitor=monitor,
+                                min_delta=min_delta,
+                                factor=0.1,
+                                patience=lr_patience,
+                                min_lr=0.00001,
                                 verbose=2)
             ]
         except Exception:
