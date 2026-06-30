@@ -155,11 +155,16 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # 1 feature (Air Average) instead of ~62 lag features.
     # R1 fix (esb_refactor, Stage B): splittingData() requires 6 args
     # (year2..year5, year_independent, cycle) but was called with 5, raising a
-    # TypeError the moment preparingData() ran. Pass year_independent (set to the
-    # int `cycle` above) so the call is valid. With an int year_independent the
-    # split leaves the test set empty, which downstream tolerates (Quirk Q8) and
-    # the grid-search tuner ignores (it uses data[:4] + its own 2021 eval).
-    training_data, testing_data, validation_data = splittingData(year2, year3, year4, year5, year_independent, cycle)
+    # TypeError the moment preparingData() ran. Pass the `independent_year`
+    # parameter (the string "cycle" in the regular rotation case) so splittingData
+    # populates the test set from the rotated cycle year, as the author intended
+    # (see the year_independent=="cycle" branch in splittingData). Passing the
+    # int from `year_independent = cycle` above instead leaves the test set EMPTY,
+    # which then crashes countingMissingValues() with a ZeroDivisionError
+    # (numMissValues/len(df)). The "2021" string / DataFrame independent-year path
+    # is exercised separately via prepare_independent_year() and is out of scope
+    # for the grid-search MAPE/MSE tuners (they always use independent_year="cycle").
+    training_data, testing_data, validation_data = splittingData(year2, year3, year4, year5, independent_year, cycle)
 
     print('finished splitting the data')
 
