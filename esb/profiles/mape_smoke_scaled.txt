@@ -1,0 +1,16 @@
+# MAPE smoke profile WITH scaling — the smallest representative SCALED run, used
+# to freeze the SECOND golden baseline (the scaled fit-input digest). Identical to
+# mape_smoke.txt except for --scale, so the two baselines differ only on scaling.
+# Launch: python -m esb run --profile mape_smoke_scaled
+--loss mape
+--scale
+--lead_times 12
+--rotations 0
+--activations relu
+--num_layers 1
+--neurons 16
+--epochs 2
+--workers 1
+--repetitions 1
+--seed 42
+--output_dir results/esb_smoke_scaled
