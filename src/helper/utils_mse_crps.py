@@ -671,12 +671,24 @@ def reshaping(input_structure, training, testing, validation, model):
 
 def prepare_independent_year(csv_path, input_structure, lead_time,
                              atp_hours_back, wtp_hours_back,
-                             pred_atp_interval=1, IPPOffset=0.0):
+                             pred_atp_interval=1, IPPOffset=0.0,
+                             scaler=None, column_map=None):
     """Prepare the independent test year (e.g. esb_2020_2021.csv) for evaluation.
 
     Runs the same feature-engineering pipeline as preparingData() but on a single
     CSV that readingData() intentionally skips. Returns numpy arrays ready for
     model.evaluate() or model.predict(), plus datetime labels.
+
+    Args:
+        scaler: optional fitted StandardScaler (the SAME one fit on training data
+            by the scale stage). When provided, X is transformed with it so the
+            independent year is scaled identically to training — no re-fit, no
+            leakage. None (the default) leaves X unscaled, preserving the legacy
+            behavior of this function byte-for-byte.
+        column_map: optional ``{source_col: esb_col}`` rename applied before
+            feature engineering, so a non-ESB station (e.g. Laguna Madre) whose
+            CSV uses different column names can reuse this exact pipeline. None
+            assumes the CSV already uses ESB column names.
 
     Returns:
         (X, y, dates) where X has shape (n_samples, n_features),
@@ -685,6 +697,10 @@ def prepare_independent_year(csv_path, input_structure, lead_time,
     import pandas as pd
 
     df_raw = pd.read_csv(csv_path)
+    if column_map is not None:
+        # Rename first so the rest of the pipeline sees ESB column names. If no
+        # column_map is given the CSV is assumed to already use ESB names.
+        df_raw = df_raw.rename(columns=column_map)
     df_features = creatingAdditionalColumns(
         df=df_raw,
         input_structure=input_structure,
@@ -702,6 +718,10 @@ def prepare_independent_year(csv_path, input_structure, lead_time,
     col_start = 1 if input_structure == 'descending' else 3
     X = df_clean.iloc[:, col_start:-1].values.astype(float)
     y = df_clean.iloc[:, -1].values.astype(float)
+
+    # Apply the training-fit scaler so inference is scaled identically to train.
+    if scaler is not None:
+        X = scaler.transform(X)
 
     return X, y, dates
 

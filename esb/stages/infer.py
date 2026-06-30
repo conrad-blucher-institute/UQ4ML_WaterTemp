@@ -9,9 +9,16 @@ from esb.stages import _fn
 
 def prepare_independent_year(csv_path, input_structure, lead_time,
                              atp_hours_back, wtp_hours_back,
-                             pred_atp_interval=1, ipp_offset=0.0):
-    """Prepare an independent test year. Façade over prepare_independent_year()."""
+                             pred_atp_interval=1, ipp_offset=0.0,
+                             scaler=None, column_map=None):
+    """Prepare an independent test year. Façade over prepare_independent_year().
+
+    Stage C: ``scaler`` applies the SAME training-fit StandardScaler to the
+    independent year (no re-fit, no leakage); ``column_map`` renames a non-ESB
+    station's columns to ESB names so the same pipeline serves cross-dataset
+    inference (e.g. Laguna Madre). Both default to None = legacy behavior.
+    """
     return _fn("prepare_independent_year")(
         csv_path, input_structure, lead_time, atp_hours_back, wtp_hours_back,
-        pred_atp_interval, ipp_offset,
+        pred_atp_interval, ipp_offset, scaler, column_map,
     )
