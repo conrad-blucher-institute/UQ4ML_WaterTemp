@@ -125,6 +125,17 @@ implementations already exist (see `SCALING_RECONCILIATION` note). Merge them in
   persistence + Laguna Madre cross-dataset support (`esb_dev_add_training_trace_*`).
 - Result: one leakage-safe (`fit` on train only), config-driven scaler *with* an inference path.
 
+### Stage C — locked decisions (2026-06-29, Hector)
+| Ref | Decision | Consequence |
+|---|---|---|
+| **C1** | **Scaling is opt-in, OFF by default** (`--scale`). | The Stage B golden fit-input digest `d80ae5421e8ba0c69593777ac3857512609a16b962ccd7cd1cd7da2fbb63c9e7` stays valid; Stage C is behavior-preserving until `--scale` is passed. |
+| **C2** | **Base branch = `origin/esb_dev_normalization`.** | It already has BOTH halves: the fit-on-train-only `StandardScaler` (gated by a `scale` flag) AND `prepare_independent_year(scaler=, column_map=)`. Lift, don't re-merge. `esb_dev_add_training_trace_*` (has `mape_scaled_driver.py`) is NOT the base. |
+| **C3** | **Introduce typed containers now (`Arrays` / `ScaledArrays`).** Guardrail-3 sign-off given. | `scale` becomes a real cohesive stage (`Arrays → ScaledArrays + scaler`); scaler persisted as `.joblib` at the single io write site and threaded to `infer`. Replaces the legacy 10-vs-11-tuple variable-length return of `preparingData`. |
+
+**Two load-bearing guardrails for Stage C:**
+1. **Leakage is now possible.** The CV-leakage verdict ("safe because no scaler exists") no longer auto-holds. `fit` MUST be on `x_train` only; add an explicit assert/test proving val/test are transform-only.
+2. **`--scale` changes the digest.** With scaling on, the fit-input arrays are standardized, so digest `d80ae54…` only covers the UNSCALED path. Freeze a SECOND golden baseline for the scaled path — do not overwrite the first.
+
 ## 7. Migration strategy: strangler fig (keep it runnable the whole time)
 
 ```mermaid
@@ -192,19 +203,36 @@ Lives in the `Config` schema (single source of truth); the layer logic lives in 
 > mean *and* variance), and **regular `Dropout`** for `relu` / `leaky_relu`. Plain Dropout on
 > SELU silently breaks self-normalization.
 
-## 10. Multi-machine throughput — static sharding (no infra)
-To split the grid across 2+ PCs **without duplicate work and without a job server**, add a
-`--shard k/N` CLI flag. The pipeline enumerates the full **deterministic** job list
-(lead_time × rotation × config × rep) and each machine runs only jobs where `index % N == k`.
-- Zero coordination, no races, reproducible.
-- **Weight by capacity:** shard into more pieces than machines and assign by core count — e.g.
-  N=3, the bigger PC takes shards 0+1, the smaller takes shard 2.
-- Each machine writes its own result folders; `run_provenance.json` already records `hostname`,
-  so you can tell which PC produced each model.
-- *Upgrade path (only if you want load-balancing):* per-job atomic **claim files** on a true
-  network share (`os.open(..., O_CREAT|O_EXCL)` / atomic rename), extending the existing
-  `ProgressTracker` resume logic. **Caveat:** cloud-synced folders (Dropbox/OneDrive) are NOT
-  atomic and will double-claim — use static sharding there.
+## 10. Multi-machine throughput — static sharding + offline (sneakernet) merge
+Plan: pool cores across **N machines** (no network between them), then physically collect each
+machine's results onto an SSD and **union-merge** them on the main machine.
+
+**Distribution — `--shard k/N` CLI flag (no infra, scales to any N).** The pipeline enumerates
+the full **deterministic** job list (lead_time × rotation × config × rep); machine *k* runs only
+jobs where `index % N == k`.
+- Zero coordination, no races, reproducible, scales to as many machines as you want.
+- **Weight by capacity:** shard *finer* than the machine count (N ≫ #machines) and assign shards
+  proportional to each machine's cores — finer granularity = better balance across heterogeneous
+  PCs. E.g. N=12 shards, a 12-core PC takes 6, a 4-core PC takes 2, etc.
+
+**Result contract that makes the SSD merge trivial (REQUIRED):**
+- **Self-contained, uniquely-named folders per job** — path encodes lead_time/rotation/config/rep
+  (model + its scaler + `run_provenance.json` together). Merging = copy all folders into one tree;
+  disjoint shards guarantee **no overwrite, no duplicates**.
+- **No single global mutable file across machines.** Do NOT have every machine append to one
+  shared progress CSV (merging divergent copies is painful). Instead each machine writes its own
+  `progress_shard_k.csv`; the merge step **concatenates** them.
+- `run_provenance.json` records `hostname`, so every model is traceable to the PC that made it.
+- **Resume** is per-machine: each machine's local `ProgressTracker` skips its own finished jobs
+  on restart (crash-safe within a shard).
+
+**Merge step:** an `esb aggregate` command (or adapter) scans the SSD-collected tree, concatenates
+the per-shard CSVs into one combined table, then the viz suite runs on the merged tree.
+
+*Upgrade path (only if machines ARE networked and you want load-balancing):* per-job atomic
+**claim files** on a true network share (`os.open(..., O_CREAT|O_EXCL)` / atomic rename),
+extending `ProgressTracker`. **Caveat:** cloud-synced folders (Dropbox/OneDrive) are NOT atomic
+and will double-claim — for sneakernet/offline, static sharding is the correct choice anyway.
 
 ---
 
