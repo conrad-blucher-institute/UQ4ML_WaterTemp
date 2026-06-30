@@ -29,3 +29,22 @@ def finalize_run(output_dir: str | Path, resolved_config: dict[str, Any]) -> str
     a run can never be produced without a provenance record.
     """
     return _write_provenance()(str(output_dir), resolved_config)
+
+
+def save_scaler(save_dir: str | Path, base_name: str, scaler: Any) -> str | None:
+    """Persist a fitted scaler as ``<base_name>_scaler.joblib`` (single site).
+
+    The ONE place a scaler is written, so it always lands next to the ``.keras``
+    it belongs to (same ``base_name``) and can never drift from its model. A
+    ``None`` scaler (scaling off) is a no-op and returns ``None`` — the contract
+    stays uniform whether or not scaling ran. Returns the path written.
+    """
+    if scaler is None:
+        return None
+    import joblib
+
+    save_dir = Path(save_dir)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    out_path = save_dir / f"{base_name}_scaler.joblib"
+    joblib.dump(scaler, out_path)
+    return str(out_path)
