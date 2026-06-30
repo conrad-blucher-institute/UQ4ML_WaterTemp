@@ -173,6 +173,27 @@ class MAPETuner(BaseHyperparameterTuner):
         except Exception as e:
             raise RuntimeError(f'Error unpacking data from preparingData(): {e}')
 
+        # --- scale stage (Stage C, decision C1; opt-in via config['scale']) ----
+        # OFF by default -> identity passthrough, byte-identical to the unscaled
+        # path (the Stage B golden digest d80ae54 stays valid). ON -> fit a
+        # StandardScaler on x_train ONLY (leakage-checked inside scale_arrays) and
+        # transform train/val/test with it. The fitted scaler is persisted next to
+        # the .keras (single io site) and reused for the 2021 inference below, so
+        # the independent year is scaled identically to training.
+        fitted_scaler = None
+        if config.get('scale', False):
+            from esb.contracts import Arrays
+            from esb.stages.scale import scale_arrays
+            if len(data) < 6:
+                raise RuntimeError(
+                    'scale=True requires preparingData to return the full 6 arrays'
+                )
+            scaled = scale_arrays(Arrays.from_preparing_data(data), enabled=True)
+            fitted_scaler = scaled.scaler
+            x_train = scaled.x_train
+            y_train = scaled.y_train
+            validation = (scaled.x_val, scaled.y_val)
+
         # Determine input shape and batch size from the actual data (ensures correctness)
         try:
             input_shape = x_train[0].shape
@@ -294,6 +315,9 @@ class MAPETuner(BaseHyperparameterTuner):
                 wtp_hours_back=config.get('wtp_hours_back', 24),
                 pred_atp_interval=config.get('pred_atp_interval', 1),
                 IPPOffset=config.get('IPPOffset', 0.0),
+                # Apply the SAME training-fit scaler (None when scaling is off) so
+                # the independent year is scaled exactly like training — no re-fit.
+                scaler=fitted_scaler,
             )
             if x_2021.shape[0] > 0:
                 eval_results = model.evaluate(x_2021, y_2021, verbose=0)
@@ -326,6 +350,15 @@ class MAPETuner(BaseHyperparameterTuner):
             model.save(save_dir / f"{base_name}.keras")
             with open(save_dir / f"{base_name}_history.json", 'w') as _hf:
                 _json.dump(hist, _hf, default=lambda o: float(o) if hasattr(o, 'item') else str(o))
+            # Persist the fitted scaler next to its .keras (single io site). No-op
+            # when scaling is off (fitted_scaler is None).
+            try:
+                from esb.io.results import save_scaler
+                scaler_path = save_scaler(save_dir, base_name, fitted_scaler)
+                if scaler_path:
+                    print(f"  saved scaler -> {scaler_path}")
+            except Exception as e:
+                print(f"  WARNING: scaler persistence failed: {e}")
 
         # Free model and TF session memory to prevent OOM across iterations
         del model, history, x_train, y_train
