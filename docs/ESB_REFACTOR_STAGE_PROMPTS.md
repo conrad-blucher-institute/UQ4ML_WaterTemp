@@ -3,10 +3,19 @@
 Paste-ready prompts to drive the ESB pipeline redesign **one stage at a time**, each in a
 fresh conversation. They implement the strangler-fig migration in `docs/ESB_PIPELINE_DESIGN.md`.
 
+> **Status (2026-06-29).** Stage A ✅ (`docs/ESB_STAGE_A_REPORT.md`). Stage B ✅ — skeleton on
+> branch `esb_refactor` (12 commits, report `docs/ESB_STAGE_B_REPORT.md`); golden fit-input digest
+> frozen: **`d80ae5421e8ba0c69593777ac3857512609a16b962ccd7cd1cd7da2fbb63c9e7`** (unscaled path).
+> Stage C is NEXT, on branch **`esb_refactor_post_stageC`** (already created off `esb_refactor`).
+> **Do NOT merge into `esb_dev`** — Hector reviews merges manually later; stages stay stacked.
+> Run env: Anaconda `python 3.10.9 / TF 2.12` with `PYTHONIOENCODING=utf-8` (workspace `python`
+> has no TF; a pre-existing `→`-print breaks on cp1252 stdout).
+
 ## How to use this file
 - Run stages **in order** (A → B → C → D). Each depends on the previous.
-- Run from the repo root. Work on a dedicated branch `esb_refactor` (created in Stage B), **not**
-  `esb_dev` directly, until each stage is reviewed.
+- Run from the repo root. Each stage works on its OWN dedicated branch (Stage B = `esb_refactor`;
+  Stage C = `esb_refactor_post_stageC`, already created off `esb_refactor`), **never** `esb_dev`
+  directly. Branches stay **stacked** — do not merge into `esb_dev`; Hector reviews merges manually.
 - If you want to keep another convo open editing code simultaneously, give the refactor convo its
   own **git worktree** (`git worktree add ../UQ4ML_stageB esb_refactor`) to avoid clobbering the
   shared working directory. Otherwise, only one convo edits code at a time.
@@ -153,31 +162,68 @@ implementing; (b) after the skeleton runs and the determinism/baseline check pas
 ## STAGE C — The `scale` stage (first cohesive stage; reconciles two implementations)
 
 ```
-Read docs/ESB_PIPELINE_DESIGN.md (sections 4–6) and the Stage B code on branch esb_refactor.
+BRANCH: work on `esb_refactor_post_stageC` (ALREADY CREATED off esb_refactor — just confirm it is
+checked out with `git branch --show-current`; do NOT create a new one and do NOT branch off esb_dev).
+Do NOT merge into esb_dev — Hector reviews merges manually later; stages stay stacked on esb_refactor.
+Small focused commits, one logical change each, Co-Authored-By trailer.
 
-Goal: replace the thin `scale` wrapper with ONE real, cohesive scaling stage that reconciles the
-two existing implementations. NOTE: this stage is the ONE place you may look at other branches.
+Read docs/ESB_PIPELINE_DESIGN.md — ESPECIALLY §6 which now holds the LOCKED Stage C decisions
+(C1–C3) and two guardrails — plus docs/ESB_STAGE_B_REPORT.md and the Stage B esb/ code.
 
-Source material to reconcile:
-- esb_dev_normalization (Ayesha, commit d718c6a): main-driver/config integration + debug
-  cleanup. Use as the integration BASE.
-- esb_dev_add_training_trace_restoring_grendal (Hector, commit f1965ad): the inference path —
-  prepare_independent_year(scaler, column_map) + .joblib scaler persistence + Laguna Madre
-  cross-dataset support. ADD this on top.
-- Both fit StandardScaler on x_train ONLY (leakage-safe) — keep that.
-- Also check: does esb_dev_normalization commit ccc31b7 ("fixed splitting data bug") duplicate
-  38eba23 already on esb_dev, or is it a different fix? Report before merging.
+LOCKED DECISIONS (do not re-litigate; design doc §6):
+- C1: scaling is OPT-IN, OFF BY DEFAULT (a `--scale` flag). Stage C stays behavior-preserving
+  until --scale is passed; the Stage B golden digest d80ae54 must still hold with scale OFF.
+- C2: integration BASE = origin/esb_dev_normalization. Inspection confirms it ALREADY contains
+  BOTH halves — the fit-on-train-only StandardScaler (gated by a `scale` flag, returns an 11-tuple
+  when on) AND prepare_independent_year(scaler=, column_map=) for cross-dataset (Laguna Madre)
+  inference. So LIFT that code into the new stage; you are NOT merging two rival implementations.
+  esb_dev_add_training_trace_restoring_grendal (has src/driver/mape_scaled_driver.py) is NOT the
+  base — only consult it if something is missing from the normalization branch.
+- C3: typed containers Arrays/ScaledArrays are APPROVED (Guardrail-3 satisfied). Build them so the
+  scale stage is Arrays -> ScaledArrays + scaler, REPLACING the legacy 10-vs-11-tuple return.
+
+GUARDRAILS (design doc §6):
+- Leakage is now possible. fit() MUST be on x_train ONLY; add an explicit assert/test proving
+  val/test (and the infer path) are transform-only.
+- --scale changes the fit-input digest (arrays become standardized). The Stage B digest d80ae54
+  covers the UNSCALED path only — freeze a SEPARATE second golden baseline for the scaled path;
+  do NOT overwrite the first. (Tooling exists: `python -m esb._verify freeze|check`.)
+- R1 (splittingData arity) is ALREADY FIXED on esb_refactor by passing independent_year='cycle'.
+  Before lifting normalization-branch code, check that its splitting logic (e.g. commit ccc31b7
+  "fixed splitting data bug") does not re-introduce or conflict with that fix — report before
+  applying.
 
 Build esb/stages/scale.py owning: fit-on-train-only, transform train/val/test, persist scaler
-(.joblib), and provide the inference transform (with column_map) for the infer stage. Wire a
-`scale` option into the Config schema + add scaled profiles.
+(.joblib) at the single io write site, and provide the inference transform (with column_map) for
+the infer stage. Wire the `scale` option into the Config schema (single source of truth) + add
+scaled profiles. Introduce Arrays/ScaledArrays (C3) as the stage contracts.
+
+ALSO IN THIS STAGE — SEARCH-SPACE UPDATE (approved model change; see design doc §9).
+This is a DELIBERATE, APPROVED change to the hyperparameter grid — the only model change allowed.
+Keep it in its OWN commit(s), clearly labeled, NOT bundled with the scale reconciliation. Implement
+in the model stage / the tuner's GridSearchConfig, and add each as a Config-schema field (single
+source of truth, so CLI + future GUI pick them up automatically):
+- neurons: [16, 32, 64, 128, 256]   (remove 100)
+- dropout: tuned choice [0.0, 0.05, 0.1, 0.3], applied as a dropout layer after EACH hidden Dense
+           (0.0 = off / a no-op layer)
+- DROPOUT TYPE DEPENDS ON ACTIVATION: use keras AlphaDropout when activation == 'selu', and
+  regular Dropout for relu / leaky_relu. Plain Dropout on SELU silently breaks self-normalization.
+- keep activation [relu, selu, leaky_relu] and layers 1–3
+- selection metric stays val_mae, BUT persist the FULL metric suite (mae, mae12, me, me12, mape, …)
+  per config/rep so any of them can be inspected later in the viz suite.
 
 Verification:
-- With scale=DISABLED: output must be IDENTICAL to Stage B (proves zero regression).
-- With scale=ENABLED: new behavior — prove the scaler is fit on training data only (no leakage),
-  is persisted, and the infer stage applies the SAME fitted scaler. Show the leakage check.
+- SCALE RECONCILIATION (behavior-preserving): with scale=DISABLED AND dropout=0.0 on the Stage B
+  baseline config, output must be IDENTICAL to the Stage B golden baseline (proves zero regression
+  from the scale stage). With scale=ENABLED: prove the scaler is fit on training data only (no
+  leakage), is persisted, and the infer stage applies the SAME fitted scaler. Show the leakage check.
+- SEARCH-SPACE UPDATE (intended behavior change — validated on its own terms, NOT against the Stage
+  B baseline): assert the generated grid contains the new dropout options, contains NO 100-neuron
+  configs, that selu configs build an AlphaDropout layer (and relu/leaky_relu build Dropout), and
+  that the results CSV now carries all metric columns.
 
-STOP for approval after presenting the reconciliation plan, and again after it passes verification.
+STOP for approval after presenting (a) the scale reconciliation plan AND (b) the search-space plan,
+before implementing; and again after each passes its verification above.
 ```
 
 ---
@@ -213,4 +259,5 @@ STOP after each stage (or a small batch) for my review before continuing.
 - The **GUI** — it is the capstone, built LAST, only after the CLI + Config schema are frozen
   (see design doc §8). Not part of Stages A–D.
 - **Remote/SLURM job submission** — Run is local-only by design.
-- Any **research/model changes** beyond the scaling reconciliation in Stage C.
+- Any **research/model changes** beyond the scaling reconciliation AND the approved search-space
+  update (design doc §9) in Stage C. No *other* model changes without explicit approval.
