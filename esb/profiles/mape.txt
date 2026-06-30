@@ -1,0 +1,14 @@
+# MAPE grid-search profile — full grid (mirrors MAPETuner.get_grid_search_config).
+# Launch: python -m esb run --profile mape
+# These values equal the tuner's hardcoded grid, so this run is byte-identical to
+# the legacy grid-search MAPE tuner (plus the unskippable provenance record).
+--loss mape
+--lead_times 12 48 96 120
+--rotations 0 1 2 3
+--activations relu leaky_relu selu sigmoid tanh
+--num_layers 1 2 3
+--neurons 16 32 64 100 128 256
+--epochs 200000
+--workers 4
+--repetitions 1
+--output_dir results/esb_tuner

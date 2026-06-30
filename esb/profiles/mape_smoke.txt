@@ -1,0 +1,14 @@
+# MAPE smoke profile — smallest representative run for the Stage B golden baseline.
+# 1 lead × 1 rotation × 1 activation × 1 layer-count × 1 neuron-count = 1 config,
+# 2 epochs, single worker, fixed seed. Launch: python -m esb run --profile mape_smoke
+--loss mape
+--lead_times 12
+--rotations 0
+--activations relu
+--num_layers 1
+--neurons 16
+--epochs 2
+--workers 1
+--repetitions 1
+--seed 42
+--output_dir results/esb_smoke
