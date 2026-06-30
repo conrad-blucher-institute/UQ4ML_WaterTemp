@@ -142,3 +142,9 @@ configs/*debug.txt
 configs/*visuals.txt
 local_work_in_progress/
 src/UQ_Visuals_Tables_Files*
+# Stage B golden baseline (local determinism lock; not committed)
+_golden_baseline/
+results/esb_smoke/
+
+# R4 debug side-effect CSVs written to CWD by preparingData (Stage D cleanup)
+debug_*.csv
