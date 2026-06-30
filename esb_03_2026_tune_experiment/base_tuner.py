@@ -28,12 +28,20 @@ class BaseHyperparameterTuner:
     - `get_grid_search_config()`: return GridSearchConfig instance
     """
     
-    def __init__(self, model_type: str, output_dir: Path, max_workers: int = 4, run_num: int = 0, metrics: List[str] = None, default_epochs: int = 200000, keras_save_dir: Path = None, verbose: int = 0):
+    def __init__(self, model_type: str, output_dir: Path, max_workers: int = 4, run_num: int = 0, metrics: List[str] = None, default_epochs: int = 200000, keras_save_dir: Path = None, verbose: int = 0, grid_config: 'GridSearchConfig' = None, config_overrides: Dict[str, Any] = None):
         """
         Args:
             model_type: 'CRPS', 'MAPE', or 'MSE'
             output_dir: directory to save progress and logs
             max_workers: number of parallel workers for multiprocessing
+            grid_config: optional GridSearchConfig that OVERRIDES the subclass's
+                hardcoded get_grid_search_config(). Used by the esb entry layer to
+                drive the grid from the Config single-source-of-truth. When None
+                (the run_all_tuners.py path), the subclass's grid is used unchanged.
+            config_overrides: optional dict of extra keys injected into every
+                per-config dict (e.g. path_to_data, input_structure, callback
+                patiences). Injected with setdefault so explicit per-config keys
+                win; absent → unchanged legacy behavior.
         """
         self.model_type = model_type
         self.output_dir = Path(output_dir)
@@ -45,6 +53,10 @@ class BaseHyperparameterTuner:
         # Metrics that will be recorded for each tuning run (strings or callables handled by subclass)
         self.metrics = metrics or []
         self.verbose = int(verbose)
+        # Optional external grid + per-config overrides (esb entry layer).
+        self.grid_config = grid_config
+        self.config_overrides = dict(config_overrides) if config_overrides else None
+
         # Directory to save trained .keras files (None = don't save)
         self.keras_save_dir = Path(keras_save_dir) if keras_save_dir is not None else None
         if self.keras_save_dir is not None:
@@ -150,9 +162,18 @@ class BaseHyperparameterTuner:
         # set run number for this tuning session
         self.run_num = int(run_num)
         
-        # Get grid search configuration
-        grid_config = self.get_grid_search_config()
+        # Get grid search configuration. An externally supplied grid (from the
+        # esb entry layer) takes precedence over the subclass's hardcoded grid.
+        grid_config = self.grid_config if self.grid_config is not None else self.get_grid_search_config()
         configs = grid_config.generate_configs()
+
+        # Inject externally supplied per-config overrides FIRST (so the base
+        # defaults below only fill what the override didn't set). setdefault keeps
+        # generate_configs' own keys (run_num, lead_time, ...) authoritative.
+        if self.config_overrides:
+            for c in configs:
+                for k, v in self.config_overrides.items():
+                    c.setdefault(k, v)
 
         # Inject default epochs into configs if not explicitly set
         if hasattr(self, 'default_epochs') and self.default_epochs is not None:
