@@ -103,6 +103,13 @@ FIELDS: list[Field] = [
           stage="grid", is_list=True),
     Field("neurons", int, [16, 32, 64, 100, 128, 256],
           "Neurons-per-layer counts to search over.", stage="grid", is_list=True),
+    # --- scale -------------------------------------------------------------
+    Field("scale", bool, False,
+          "Standardize inputs: fit a StandardScaler on TRAINING data only, "
+          "transform val/test, persist the scaler (.joblib) and reuse it for "
+          "inference. OFF by default (behavior-preserving; the unscaled golden "
+          "baseline still holds).",
+          stage="scale", is_flag=True),
     # --- model -------------------------------------------------------------
     Field("loss", str, "mape",
           "Loss / tuner to launch: 'mape' or 'mse' (crps parked).",

@@ -63,6 +63,9 @@ def _build_config_overrides(config: Config) -> dict:
         "path_to_data": config.data_path,
         "input_structure": config.input_structure,
         "independent_year": config.independent_year,
+        # Scale stage (C1): opt-in, off by default. _train_model routes arrays
+        # through esb.stages.scale only when this is True.
+        "scale": config.scale,
         "atp_hours_back": config.atp_hours_back,
         "wtp_hours_back": config.wtp_hours_back,
         "pred_atp_interval": config.pred_atp_interval,
