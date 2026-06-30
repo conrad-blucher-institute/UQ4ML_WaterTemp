@@ -153,7 +153,13 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     # FIX: was passing raw data_year2..5 (3 columns) instead of
     # year2..5 (with engineered features). Models were training on only
     # 1 feature (Air Average) instead of ~62 lag features.
-    training_data, testing_data, validation_data = splittingData(year2, year3, year4, year5, cycle)
+    # R1 fix (esb_refactor, Stage B): splittingData() requires 6 args
+    # (year2..year5, year_independent, cycle) but was called with 5, raising a
+    # TypeError the moment preparingData() ran. Pass year_independent (set to the
+    # int `cycle` above) so the call is valid. With an int year_independent the
+    # split leaves the test set empty, which downstream tolerates (Quirk Q8) and
+    # the grid-search tuner ignores (it uses data[:4] + its own 2021 eval).
+    training_data, testing_data, validation_data = splittingData(year2, year3, year4, year5, year_independent, cycle)
 
     print('finished splitting the data')
 
