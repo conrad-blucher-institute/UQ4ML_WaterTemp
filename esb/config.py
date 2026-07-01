@@ -31,7 +31,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 # ---------------------------------------------------------------------------
 # Allowed value sets (one definition each; argparse + validate() both use these)
 # ---------------------------------------------------------------------------
-ALLOWED_LEAD_TIMES = [12, 24, 48, 72, 96, 108, 120]
+ALLOWED_LEAD_TIMES = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 114, 120]  # deliverable set: 3h + every 6h to 120h (21 total)
 ALLOWED_ROTATIONS = [0, 1, 2, 3]
 ALLOWED_STRUCTURES = ["descending", "ascending"]
 ALLOWED_INDEPENDENT = ["cycle", "2021"]
