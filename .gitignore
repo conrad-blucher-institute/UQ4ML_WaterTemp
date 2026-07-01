@@ -145,6 +145,10 @@ src/UQ_Visuals_Tables_Files*
 # Stage B golden baseline (local determinism lock; not committed)
 _golden_baseline/
 results/esb_smoke/
+# Stage C scaled golden baseline (separate lock for the --scale path)
+_golden_baseline_scaled/
+results/esb_smoke_scaled/
+results/esb_tuner_scaled/
 
 # R4 debug side-effect CSVs written to CWD by preparingData (Stage D cleanup)
 debug_*.csv

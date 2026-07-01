@@ -12,9 +12,16 @@ This reproduces what ``mape_tuner._train_model`` feeds the model (it uses
 ``preparingData(...)[:4]`` and ``batch_size = len(x_train)`` when unset), WITHOUT
 instrumenting the tuner.
 
+Stage C adds a SECOND, separate baseline for the scaled path (decision C1
+guardrail): `--scale` standardizes the fit-input arrays, so its digest differs
+from the unscaled d80ae54. The scaled baseline lives in its own directory and
+NEVER overwrites the unscaled one.
+
 Usage (from repo root):
-  python -m esb._verify freeze   # compute hash, write ./_golden_baseline/
-  python -m esb._verify check    # recompute, assert identical to frozen baseline
+  python -m esb._verify freeze            # unscaled -> ./_golden_baseline/
+  python -m esb._verify check             # recompute unscaled, assert identical
+  python -m esb._verify freeze --scaled   # scaled   -> ./_golden_baseline_scaled/
+  python -m esb._verify check  --scaled   # recompute scaled, assert identical
 """
 from __future__ import annotations
 
@@ -28,12 +35,21 @@ from esb.config import Config
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _BASELINE_DIR = _REPO_ROOT / "_golden_baseline"
+_BASELINE_DIR_SCALED = _REPO_ROOT / "_golden_baseline_scaled"
 sys.path.insert(0, str(_REPO_ROOT))
 
 
-def _smoke_config() -> Config:
-    """Resolve the mape_smoke profile exactly as the CLI would."""
-    argv = _resolve_profile_flag(["run", "--profile", "mape_smoke"])
+def _baseline_dir(scaled: bool) -> Path:
+    return _BASELINE_DIR_SCALED if scaled else _BASELINE_DIR
+
+
+def _profile_name(scaled: bool) -> str:
+    return "mape_smoke_scaled" if scaled else "mape_smoke"
+
+
+def _smoke_config(scaled: bool = False) -> Config:
+    """Resolve the (scaled or unscaled) smoke profile exactly as the CLI would."""
+    argv = _resolve_profile_flag(["run", "--profile", _profile_name(scaled)])
     ns = _build_parser().parse_args(argv)
     return Config.from_namespace(ns).validate()
 
@@ -75,11 +91,21 @@ def compute_fit_inputs(config: Config) -> dict:
     x_val = np.asarray(getattr(X_val, "values", X_val), dtype=float)
     y_val = np.asarray(getattr(y_val, "values", y_val), dtype=float)
 
+    # Apply the scale stage exactly as mape_tuner._train_model does, so the scaled
+    # baseline's digest reflects the STANDARDIZED fit inputs (C1 guardrail).
+    if config.scale:
+        from esb.contracts import Arrays
+        from esb.stages.scale import scale_arrays
+        scaled = scale_arrays(Arrays.from_preparing_data(data), enabled=True)
+        x_train, y_train = scaled.x_train, scaled.y_train
+        x_val, y_val = scaled.x_val, scaled.y_val
+
     batch_size = config.batch_size if config.batch_size is not None else int(x_train.shape[0])
 
     payload = {
         "config": {
             "loss": config.loss, "lead_time": lead_time, "rotation": rotation,
+            "scale": config.scale,
             "input_structure": config.input_structure,
             "atp_hours_back": config.atp_hours_back,
             "wtp_hours_back": config.wtp_hours_back,
@@ -105,12 +131,13 @@ def compute_fit_inputs(config: Config) -> dict:
     return payload
 
 
-def freeze() -> int:
-    config = _smoke_config()
+def freeze(scaled: bool = False) -> int:
+    config = _smoke_config(scaled)
+    baseline_dir = _baseline_dir(scaled)
     payload = compute_fit_inputs(config)
-    _BASELINE_DIR.mkdir(parents=True, exist_ok=True)
-    (_BASELINE_DIR / "fit_inputs.json").write_text(json.dumps(payload, indent=2, default=str))
-    (_BASELINE_DIR / "resolved_config.json").write_text(
+    baseline_dir.mkdir(parents=True, exist_ok=True)
+    (baseline_dir / "fit_inputs.json").write_text(json.dumps(payload, indent=2, default=str))
+    (baseline_dir / "resolved_config.json").write_text(
         json.dumps(config.resolved(), indent=2, default=str)
     )
     # Copy the run-level artifacts produced by the actual run, if present.
@@ -118,23 +145,26 @@ def freeze() -> int:
     for name in ("run_provenance.json", "mape_progress.csv"):
         src = run_dir / name
         if src.is_file():
-            (_BASELINE_DIR / name).write_text(src.read_text())
-    print(f"[freeze] fit-input digest: {payload['digest']}")
-    print(f"[freeze] wrote baseline -> {_BASELINE_DIR}")
+            (baseline_dir / name).write_text(src.read_text())
+    label = "scaled" if scaled else "unscaled"
+    print(f"[freeze] {label} fit-input digest: {payload['digest']}")
+    print(f"[freeze] wrote baseline -> {baseline_dir}")
     return 0
 
 
-def check() -> int:
-    frozen_path = _BASELINE_DIR / "fit_inputs.json"
+def check(scaled: bool = False) -> int:
+    baseline_dir = _baseline_dir(scaled)
+    frozen_path = baseline_dir / "fit_inputs.json"
     if not frozen_path.is_file():
         print(f"[check] no frozen baseline at {frozen_path}; run `freeze` first.")
         return 1
     frozen = json.loads(frozen_path.read_text())
-    current = compute_fit_inputs(_smoke_config())
+    current = compute_fit_inputs(_smoke_config(scaled))
+    label = "scaled" if scaled else "unscaled"
     if current["digest"] == frozen["digest"]:
-        print(f"[check] PASS — fit-input digest identical: {current['digest']}")
+        print(f"[check] PASS — {label} fit-input digest identical: {current['digest']}")
         return 0
-    print("[check] FAIL — fit-input digest differs!")
+    print(f"[check] FAIL — {label} fit-input digest differs!")
     print(f"  frozen : {frozen['digest']}")
     print(f"  current: {current['digest']}")
     for k in ("x_train", "y_train", "x_val", "y_val"):
@@ -146,11 +176,13 @@ def check() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
+    scaled = "--scaled" in argv
+    argv = [a for a in argv if a != "--scaled"]
     cmd = argv[0] if argv else "check"
     if cmd == "freeze":
-        return freeze()
+        return freeze(scaled)
     if cmd == "check":
-        return check()
+        return check(scaled)
     print(__doc__)
     return 2
 
