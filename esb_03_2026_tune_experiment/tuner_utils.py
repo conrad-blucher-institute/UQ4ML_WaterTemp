@@ -58,12 +58,30 @@ class TimingLogger:
 
 class ProgressTracker:
     """Tracks tuning progress and allows checkpointing/resumption."""
-    
+
+    # Single source of truth for the progress CSV schema. Stage C additions:
+    #  * 'dropout' — part of the resume identity (each dropout rate is its own job)
+    #  * the FULL metric suite promoted to columns (mae/mae12/me/me12/mape on both
+    #    the validation set and the 2021 independent year) so any of them can be
+    #    inspected in the viz suite without re-parsing the JSON 'metrics' blob.
+    FIELDNAMES = [
+        'run_num', 'model_type', 'lead_time', 'cycle', 'activation', 'num_layers',
+        'neurons', 'dropout', 'loss_value',
+        'val_mae', 'val_mae12', 'val_me', 'val_me12', 'val_mape',
+        'mae_2021', 'mae12_2021', 'me_2021', 'me12_2021', 'mape_2021',
+        'metrics', 'timestamp', 'status',
+    ]
+    # Promoted metric column -> key looked up in the metrics dict.
+    _PROMOTED_METRICS = [
+        'val_mae', 'val_mae12', 'val_me', 'val_me12', 'val_mape',
+        'mae_2021', 'mae12_2021', 'me_2021', 'me12_2021', 'mape_2021',
+    ]
+
     def __init__(self, progress_path: Path):
         self.progress_path = progress_path
         self.completed = set()
         self.results = []
-        
+
         # Load existing progress if file exists
         if progress_path.exists():
             with open(progress_path, 'r', newline='') as f:
@@ -77,29 +95,34 @@ class ProgressTracker:
         else:
             # Create CSV with headers (include run_num so multiple runs append)
             with open(progress_path, 'w', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=[
-                    'run_num', 'model_type', 'lead_time', 'cycle', 'activation', 'num_layers',
-                    'neurons', 'loss_value', 'val_mae', 'val_mae12', 'mae_2021', 'mae12_2021',
-                    'metrics', 'timestamp', 'status'
-                ])
+                writer = csv.DictWriter(f, fieldnames=self.FIELDNAMES)
                 writer.writeheader()
-    
+
     @staticmethod
     def _make_key(config: Dict[str, Any]) -> str:
-        """Create a unique key from a configuration (includes run_num)."""
+        """Create a unique key from a configuration (includes dropout + run_num).
+
+        Reading legacy rows without a 'dropout' column falls back to 0.0 so old
+        progress CSVs still resolve to a stable key.
+        """
         run_num = config.get('run_num', 0)
+        dropout = config.get('dropout', 0.0)
         return f"{config['model_type']}_{config['lead_time']}_{config['cycle']}_" \
-               f"{config['activation']}_{config['num_layers']}_{config['neurons']}_{run_num}"
+               f"{config['activation']}_{config['num_layers']}_{config['neurons']}_" \
+               f"{dropout}_{run_num}"
 
     def is_completed(self, model_type: str, lead_time: int, cycle: int,
-                     activation: str, num_layers: int, neurons: int, run_num: int = 0) -> bool:
+                     activation: str, num_layers: int, neurons: int,
+                     dropout: float = 0.0, run_num: int = 0) -> bool:
         """Check if a configuration has been completed successfully (O(1) set lookup)."""
-        key = f"{model_type}_{lead_time}_{cycle}_{activation}_{num_layers}_{neurons}_{run_num}"
+        key = f"{model_type}_{lead_time}_{cycle}_{activation}_{num_layers}_" \
+              f"{neurons}_{dropout}_{run_num}"
         return key in self.completed
-    
+
     def log_result(self, model_type: str, lead_time: int, cycle: int,
                    activation: str, num_layers: int, neurons: int,
-                   loss_value: float, status: str = "completed", run_num: int = 0, metrics: Dict[str, Any] = None):
+                   loss_value: float, status: str = "completed", run_num: int = 0,
+                   metrics: Dict[str, Any] = None, dropout: float = 0.0):
         """Log a tuning result."""
         # Promote key metrics to top-level columns so the CSV is queryable without JSON parsing
         def _extract(key):
@@ -116,15 +139,15 @@ class ProgressTracker:
             'activation': activation,
             'num_layers': num_layers,
             'neurons': neurons,
+            'dropout': dropout,
             'loss_value': loss_value,
-            'val_mae': _extract('val_mae'),
-            'val_mae12': _extract('val_mae12'),
-            'mae_2021': _extract('mae_2021'),
-            'mae12_2021': _extract('mae12_2021'),
             'metrics': '' if not metrics else json.dumps(metrics, default=lambda o: float(o) if hasattr(o, 'item') else str(o)),
             'timestamp': datetime.now().isoformat(),
             'status': status
         }
+        # Fill every promoted metric column from the metrics dict.
+        for col in self._PROMOTED_METRICS:
+            config[col] = _extract(col)
 
         key = self._make_key(config)
         if not status.lower().startswith('error') and status != '':
@@ -133,11 +156,7 @@ class ProgressTracker:
 
         # Append to CSV
         with open(self.progress_path, 'a', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=[
-                'run_num', 'model_type', 'lead_time', 'cycle', 'activation', 'num_layers',
-                'neurons', 'loss_value', 'val_mae', 'val_mae12', 'mae_2021', 'mae12_2021',
-                'metrics', 'timestamp', 'status'
-            ])
+            writer = csv.DictWriter(f, fieldnames=self.FIELDNAMES)
             writer.writerow(config)
 
     def aggregate_runs(self, aggregate_path: Path):

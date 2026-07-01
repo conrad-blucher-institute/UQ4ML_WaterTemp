@@ -122,7 +122,8 @@ class BaseHyperparameterTuner:
             self.progress_tracker.log_result(
                 config['model_type'], config['lead_time'], config['cycle'],
                 config['activation'], config['num_layers'], config['neurons'],
-                loss_value, status="completed", run_num=self.run_num, metrics=metrics_dict
+                loss_value, status="completed", run_num=self.run_num, metrics=metrics_dict,
+                dropout=config.get('dropout', 0.0)
             )
             
             config['loss_value'] = loss_value
@@ -139,7 +140,8 @@ class BaseHyperparameterTuner:
             self.progress_tracker.log_result(
                 config['model_type'], config['lead_time'], config['cycle'],
                 config['activation'], config['num_layers'], config['neurons'],
-                loss_value=-1.0, status=f"error: {str(e)}", run_num=self.run_num
+                loss_value=-1.0, status=f"error: {str(e)}", run_num=self.run_num,
+                dropout=config.get('dropout', 0.0)
             )
             config['status'] = 'error'
             config['error'] = str(e)
@@ -212,7 +214,7 @@ class BaseHyperparameterTuner:
             if not self.progress_tracker.is_completed(
                 c['model_type'], c['lead_time'], c['cycle'],
                 c['activation'], c['num_layers'], c['neurons'],
-                run_num=c.get('run_num', 0)
+                dropout=c.get('dropout', 0.0), run_num=c.get('run_num', 0)
             )
         ]
         total_configs = len(configs)
