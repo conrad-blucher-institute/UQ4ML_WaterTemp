@@ -210,11 +210,14 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
     print(f"Testing size: {testing.shape[0]} (was {testing_data.shape[0]})")
     print(f"Validation size: {validation.shape[0]} (was {validation_data.shape[0]})\n")
 
-    # Save cleaned data for verification
-    training.to_csv('debug_training_data_CLEANED.csv')
-    testing.to_csv('debug_testing_data_CLEANED.csv')
-    validation.to_csv('debug_validation_data_CLEANED.csv')
-    print("Saved cleaned data to debug_*_CLEANED.csv files for verification\n")
+    # TODO(revisit): debug CSV dumps disabled — they wrote debug_*_CLEANED.csv to the
+    # repo root (cwd) on every run. Needs a proper solution: gate behind a verbose/debug
+    # flag AND write into the run's output/results dir, not cwd. (Same issue: the
+    # debug_year_independent.csv dump ~line 91 and debug_preparingData.txt.)
+    # training.to_csv('debug_training_data_CLEANED.csv')
+    # testing.to_csv('debug_testing_data_CLEANED.csv')
+    # validation.to_csv('debug_validation_data_CLEANED.csv')
+    # print("Saved cleaned data to debug_*_CLEANED.csv files for verification\n")
 
     dataframe_checker(-100, [training, testing, validation]) # checking for any rogue number less than -100
     _dlog(f'after deletingMissingValues: train={training.shape}, test={testing.shape}, val={validation.shape}')

@@ -1,6 +1,19 @@
 # UQ4ML WaterTemp - TODO Tracker
 
-Last updated: 2026-03-21
+Last updated: 2026-07-01
+
+---
+
+## REVISIT: debug CSV/file dumps in dataprep (temporarily disabled 2026-07-01)
+
+`src/helper/utils_mse_crps.py` was writing debug files to the **repo root (cwd)** on every
+run. Temporarily commented out (esb_refactor_post_stageC) to stop the clutter; needs a proper
+solution — gate behind a verbose/debug flag AND write into the run's output/results dir, not cwd.
+
+- `debug_training_data_CLEANED.csv`, `debug_testing_data_CLEANED.csv`,
+  `debug_validation_data_CLEANED.csv` (+ "Saved cleaned data..." print) — **disabled** (~line 214).
+- Also still present / same problem: `debug_year_independent.csv` (~line 91) and
+  `debug_preparingData.txt` (verbose logger, honors `TUNER_DEBUG_LOG_DIR`).
 
 ---
 
