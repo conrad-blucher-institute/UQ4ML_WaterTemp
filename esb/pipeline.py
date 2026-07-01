@@ -54,6 +54,7 @@ def _build_grid_config(config: Config):
         activations=list(config.activations),
         num_layers_range=list(config.num_layers),
         neurons_range=list(config.neurons),
+        dropouts=list(config.dropout),          # Stage C search-space axis (§9)
     )
 
 

@@ -184,7 +184,7 @@ class ProgressTracker:
 class GridSearchConfig:
     """Defines and generates grid search configurations."""
     
-    def __init__(self, model_type: str, lead_times: List[int], cycles: List[int], activations: List[str], num_layers_range: List[int], neurons_range: List[int], run_nums: List[int] = None):
+    def __init__(self, model_type: str, lead_times: List[int], cycles: List[int], activations: List[str], num_layers_range: List[int], neurons_range: List[int], run_nums: List[int] = None, dropouts: List[float] = None):
 
         self.model_type = model_type
         self.lead_times = lead_times
@@ -194,7 +194,11 @@ class GridSearchConfig:
         self.neurons_range = neurons_range
         # allow generating multiple independent runs per configuration
         self.run_nums = [0] if run_nums is None else list(run_nums)
-    
+        # Dropout rate(s) applied after each hidden Dense (Stage C, design §9).
+        # None -> [0.0] so the legacy hardcoded grids (which don't pass dropouts)
+        # generate exactly one no-dropout config per point, unchanged.
+        self.dropouts = [0.0] if dropouts is None else list(dropouts)
+
     def generate_configs(self) -> List[Dict[str, Any]]:
         """Generate all configurations for grid search."""
         configs = []
@@ -203,19 +207,22 @@ class GridSearchConfig:
                 for activation in self.activations:
                     for num_layers in self.num_layers_range:
                         for neurons in self.neurons_range:
-                            for run_num in self.run_nums:
-                                configs.append({
-                                    'run_num': run_num,
-                                    'model_type': self.model_type,
-                                    'lead_time': lead_time,
-                                    'cycle': cycle,
-                                    'activation': activation,
-                                    'num_layers': num_layers,
-                                    'neurons': neurons
-                                })
+                            for dropout in self.dropouts:
+                                for run_num in self.run_nums:
+                                    configs.append({
+                                        'run_num': run_num,
+                                        'model_type': self.model_type,
+                                        'lead_time': lead_time,
+                                        'cycle': cycle,
+                                        'activation': activation,
+                                        'num_layers': num_layers,
+                                        'neurons': neurons,
+                                        'dropout': dropout
+                                    })
         return configs
-    
+
     def count_configs(self) -> int:
         """Return total number of configurations in grid."""
-        return (len(self.lead_times) * len(self.cycles) * len(self.activations) * 
-            len(self.num_layers_range) * len(self.neurons_range) * len(self.run_nums))
+        return (len(self.lead_times) * len(self.cycles) * len(self.activations) *
+            len(self.num_layers_range) * len(self.neurons_range) *
+            len(self.dropouts) * len(self.run_nums))
