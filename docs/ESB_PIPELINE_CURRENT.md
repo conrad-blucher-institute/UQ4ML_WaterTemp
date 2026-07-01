@@ -43,7 +43,7 @@ flowchart TB
   note["NO scaling/normalization stage<br/>(raw values straight to model)"]:::warn
   arr -.-> note
 
-  classDef warn fill:#ffecec,stroke:#d33;
+  classDef warn stroke:#d33,stroke-width:3px;
 ```
 
 **Pain:** all stages live in one function with debug prints/CSV dumps interleaved; the
@@ -58,7 +58,7 @@ flowchart LR
   pi --> ev["model.evaluate / predict"]
   note2["assumes csv_files[0] is the<br/>independent year; no shared<br/>scaler with training"]:::warn
   pi -.-> note2
-  classDef warn fill:#ffecec,stroke:#d33;
+  classDef warn stroke:#d33,stroke-width:3px;
 ```
 
 ## 4. Known warts to fix in the redesign (from CLAUDE.md / this session)

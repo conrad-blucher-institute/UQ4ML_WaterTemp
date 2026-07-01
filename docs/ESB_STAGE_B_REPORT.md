@@ -11,18 +11,32 @@
 
 > The diagrams restate the dense sections below. If you read one part, read this.
 
+**Border-color legend** (borders only — node backgrounds follow your theme, so they stay readable in dark mode):
+
+```mermaid
+flowchart LR
+  L1["live bug / risk / danger"]:::hot
+  L2["new code, safe / added"]:::new
+  L3["caution / behavior note"]:::warn
+  classDef hot stroke:#d33,stroke-width:3px
+  classDef new stroke:#2a2,stroke-width:3px
+  classDef warn stroke:#d39e00,stroke-width:3px
+```
+
+- **Red border** = a live bug / risk / danger zone.
+- **Green border** = new code that is safe / additive.
+- **Yellow border** = caution: a behavior note or caveat.
+
 ### V1. What changed — tiny risk surface, isolated new package
 
 ```mermaid
 flowchart TB
   subgraph RISK["EXISTING files touched — 3 files, behavior-preserving"]
-    direction TB
     r1["utils_mse_crps.py +1 line<br/>R1 crash-fix (was a TypeError; now runs)"]
     r2["base_tuner.py +2 optional hooks<br/>default None → legacy path byte-identical"]
     r3["mape_tuner.py callback knobs ← config<br/>defaults = old literals → byte-identical"]
   end
   subgraph NEW["NEW esb/ package — nothing legacy imports it"]
-    direction TB
     n1["config.py — single source of truth"]
     n2["cli.py / __main__.py — one front door"]
     n3["pipeline.py — delegates to tuner"]
@@ -32,7 +46,7 @@ flowchart TB
     n7["_verify.py — golden-baseline tooling"]
   end
   RISK -->|"strangler fig: new grows beside old"| NEW
-  classDef hot fill:#ffecec,stroke:#d33;
+  classDef hot stroke:#d33,stroke-width:3px;
   class r1 hot
 ```
 
@@ -47,7 +61,7 @@ flowchart TB
   PIPE --> GRID["build GridSearchConfig<br/>(rotation→cycle) + config_overrides"]
   GRID --> TUNER["MAPETuner.run_tuning()<br/>EXISTING lead×rotation loop<br/>ProcessPoolExecutor + ProgressTracker"]
   TUNER --> OUT[("results/<run>/<br/>mape_progress.csv · *.keras<br/>run_provenance.json")]
-  classDef new fill:#eef7ee,stroke:#2a2;
+  classDef new stroke:#2a2,stroke-width:3px;
   class CLI,CFG,PIPE,PROV,GRID new
 ```
 
@@ -61,7 +75,7 @@ flowchart TB
   RUN --> RUN2["2nd full run, fresh dir<br/>completes + provenance ✅"]
   RUN2 --> WEIGHTS["trained loss DIFFERS (13.46 vs 27.60)<br/>⚠️ legacy tuner doesn't seed TF — reported, not papered over"]
   CHK --> LOCK["GOLDEN INVARIANT for Stages C/D:<br/>fit-input digest d80ae54…"]
-  classDef warn fill:#fff3cd,stroke:#d39e00;
+  classDef warn stroke:#d39e00,stroke-width:3px;
   class WEIGHTS warn
 ```
 

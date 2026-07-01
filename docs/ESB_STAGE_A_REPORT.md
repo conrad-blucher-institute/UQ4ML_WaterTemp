@@ -34,6 +34,19 @@ Files surveyed: `src/driver/crps_mme_runner.py`, `src/driver/operational_mse_crp
 
 > The diagrams below restate the dense tables in sections 1–4. If you only read one part, read this.
 
+**Border-color legend** (borders only — node backgrounds follow your theme, so they stay readable in dark mode):
+
+```mermaid
+flowchart LR
+  L1["live bug / blocker (danger)"]:::bad
+  L2["caution / behavior note / kept-as-is"]:::warn
+  classDef bad stroke:#d33,stroke-width:3px
+  classDef warn stroke:#d39e00,stroke-width:3px
+```
+
+- **Red border** = a live bug / blocker / danger zone.
+- **Yellow border** = caution: a behavior note or something deliberately kept as-is.
+
 ### V1. Config options grouped by the stage that consumes them
 Replaces the four big tables in §1. Each box = one stage; ⚠️ marks options that are
 duplicated, conflicting, or parsed-but-ignored.
@@ -41,23 +54,19 @@ duplicated, conflicting, or parsed-but-ignored.
 ```mermaid
 flowchart TB
   subgraph READ["read"]
-    direction TB
     r1["data_set / path_to_data ⚠️3 defaults"]
     r2["independent_year ⚠️not in parser"]
   end
   subgraph FEAT["features"]
-    direction TB
     f1["input_structure (desc/asc)"]
     f2["atp_hours_back / wtp_hours_back"]
     f3["pred_atp_interval ⚠️hardcoded 1"]
     f4["IPPOffset / temperature_list ⚠️not in parser"]
   end
   subgraph SPLIT["split"]
-    direction TB
     s1["rotation_list ⚠️=cycle=rotation=c_cycle"]
   end
   subgraph MODEL["model"]
-    direction TB
     m1["model_type ⚠️=loss + LSTM flag"]
     m2["num_output_neurons ⚠️CRPS needs >1"]
     m3["n_hidden / unit_list / num_layers"]
@@ -65,7 +74,6 @@ flowchart TB
     m5["kernel_regularizer / l2"]
   end
   subgraph TRAIN["train"]
-    direction TB
     t1["loss_function ⚠️bad parser default"]
     t2["lrate ⚠️0.0001 vs 0.01"]
     t3["epochs ⚠️100/2000/20000/200000"]
@@ -73,11 +81,9 @@ flowchart TB
     t5["patience / min_delta / *_patience ⚠️parsed but IGNORED"]
   end
   subgraph EVAL["evaluate"]
-    direction TB
     e1["metrics ⚠️str default iterates as m,s,e"]
   end
   subgraph TUNE["tune-only"]
-    direction TB
     u1["max_trials / executions_per_trial / tuner_objective"]
   end
   READ --> FEAT --> SPLIT --> MODEL --> TRAIN --> EVAL --> TUNE
@@ -101,7 +107,7 @@ flowchart TB
   INFER2 --> OUT2
   note["NOTE: current code runs split BEFORE clean (design doc says clean->split). Kept as-is for Stage B."]:::warn
   SPLIT2 -.-> note
-  classDef warn fill:#fff3cd,stroke:#d39e00;
+  classDef warn stroke:#d39e00,stroke-width:3px;
 ```
 
 ### V3. R1 — the suspected live bug (read this one)
@@ -111,7 +117,7 @@ flowchart LR
   callee["def splittingData(<br/>y2,y3,y4,y5, year_independent, cycle)<br/>line 455<br/><b>6 params required</b>"]
   caller -->|"calls"| callee
   callee --> err["⚠️ missing positional arg<br/>'cycle' → TypeError?<br/>Must run to confirm."]
-  classDef bad fill:#ffecec,stroke:#d33;
+  classDef bad stroke:#d33,stroke-width:3px;
   class err bad
 ```
 
@@ -149,7 +155,7 @@ flowchart TB
     R4["R4: debug-CSV side effects → Stage D"]
   end
   G1 --> G2 --> G3
-  classDef hot fill:#ffecec,stroke:#d33;
+  classDef hot stroke:#d33,stroke-width:3px;
   class R1 hot
 ```
 
