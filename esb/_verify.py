@@ -102,20 +102,26 @@ def compute_fit_inputs(config: Config) -> dict:
 
     batch_size = config.batch_size if config.batch_size is not None else int(x_train.shape[0])
 
+    config_payload = {
+        "loss": config.loss, "lead_time": lead_time, "rotation": rotation,
+        "input_structure": config.input_structure,
+        "atp_hours_back": config.atp_hours_back,
+        "wtp_hours_back": config.wtp_hours_back,
+        "pred_atp_interval": config.pred_atp_interval,
+        "activation": config.activations[0],
+        "num_layers": config.num_layers[0], "neurons": config.neurons[0],
+        "output_units": config.output_units,
+        "output_activation": config.output_activation,
+        "learning_rate": config.learning_rate,
+    }
+    # Only record scale when ON, so the UNSCALED payload stays byte-identical to
+    # the Stage B baseline and reproduces digest d80ae54 exactly (C1). The scaled
+    # path's difference is already captured by the standardized array digests.
+    if config.scale:
+        config_payload["scale"] = True
+
     payload = {
-        "config": {
-            "loss": config.loss, "lead_time": lead_time, "rotation": rotation,
-            "scale": config.scale,
-            "input_structure": config.input_structure,
-            "atp_hours_back": config.atp_hours_back,
-            "wtp_hours_back": config.wtp_hours_back,
-            "pred_atp_interval": config.pred_atp_interval,
-            "activation": config.activations[0],
-            "num_layers": config.num_layers[0], "neurons": config.neurons[0],
-            "output_units": config.output_units,
-            "output_activation": config.output_activation,
-            "learning_rate": config.learning_rate,
-        },
+        "config": config_payload,
         "fit_inputs": {
             "x_train": _arr_digest(x_train), "y_train": _arr_digest(y_train),
             "x_val": _arr_digest(x_val), "y_val": _arr_digest(y_val),
