@@ -283,23 +283,43 @@ class MAPETuner(BaseHyperparameterTuner):
         # Build metrics dict from Keras history
         metrics_dict = {k: float(v[-1]) for k, v in hist.items() if isinstance(v, (list, tuple)) and len(v) > 0}
 
-        # Import mae12 once so it is available for both val and 2021 evaluation
+        # Full metric suite (design §9): keras history already gives val_mae /
+        # val_mape (and mae / mape); we add the below-12 and mean-error metrics so
+        # the whole suite (mae, mae12, me, me12, mape) is persisted per config/rep
+        # for both the validation set and the 2021 independent year. Selection
+        # still uses val_mae; these are for later inspection in the viz suite.
         try:
-            from src.helper.utils import mae12 as _mae12
+            from src.helper.metrics import mae12 as _mae12, me as _me, me12 as _me12
         except Exception:
             try:
-                from helper.utils import mae12 as _mae12
+                from helper.metrics import mae12 as _mae12, me as _me, me12 as _me12
             except Exception:
-                _mae12 = None
+                _mae12 = _me = _me12 = None
 
-        # Post-hoc mae12 on validation set (y_true <= 12°C)
+        def _suite(y_true, y_pred):
+            """{mae12, me, me12} on flattened 1D arrays (avoids the shape-broadcast
+            pitfalls in the metric fns when y_pred is (N,1) and y_true is (N,))."""
+            import numpy as _np
+            yt = _np.asarray(y_true).reshape(-1)
+            yp = _np.asarray(y_pred).reshape(-1)
+            out = {}
+            if _mae12 is not None:
+                out['mae12'] = float(_mae12(yt, yp))
+            if _me is not None:
+                out['me'] = float(_me(yt, yp))
+            if _me12 is not None:
+                out['me12'] = float(_me12(yt, yp))
+            return out
+
+        # Post-hoc suite on the validation set (val_mae/val_mape come from history)
         if validation is not None and _mae12 is not None:
             try:
                 x_val_arr, y_val_arr = validation
                 y_pred_val = model.predict(x_val_arr, verbose=0)
-                metrics_dict['val_mae12'] = float(_mae12(y_val_arr, y_pred_val))
+                for name, val in _suite(y_val_arr, y_pred_val).items():
+                    metrics_dict[f'val_{name}'] = val
             except Exception as e:
-                print(f"  WARNING: mae12 val computation failed: {e}")
+                print(f"  WARNING: val metric suite computation failed: {e}")
 
         # Post-hoc 2021 independent test set evaluation
         # Uses prepare_independent_year() which runs the same feature-engineering
@@ -334,9 +354,12 @@ class MAPETuner(BaseHyperparameterTuner):
                     if name == 'loss':
                         continue
                     metrics_dict[f'{name}_2021'] = float(val)
+                # Add the below-12 / mean-error suite on the 2021 year (mae_2021 /
+                # mape_2021 already came from model.evaluate above).
                 if _mae12 is not None:
                     y_pred_2021 = model.predict(x_2021, verbose=0)
-                    metrics_dict['mae12_2021'] = float(_mae12(y_2021, y_pred_2021))
+                    for name, val in _suite(y_2021, y_pred_2021).items():
+                        metrics_dict[f'{name}_2021'] = val
         except Exception as e:
             print(f"  WARNING: 2021 evaluation failed: {e}")
 
