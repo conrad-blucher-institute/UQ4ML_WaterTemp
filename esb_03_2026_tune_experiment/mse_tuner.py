@@ -61,15 +61,24 @@ class MSETuner(BaseHyperparameterTuner):
         learning_rate = float(config['learning_rate'])
         input_shape = tuple(config['input_shape'])
 
+        # Dropout rate + activation-aware layer type (Stage C, design §9):
+        # AlphaDropout preserves SELU self-normalization (mean AND variance);
+        # plain Dropout would silently break it. dropout == 0.0 -> no layer (off).
+        dropout = float(config.get('dropout', 0.0))
+        from tensorflow.keras.layers import Dropout, AlphaDropout
+        DropoutLayer = AlphaDropout if activation == 'selu' else Dropout
+
         model = Sequential()
 
         # Add explicit Input layer (matches MyHyperModel behavior)
         from tensorflow.keras.layers import Input
         model.add(Input(shape=input_shape))
 
-        # Add hidden layers
+        # Add hidden layers, each optionally followed by a dropout layer
         for _ in range(num_layers):
             model.add(Dense(units=neurons, activation=activation))
+            if dropout > 0.0:
+                model.add(DropoutLayer(dropout))
 
         # Output layer
         model.add(Dense(output_units, activation=output_activation))
