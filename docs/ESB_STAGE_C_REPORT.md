@@ -23,6 +23,8 @@ flowchart TB
     a5["--scale flag (default False) · scaled profiles"]
     a6["_verify --scaled: SECOND golden baseline"]
   end
+  A -->|"scale OFF ⇒ zero regression"| GATE["golden digest d80ae54 still holds"]
+  GATE --> B
   subgraph B["B · SEARCH-SPACE UPDATE — intended model change (design §9)"]
     direction TB
     b1["neurons: drop 100 → [16,32,64,128,256]"]
@@ -30,7 +32,6 @@ flowchart TB
     b3["selu → AlphaDropout · relu/leaky → Dropout<br/>0.0 → no layer"]
     b4["progress CSV: dropout in resume key<br/>+ FULL metric suite columns"]
   end
-  A -->|"scale OFF ⇒ zero regression"| GATE["golden digest d80ae54 still holds"]
   B -->|"validated on its OWN terms"| GRID["grid/layer/CSV assertions"]
 ```
 
