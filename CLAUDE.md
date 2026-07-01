@@ -1,5 +1,27 @@
 # Repo notes
 
+## North Star — design direction for the pipeline
+
+**Push complexity into the code; keep the human interface simple.** Complexity can't be
+deleted, only moved (Tesler's Law) — and with one author + thousands of runs, the *code*
+should absorb it, not the user. The target: **one command, one named profile, smart defaults,
+loud failures**, sitting on **low-coupling / high-cohesion** stages.
+
+Guardrails (so we don't recreate the "bandaid → bad code" cycle):
+1. **Hidden ≠ invisible** — defaults must be inspectable and overridable; "just works" must
+   never mean "silently does something."
+2. **Magic needs loud errors** — auto-discovery/conventions must fail clearly (never trust
+   unsorted-glob ordering).
+3. **Don't over-abstract** — new abstraction layers require explicit approval before code.
+
+Reference: the tuning viz suite (`run_v16.py`) proves a simple interface is achievable
+(one command, folder picker, auto-discovery, all plots) but NOT yet internal cohesion
+(version sprawl, the `infer_metric_column()`-always-`val_mae` stub, headless-incompatible
+tkinter picker).
+
+Full design + visuals: **`docs/ESB_PIPELINE_DESIGN.md`**. The `main` clean-room refactor
+follows the same philosophy but is behavior-preserving (paper-replication baseline).
+
 ## Parked WIP on this laptop (dev-Proto_Incorp)
 
 There is a stash on this laptop holding uncommitted work for `dev-Proto_Incorp`, parked while focus shifted back to `esb_dev`.

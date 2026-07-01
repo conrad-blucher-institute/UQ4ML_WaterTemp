@@ -151,7 +151,7 @@ flowchart LR
 3. Make `scale` the first truly cohesive stage (reconcile the two impls).
 4. Continue stage by stage. Never a big-bang rewrite.
 
-## 8. GUI (future capstone — build LAST)
+## 8. GUI (Stage E — after C, before D; reordered 2026-06-29)
 A GUI is **reasonable, not overkill**, *if* it sits on top of a stable CLI: builds a config
 profile, optionally launches a run, and doubles as a launcher into the viz suite. Hard
 constraints so it doesn't become a second maintenance burden:
@@ -161,8 +161,10 @@ constraints so it doesn't become a second maintenance burden:
   it** and the **GUI introspects the same schema** to render its form. Add an option in one
   place → it appears as a CLI flag *and* a GUI field automatically. The GUI never hardcodes its
   own option list (that's how the two drift).
-- **Build it LAST**, only after the CLI + `Config` schema are frozen. A GUI on a moving CLI is
-  two churning things.
+- **Build it after the schema is frozen (end of Stage C), as Stage E — not dead last.** Reordered
+  2026-06-29 to run after C and before D so it can launch the sharded tuning campaign; safe because
+  the GUI is schema-driven and the schema is frozen at the end of C (D is internal-only). The rule
+  that still holds: never build a GUI on a *moving* CLI.
 - **Run button = LOCAL only (intentional constraint).** The Run button executes experiments on
   the machine running the GUI/CLI, by shelling out to the CLI. **Cluster/SLURM (Grendal) runs
   are manual by design** — the GUI builds the config; you copy it to the cluster and submit it

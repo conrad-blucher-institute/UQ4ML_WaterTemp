@@ -12,7 +12,12 @@ fresh conversation. They implement the strangler-fig migration in `docs/ESB_PIPE
 > has no TF; a pre-existing `→`-print breaks on cp1252 stdout).
 
 ## How to use this file
-- Run stages **in order** (A → B → C → D). Each depends on the previous.
+- **Execution order (Hector's plan, 2026-06-29): A → B → C → E → D → F.** The stage *labels* are
+  fixed identifiers; only the *order* is reordered. Stage E (GUI + `--shard` sharding) now runs
+  **after C and before D**, because Hector wants to launch sharded tuning (`--shard 1/20`) as soon
+  as C+E finish, then do the internal migration (D) while the runs proceed. This is safe: the GUI
+  is schema-driven and the Config schema is frozen at the end of C, so D (internal-only) doesn't
+  move it.
 - Run from the repo root. Each stage works on its OWN dedicated branch (Stage B = `esb_refactor`;
   Stage C = `esb_refactor_post_stageC`, already created off `esb_refactor`), **never** `esb_dev`
   directly. Branches stay **stacked** — do not merge into `esb_dev`; Hector reviews merges manually.
@@ -255,9 +260,58 @@ STOP after each stage (or a small batch) for my review before continuing.
 
 ---
 
+## STAGE E — GUI + multi-machine sharding  (EXECUTION: run AFTER Stage C, BEFORE Stage D)
+
+```
+Read docs/ESB_PIPELINE_DESIGN.md (§8 GUI, §9 search space, §10 sharding) and the post-Stage-C code.
+Branch off the latest post-C branch (e.g. `git checkout -b esb_refactor_stageE` off the Stage C
+branch); do NOT merge into esb_dev (stacked branches; Hector merges manually). Small focused commits.
+
+This stage has TWO parts, each its own commit(s). Do PART 1 (sharding) FIRST — Hector wants to launch
+`--shard 1/20` as soon as this stage lands.
+
+PART 1 — MULTI-MACHINE SHARDING (CLI/pipeline feature; design doc §10)
+- Add `--shard k/N` to the Config schema + CLI. The pipeline enumerates the FULL deterministic job
+  list (lead_time × rotation × config × rep, stable sort); machine k runs only its slice. Default to
+  CONTIGUOUS blocks (split the job list into N equal contiguous chunks, machine k = chunk k) for easy
+  manual tracking/hand-out; document the choice. No flag (or `--shard 0/1`) = run everything.
+- OUTPUT CONTRACT (so an offline SSD union-merge is trivial): self-contained, uniquely-named result
+  folders whose path encodes leadtime/rotation/config/rep (model + scaler + run_provenance.json
+  together). Each shard writes its OWN progress_shard_k.csv — NEVER one shared global CSV.
+- BEHAVIOR-PRESERVING: with no shard flag, behavior is IDENTICAL to Stage C/D — the golden check must
+  still pass. Sharding only SELECTS a subset of jobs; it never changes any job's result.
+- Verification: assert `--shard 0/2` ∪ `--shard 1/2` = the full job set with ZERO overlap and ZERO
+  gaps; `--dry-run` prints exactly which jobs a given shard would run.
+- The cross-machine `esb aggregate` merge step stays in Stage F — running shards does not need it.
+
+PART 2 — GUI (schema-driven; design doc §8)
+- Lightweight Python web UI (Streamlit OR Gradio — pick one, justify briefly in your report). It MUST
+  introspect the Config schema to render its form — NEVER hardcode the option list (single source of
+  truth is the whole point).
+- Three actions:
+  (a) "Build config & stop" → writes a profiles/*.txt the CLI accepts (the dry-run artifact).
+  (b) "Run locally" → shells out to `python -m esb run ...` on THIS machine.
+  (c) "Open viz suite" → launches the existing viz on a chosen results folder.
+- Surface the LOCAL-ONLY blurb (design doc §8): Run trains on THIS machine; cluster/SLURM is manual —
+  build the config, submit it on the cluster yourself.
+- May expose a `--shard k/N` field for a local run, but make clear multi-machine = run the CLI on each
+  machine manually (the GUI does NOT orchestrate remote machines).
+- Verification (prove single-source-of-truth): the GUI renders every Config field; a config it builds
+  is accepted by the CLI unchanged; adding/removing a schema field changes the GUI form with NO
+  GUI-code edit. Demonstrate that last point explicitly.
+
+STOP for approval at: PART 1 sharding design (before coding); PART 1 verification; PART 2 GUI design
+(tech choice + layout); PART 2 verification.
+```
+
+---
+
 ## OUT OF SCOPE (do not start without explicit approval)
-- The **GUI** — it is the capstone, built LAST, only after the CLI + Config schema are frozen
-  (see design doc §8). Not part of Stages A–D.
-- **Remote/SLURM job submission** — Run is local-only by design.
+- **Remote/SLURM job submission** — Run is local-only by design (manual on the cluster).
 - Any **research/model changes** beyond the scaling reconciliation AND the approved search-space
   update (design doc §9) in Stage C. No *other* model changes without explicit approval.
+- **Stage F (later):** the `esb aggregate` offline SSD-merge step, PNG/PDF share export, `esb new`
+  config wizard, and other throughput/UX niceties.
+
+> NOTE: the **GUI + `--shard k/N` sharding are now Stage E**, reordered to run after Stage C and
+> before Stage D (see the execution-order note at the top). They are no longer out of scope.

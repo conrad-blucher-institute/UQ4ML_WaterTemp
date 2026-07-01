@@ -13,6 +13,7 @@
 ### V1. Two deliverables, separate commit groups
 
 ```mermaid
+%%{init: {'themeVariables': {'fontSize': '28px'}}}%%
 flowchart TB
   subgraph A["A · SCALE RECONCILIATION — behavior-preserving, OFF by default"]
     direction TB
@@ -34,9 +35,6 @@ flowchart TB
   end
   B -->|"validated on its OWN terms"| GRID["grid/layer/CSV assertions"]
 
-  %% Inner-box font size — change 18px below to taste (e.g. 16px, 20px):
-  classDef box font-size:18px;
-  class a1,a2,a3,a4,a5,a6,b1,b2,b3,b4 box;
 ```
 
 ### V2. The scale stage on the live path (opt-in)
@@ -67,28 +65,28 @@ flowchart TB
 
 ## 1. Branch & commits (12, one logical change each)
 
-| # | Commit | Group |
-|---|--------|-------|
-| db6b00c | contracts: typed Arrays/ScaledArrays (C3) | A |
-| 48485c9 | stages/scale: cohesive fit-on-train-only stage (C1/C2) | A |
-| 1d923af | io/results: single scaler persistence site (.joblib) | A |
-| a8ef994 | infer: prepare_independent_year(scaler=, column_map=) | A |
-| ff8dd54 | mape_tuner: wire scale into live path (opt-in) | A |
-| 14698ef | config: --scale flag + thread to tuner | A |
-| 45e3f66 | profiles: scaled MAPE profiles (full + smoke) | A |
-| _(this)_ | _verify: second golden baseline (--scaled) + leakage tests | A |
-| _(this)_ | config: drop neurons=100, add dropout field | B |
-| _(this)_ | tuner_utils: dropout axis in GridSearchConfig | B |
-| _(this)_ | mape/mse tuner: activation-aware dropout | B |
-| _(this)_ | tuner_utils: dropout resume key + full metric columns | B |
-| _(this)_ | mape_tuner: compute full metric suite | B |
+| #        | Commit                                                      | Group |
+| -------- | ----------------------------------------------------------- | ----- |
+| db6b00c  | contracts: typed Arrays/ScaledArrays (C3)                   | A     |
+| 48485c9  | stages/scale: cohesive fit-on-train-only stage (C1/C2)      | A     |
+| 1d923af  | io/results: single scaler persistence site (.joblib)        | A     |
+| a8ef994  | infer: prepare_independent_year(scaler=, column_map=)       | A     |
+| ff8dd54  | mape_tuner: wire scale into live path (opt-in)              | A     |
+| 14698ef  | config: --scale flag + thread to tuner                      | A     |
+| 45e3f66  | profiles: scaled MAPE profiles (full + smoke)               | A     |
+| _(this)_ | \_verify: second golden baseline (--scaled) + leakage tests | A     |
+| _(this)_ | config: drop neurons=100, add dropout field                 | B     |
+| _(this)_ | tuner_utils: dropout axis in GridSearchConfig               | B     |
+| _(this)_ | mape/mse tuner: activation-aware dropout                    | B     |
+| _(this)_ | tuner_utils: dropout resume key + full metric columns       | B     |
+| _(this)_ | mape_tuner: compute full metric suite                       | B     |
 
 ## 2. Deliverable A — scale reconciliation (LOCKED C1/C2/C3)
 
-**Design choice (approved): A1.** The norm-branch scaling *logic* was lifted into a
+**Design choice (approved): A1.** The norm-branch scaling _logic_ was lifted into a
 cohesive standalone stage; `preparingData` keeps its **unscaled 10-tuple** return
 unchanged. So every other `preparingData` caller — and the Stage B golden digest —
-is untouched, and "scale OFF is byte-identical" holds *by construction*.
+is untouched, and "scale OFF is byte-identical" holds _by construction_.
 
 - **C3 — typed containers.** `esb/contracts.py`: `Arrays` (reshape output) and
   `ScaledArrays` (scale output; `scaler` field is `None` when off). The esb path is
@@ -133,30 +131,34 @@ lifting only the scaler logic + infer params.
 ## 4. Verification
 
 ### A — scale reconciliation (behavior-preserving)
-| Check | Result |
-|---|---|
-| `_verify check` (scale OFF + dropout 0.0) | ✅ digest **d80ae54… IDENTICAL** (zero regression) |
-| `_verify freeze/check --scaled` | ✅ scaled digest **3ae83946…** in `_golden_baseline_scaled/` (separate; d80ae54 untouched) |
-| `test_scale_leakage.py` (5 tests) | ✅ fit-on-train-only · val/test transform-only · OFF=identity(scaler=None) · `.joblib` reproduces infer transform · guard fires on bad fit |
+
+| Check                                     | Result                                                                                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `_verify check` (scale OFF + dropout 0.0) | ✅ digest **d80ae54… IDENTICAL** (zero regression)                                                                                         |
+| `_verify freeze/check --scaled`           | ✅ scaled digest **3ae83946…** in `_golden_baseline_scaled/` (separate; d80ae54 untouched)                                                 |
+| `test_scale_leakage.py` (5 tests)         | ✅ fit-on-train-only · val/test transform-only · OFF=identity(scaler=None) · `.joblib` reproduces infer transform · guard fires on bad fit |
 
 > A tooling regression was caught and fixed here: adding a `scale` key to the
-> `_verify` digest payload had changed the *unscaled* hash. Now the key is recorded
+> `_verify` digest payload had changed the _unscaled_ hash. Now the key is recorded
 > only when scaling is ON, so the unscaled payload is byte-identical and reproduces
 > d80ae54 exactly.
 
 ### B — search-space update (validated on its own terms, NOT vs Stage B)
-| Assertion | Result |
-|---|---|
-| generated grid neurons | ✅ `[16,32,64,128,256]`, **zero** 100-neuron configs |
-| dropout axis in grid | ✅ `[0.0,0.05,0.1,0.3]`; `count_configs == len(generate_configs)` |
-| selu layer type | ✅ `AlphaDropout`; relu/leaky_relu → `Dropout`; 0.0 → no dropout layer |
-| results CSV | ✅ carries `dropout` + full `val_*` / `*_2021` metric suite (verified live via `mape_smoke`) |
+
+| Assertion              | Result                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------- |
+| generated grid neurons | ✅ `[16,32,64,128,256]`, **zero** 100-neuron configs                                         |
+| dropout axis in grid   | ✅ `[0.0,0.05,0.1,0.3]`; `count_configs == len(generate_configs)`                            |
+| selu layer type        | ✅ `AlphaDropout`; relu/leaky_relu → `Dropout`; 0.0 → no dropout layer                       |
+| results CSV            | ✅ carries `dropout` + full `val_*` / `*_2021` metric suite (verified live via `mape_smoke`) |
 
 ### Environment
+
 Anaconda base interpreter (`C:\Users\hmarrero\anaconda3\python.exe`, Python 3.10.9,
 TensorFlow 2.12.0), `PYTHONIOENCODING=utf-8` (pre-existing cp1252 print fragility).
 
 ## 5. Not seeded / out of scope (unchanged from Stage B)
+
 - Trained-weight bitwise reproducibility is still **not** asserted (legacy tuner has
   no TF seed) — the locked invariant remains the **fit-input digest**.
 - `mse_tuner` scale wiring: only `mape_tuner` (the live path) was wired for scaling;
@@ -165,5 +167,6 @@ TensorFlow 2.12.0), `PYTHONIOENCODING=utf-8` (pre-existing cp1252 print fragilit
 - R2/R4/unicode-print → Stage D.
 
 ## 6. Stop point
+
 Both deliverables implemented, both golden baselines hold, leakage proven, search
 space validated. **Awaiting approval** before Stage D.
