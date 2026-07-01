@@ -101,8 +101,13 @@ FIELDS: list[Field] = [
           stage="grid", choices=tuple(ALLOWED_ACTIVATIONS), is_list=True),
     Field("num_layers", int, [1, 2, 3], "Hidden-layer counts to search over.",
           stage="grid", is_list=True),
-    Field("neurons", int, [16, 32, 64, 100, 128, 256],
+    Field("neurons", int, [16, 32, 64, 128, 256],
           "Neurons-per-layer counts to search over.", stage="grid", is_list=True),
+    Field("dropout", float, [0.0, 0.05, 0.1, 0.3],
+          "Dropout rates to search over, applied after each hidden Dense. 0.0 = "
+          "no dropout layer. Uses AlphaDropout for selu, regular Dropout for "
+          "relu/leaky_relu (plain Dropout breaks SELU self-normalization).",
+          stage="grid", is_list=True),
     # --- scale -------------------------------------------------------------
     Field("scale", bool, False,
           "Standardize inputs: fit a StandardScaler on TRAINING data only, "
@@ -256,6 +261,9 @@ class Config:
         for n in v["neurons"]:
             if n < 1:
                 errs.append(f"neurons entry {n} must be >= 1.")
+        for d in v["dropout"]:
+            if not (0.0 <= d < 1.0):
+                errs.append(f"dropout entry {d} must be in [0.0, 1.0).")
 
         if v["input_structure"] not in ALLOWED_STRUCTURES:
             errs.append(f"input_structure {v['input_structure']!r} not in {ALLOWED_STRUCTURES}.")
@@ -282,6 +290,8 @@ class Config:
             errs.append("rotations is empty — nothing to search.")
         if not v["activations"]:
             errs.append("activations is empty — nothing to search.")
+        if not v["dropout"]:
+            errs.append("dropout is empty — nothing to search.")
 
         if errs:
             bullet = "\n  - ".join(errs)
