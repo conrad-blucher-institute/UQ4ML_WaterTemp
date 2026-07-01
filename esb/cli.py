@@ -96,7 +96,7 @@ def _expand_tokens(argv: list[str]) -> list[str]:
         if tok.startswith("@"):
             path = Path(tok[1:])
             if path.is_file():
-                for line in path.read_text().splitlines():
+                for line in path.read_text(encoding="utf-8").splitlines():
                     line = line.split("#", 1)[0].strip()
                     tokens.extend(line.split())
             else:
@@ -117,6 +117,14 @@ def _die(msg: str) -> "NoReturn":  # type: ignore[name-defined]
 
 
 def main(argv: list[str] | None = None) -> int:
+    # UTF-8 stdout/stderr so em dashes / § / → print on Windows cp1252 consoles
+    # without needing PYTHONIOENCODING=utf-8. errors="replace" = never crash.
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     argv = list(sys.argv[1:] if argv is None else argv)
 
     # `profiles` needs no config parsing.
@@ -165,7 +173,7 @@ def _list_profiles() -> None:
     print(f"Available profiles ({PROFILES_DIR}):")
     for p in profiles:
         first = ""
-        for line in p.read_text().splitlines():
+        for line in p.read_text(encoding="utf-8").splitlines():
             s = line.strip()
             if s.startswith("#"):
                 first = s.lstrip("# ").strip()
