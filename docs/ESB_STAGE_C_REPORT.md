@@ -15,22 +15,28 @@
 ```mermaid
 flowchart TB
   subgraph A["A · SCALE RECONCILIATION — behavior-preserving, OFF by default"]
-    direction TB
+    direction LR
     a1["contracts.py: Arrays / ScaledArrays (C3)<br/>replace the 10-vs-11-tuple return"]
     a2["stages/scale.py: fit on x_train ONLY<br/>+ loud leakage assert"]
     a3["io/results.save_scaler → .joblib (single site)"]
     a4["prepare_independent_year(scaler=, column_map=)<br/>infer reuses the SAME scaler"]
     a5["--scale flag (default False) · scaled profiles"]
     a6["_verify --scaled: SECOND golden baseline"]
+    a1 ~~~ a2 ~~~ a3
+    a4 ~~~ a5 ~~~ a6
+    a1 ~~~ a4
   end
   A -->|"scale OFF ⇒ zero regression"| GATE["golden digest d80ae54 still holds"]
   GATE --> B
   subgraph B["B · SEARCH-SPACE UPDATE — intended model change (design §9)"]
-    direction TB
+    direction LR
     b1["neurons: drop 100 → [16,32,64,128,256]"]
     b2["dropout axis [0.0,0.05,0.1,0.3]<br/>after each hidden Dense"]
     b3["selu → AlphaDropout · relu/leaky → Dropout<br/>0.0 → no layer"]
     b4["progress CSV: dropout in resume key<br/>+ FULL metric suite columns"]
+    b1 ~~~ b2
+    b3 ~~~ b4
+    b1 ~~~ b3
   end
   B -->|"validated on its OWN terms"| GRID["grid/layer/CSV assertions"]
 ```
