@@ -122,9 +122,20 @@ if __name__ == "__main__":
         '--no-serve', action='store_true',
         help="Skip launching the local server after generating plots.",
     )
+    parser.add_argument(
+        '--folder', type=str, default=None,
+        help="Results folder containing *_progress.csv (skips the tkinter picker; "
+             "headless/GUI-launch friendly).",
+    )
     args = parser.parse_args()
 
-    folder = pick_folder()
+    if args.folder:
+        folder = Path(args.folder)
+        if not folder.is_dir():
+            print(f"--folder is not a directory: {folder}")
+            sys.exit(1)
+    else:
+        folder = pick_folder()
     csv_paths = discover_csvs(folder)
     output_dir = str(folder.parent / f"{folder.name}_visuals")
 

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -64,6 +65,10 @@ def _build_parser() -> argparse.ArgumentParser:
     add_run_arguments(run)
 
     sub.add_parser("profiles", help="List available named profiles.")
+    sub.add_parser(
+        "gui",
+        help="Launch the schema-driven web GUI (requires streamlit; runs locally).",
+    )
     return parser
 
 
@@ -127,10 +132,12 @@ def main(argv: list[str] | None = None) -> int:
 
     argv = list(sys.argv[1:] if argv is None else argv)
 
-    # `profiles` needs no config parsing.
+    # `profiles` / `gui` need no config parsing.
     if argv and argv[0] == "profiles":
         _list_profiles()
         return 0
+    if argv and argv[0] == "gui":
+        return _launch_gui()
 
     # Rewrite --profile to an @file BEFORE argparse sees it (one mechanism).
     rewritten = _resolve_profile_flag(argv)
@@ -165,6 +172,24 @@ def main(argv: list[str] | None = None) -> int:
     from esb.pipeline import run_experiment
     run_experiment(config)
     return 0
+
+
+def _launch_gui() -> int:
+    """`esb gui` — exec `streamlit run esb/gui/app.py` (loud if not installed)."""
+    import importlib.util
+
+    if importlib.util.find_spec("streamlit") is None:
+        print(
+            "esb: error: streamlit is not installed in this environment.\n"
+            "  Install it with:  pip install streamlit\n"
+            "  (streamlit is an OPTIONAL dependency — only `esb gui` needs it; "
+            "the CLI and pipeline run without it.)",
+            file=sys.stderr,
+        )
+        return 2
+    app = Path(__file__).resolve().parent / "gui" / "app.py"
+    print(_RUN_LOCATION_BANNER + "\n")
+    return subprocess.call([sys.executable, "-m", "streamlit", "run", str(app)])
 
 
 def _list_profiles() -> None:
