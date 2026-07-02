@@ -4,7 +4,6 @@ Shared utilities for hyperparameter tuning with grid search, progress tracking, 
 
 import csv
 import json
-import numpy as np
 import time
 from pathlib import Path
 from datetime import datetime

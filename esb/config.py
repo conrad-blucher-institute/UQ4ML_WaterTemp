@@ -143,6 +143,13 @@ FIELDS: list[Field] = [
           stage="run"),
     Field("max_models", int, None, "Cap configs explored (debug subset); None = all.",
           stage="run", optional=True),
+    Field("shard", str, None,
+          "Static multi-machine sharding 'k/N' (1-based: '1/40' = first of 40). "
+          "The full deterministic job list is split into N contiguous blocks; "
+          "this machine runs only block k. Each shard writes its own progress "
+          "CSV + provenance (no shared mutable files), so an offline SSD "
+          "union-merge is a plain copy. Omit (or '0/1') = run everything.",
+          stage="run", optional=True),
     Field("seed", int, 42, "Seed applied (best-effort) before training.", stage="run"),
     Field("verbose", int, 0, "Verbosity 0-3.", stage="run"),
     Field("debug", bool, False,
@@ -283,6 +290,12 @@ class Config:
             errs.append(f"batch_size must be >= 1 or None, got {v['batch_size']}.")
         if v["max_models"] is not None and v["max_models"] < 1:
             errs.append(f"max_models must be >= 1 or None, got {v['max_models']}.")
+
+        try:
+            from esb.sharding import parse_shard
+            parse_shard(v["shard"])
+        except ValueError as e:
+            errs.append(str(e))
 
         if not v["lead_times"]:
             errs.append("lead_times is empty — nothing to search.")

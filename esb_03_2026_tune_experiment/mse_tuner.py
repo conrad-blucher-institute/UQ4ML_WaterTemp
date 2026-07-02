@@ -19,8 +19,8 @@ from tuner_utils import GridSearchConfig
 class MSETuner(BaseHyperparameterTuner):
     """MSE-specific hyperparameter tuner."""
     
-    def __init__(self, output_dir: Path, max_workers: int = 4, keras_save_dir: Path = None, verbose: int = 0):
-        super().__init__("MSE", output_dir, max_workers, keras_save_dir=keras_save_dir, verbose=verbose)
+    def __init__(self, output_dir: Path, max_workers: int = 4, keras_save_dir: Path = None, verbose: int = 0, shard: tuple = None):
+        super().__init__("MSE", output_dir, max_workers, keras_save_dir=keras_save_dir, verbose=verbose, shard=shard)
         
         # TODO: Load training data once (for all workers)
         # self.train_data = load_train_data()

@@ -17,6 +17,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 from tuner_utils import (
     GridSearchConfig, ProgressTracker, TimingLogger
 )
+from esb.sharding import shard_slice, shard_suffix
 
 class BaseHyperparameterTuner:
     """
@@ -28,7 +29,7 @@ class BaseHyperparameterTuner:
     - `get_grid_search_config()`: return GridSearchConfig instance
     """
     
-    def __init__(self, model_type: str, output_dir: Path, max_workers: int = 4, run_num: int = 0, metrics: List[str] = None, default_epochs: int = 200000, keras_save_dir: Path = None, verbose: int = 0, grid_config: 'GridSearchConfig' = None, config_overrides: Dict[str, Any] = None):
+    def __init__(self, model_type: str, output_dir: Path, max_workers: int = 4, run_num: int = 0, metrics: List[str] = None, default_epochs: int = 200000, keras_save_dir: Path = None, verbose: int = 0, grid_config: 'GridSearchConfig' = None, config_overrides: Dict[str, Any] = None, shard: tuple = None):
         """
         Args:
             model_type: 'CRPS', 'MAPE', or 'MSE'
@@ -42,6 +43,10 @@ class BaseHyperparameterTuner:
                 per-config dict (e.g. path_to_data, input_structure, callback
                 patiences). Injected with setdefault so explicit per-config keys
                 win; absent → unchanged legacy behavior.
+            shard: optional (k, N) — run only contiguous block k (1-based) of
+                the enumerated job list, and isolate this machine's mutable
+                files as *_shard{k}of{N}.csv so shards never share a file.
+                None → unchanged legacy behavior (full list, legacy filenames).
         """
         self.model_type = model_type
         self.output_dir = Path(output_dir)
@@ -62,9 +67,13 @@ class BaseHyperparameterTuner:
         if self.keras_save_dir is not None:
             self.keras_save_dir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize tracking
-        self.progress_path = self.output_dir / f"{model_type.lower()}_progress.csv"
-        self.timing_log_path = self.output_dir / f"{model_type.lower()}_timing.csv"
+        # Initialize tracking. When sharding, every mutable file this machine
+        # writes carries the shard suffix — machines never share a file, so an
+        # offline union-merge is a plain copy (design doc §10).
+        self.shard = shard
+        _sfx = shard_suffix(shard)
+        self.progress_path = self.output_dir / f"{model_type.lower()}_progress{_sfx}.csv"
+        self.timing_log_path = self.output_dir / f"{model_type.lower()}_timing{_sfx}.csv"
         
         self.progress_tracker = ProgressTracker(self.progress_path)
         self.timing_logger = TimingLogger(self.timing_log_path)
@@ -201,6 +210,14 @@ class BaseHyperparameterTuner:
                 c['learning_rate'] = 0.001
             if 'verbose' not in c:
                 c['verbose'] = self.verbose
+
+        # Shard BEFORE max_configs/completed-filter: the slice is over the full
+        # deterministic list, so every machine computes identical block bounds.
+        if self.shard is not None:
+            full_count = len(configs)
+            configs = shard_slice(configs, self.shard)
+            k, n = self.shard
+            print(f"Shard {k}/{n}: {len(configs)} of {full_count} jobs (contiguous block)")
 
         total_before = len(configs)
         # Optionally limit to a subset (debug)

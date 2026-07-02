@@ -47,14 +47,16 @@ def capture_provenance(config: dict) -> dict:
     }
 
 
-def write_provenance(result_dir: str, config: dict) -> str:
-    """Capture provenance and write ``run_provenance.json`` into ``result_dir``.
+def write_provenance(result_dir: str, config: dict,
+                     filename: str = "run_provenance.json") -> str:
+    """Capture provenance and write it into ``result_dir`` as ``filename``.
 
     Returns the path written. ``default=str`` keeps it from crashing on
     non-JSON-serializable config values (e.g. callables, keras objects).
+    Sharded runs pass a per-shard filename (run_provenance_shard{k}of{N}.json).
     """
     os.makedirs(result_dir, exist_ok=True)
-    path = os.path.join(result_dir, "run_provenance.json")
+    path = os.path.join(result_dir, filename)
     with open(path, "w") as f:
         json.dump(capture_provenance(config), f, indent=2, default=str)
     return path

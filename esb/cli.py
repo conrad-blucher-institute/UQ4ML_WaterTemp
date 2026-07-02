@@ -149,7 +149,9 @@ def main(argv: list[str] | None = None) -> int:
     config = Config.from_namespace(ns)
 
     if ns.dry_run:
-        _print_resolved(config, validate=True)
+        ok = _print_resolved(config, validate=True)
+        if ok:
+            _print_shard_jobs(config)
         return 0
 
     try:
@@ -181,7 +183,7 @@ def _list_profiles() -> None:
         print(f"  {p.stem:16s} {first}")
 
 
-def _print_resolved(config: Config, validate: bool) -> None:
+def _print_resolved(config: Config, validate: bool) -> bool:
     resolved = config.resolved()
     print("# Resolved configuration (--dry-run; no training performed)\n")
     print(json.dumps(resolved, indent=2, default=str))
@@ -192,6 +194,32 @@ def _print_resolved(config: Config, validate: bool) -> None:
             print("# validation: OK")
         except Exception as e:
             print(f"# validation: FAILED\n{e}")
+            return False
+    return True
+
+
+def _print_shard_jobs(config: Config) -> None:
+    """With --shard, list exactly which jobs this shard would run (design §10).
+
+    The listing comes from the SAME enumeration + slice the tuner uses
+    (GridSearchConfig.generate_configs + esb.sharding.shard_bounds), so what is
+    printed is what runs — no parallel implementation to drift.
+    """
+    from esb.sharding import job_key, parse_shard, shard_bounds
+
+    shard = parse_shard(config.shard)  # validate() vetted the format already
+    if shard is None:
+        return
+    from esb.pipeline import _build_grid_config  # light: no TF at module level
+
+    jobs = _build_grid_config(config).generate_configs()
+    start, end = shard_bounds(len(jobs), *shard)
+    print(
+        f"\n# shard {shard[0]}/{shard[1]}: jobs {start + 1}..{end} of {len(jobs)} "
+        f"(per repetition; repetitions={config.repetitions})"
+    )
+    for c in jobs[start:end]:
+        print(job_key(c))
 
 
 if __name__ == "__main__":

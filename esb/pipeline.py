@@ -112,13 +112,37 @@ def run_experiment(config: Config) -> None:
     for var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
         os.environ.setdefault(var, "1")
 
-    # Provenance FIRST: a run can never exist without its record, even if it
-    # later crashes. This is the single, unskippable write site.
-    prov_path = finalize_run(output_dir, config.resolved())
-    print(f"[esb] wrote provenance: {prov_path}")
-
     grid_config = _build_grid_config(config)
     config_overrides = _build_config_overrides(config)
+
+    # Sharding (design §10): parse once (validate() already vetted the format).
+    # Provenance records the full-grid fingerprint + this shard's block so every
+    # shard of one campaign is traceable, and a grid edited between hand-outs
+    # (fingerprint mismatch) is caught at merge time instead of silently
+    # producing a torn campaign.
+    from esb.sharding import grid_fingerprint, parse_shard, shard_bounds, shard_suffix
+    shard = parse_shard(config.shard)
+    all_jobs = grid_config.generate_configs()
+    resolved = config.resolved()
+    resolved["_jobs"] = {
+        "grid_fingerprint": grid_fingerprint(all_jobs),
+        "jobs_total": len(all_jobs),
+    }
+    if shard is not None:
+        start, end = shard_bounds(len(all_jobs), *shard)
+        resolved["_jobs"]["shard"] = {
+            "k": shard[0], "N": shard[1],
+            "jobs_start": start + 1, "jobs_end": end,  # 1-based inclusive range
+            "jobs_in_shard": end - start,
+        }
+
+    # Provenance FIRST: a run can never exist without its record, even if it
+    # later crashes. This is the single, unskippable write site. Per-shard
+    # filename so machines never collide when result trees are union-merged.
+    prov_path = finalize_run(
+        output_dir, resolved, filename=f"run_provenance{shard_suffix(shard)}.json"
+    )
+    print(f"[esb] wrote provenance: {prov_path}")
 
     TunerClass = _tuner_class(config.loss)
     tuner = TunerClass(
@@ -126,6 +150,7 @@ def run_experiment(config: Config) -> None:
         max_workers=config.workers,
         keras_save_dir=keras_save_dir,
         verbose=config.verbose,
+        shard=shard,
     )
     # Drive the tuner from the Config single-source-of-truth via the additive hooks.
     tuner.grid_config = grid_config
@@ -140,6 +165,13 @@ def run_experiment(config: Config) -> None:
         f"neurons={config.neurons}) | epochs={config.epochs} | workers={config.workers} "
         f"| repetitions={config.repetitions} | output={output_dir}"
     )
+    if shard is not None:
+        info = resolved["_jobs"]["shard"]
+        print(
+            f"[esb] shard {info['k']}/{info['N']}: jobs {info['jobs_start']}..{info['jobs_end']} "
+            f"of {resolved['_jobs']['jobs_total']} (per repetition) | "
+            f"fingerprint {resolved['_jobs']['grid_fingerprint']}"
+        )
 
     for run_idx in range(int(config.repetitions)):
         run_id = run_idx + 1

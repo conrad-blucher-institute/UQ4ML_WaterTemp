@@ -22,13 +22,15 @@ def _write_provenance():
         return import_module("helper.run_provenance").write_provenance
 
 
-def finalize_run(output_dir: str | Path, resolved_config: dict[str, Any]) -> str:
-    """Write run_provenance.json into ``output_dir``. Returns the path written.
+def finalize_run(output_dir: str | Path, resolved_config: dict[str, Any],
+                 filename: str = "run_provenance.json") -> str:
+    """Write the provenance record into ``output_dir``. Returns the path written.
 
     Called unconditionally by the orchestration's single result-writing site, so
-    a run can never be produced without a provenance record.
+    a run can never be produced without a provenance record. Sharded runs pass a
+    per-shard ``filename`` so machines never collide on merge.
     """
-    return _write_provenance()(str(output_dir), resolved_config)
+    return _write_provenance()(str(output_dir), resolved_config, filename=filename)
 
 
 def save_scaler(save_dir: str | Path, base_name: str, scaler: Any) -> str | None:
