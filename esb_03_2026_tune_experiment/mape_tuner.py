@@ -373,12 +373,8 @@ class MAPETuner(BaseHyperparameterTuner):
             from pathlib import Path as _Path
             save_dir = _Path(keras_save_dir)
             save_dir.mkdir(parents=True, exist_ok=True)
-            base_name = (
-                f"{config['model_type']}_{config['lead_time']}h"
-                f"_cycle{config['cycle']}_{config['activation']}"
-                f"_{config['num_layers']}L_{config['neurons']}N"
-                f"_run{config['run_num']}"
-            )
+            from tuner_utils import job_base_name
+            base_name = job_base_name(config)
             model.save(save_dir / f"{base_name}.keras")
             with open(save_dir / f"{base_name}_history.json", 'w') as _hf:
                 _json.dump(hist, _hf, default=lambda o: float(o) if hasattr(o, 'item') else str(o))

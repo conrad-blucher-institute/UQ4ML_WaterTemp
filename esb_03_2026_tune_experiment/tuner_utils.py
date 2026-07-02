@@ -200,6 +200,25 @@ class ProgressTracker:
         return counts
 
 
+def job_base_name(config: Dict[str, Any]) -> str:
+    """Filesystem base name for one job's artifacts (.keras / _history.json /
+    _scaler.joblib). SINGLE definition so every artifact of a job shares one
+    prefix and no two jobs can collide.
+
+    Includes EVERY grid axis. Dropout was historically missing, so the 4 jobs
+    differing only in dropout silently overwrote each other's saved model,
+    history, and scaler (progress CSV rows stayed distinct — the loss looked
+    fine while 3 of 4 models were gone).
+    """
+    return (
+        f"{config['model_type']}_{config['lead_time']}h"
+        f"_cycle{config['cycle']}_{config['activation']}"
+        f"_{config['num_layers']}L_{config['neurons']}N"
+        f"_d{config.get('dropout', 0.0)}"
+        f"_run{config['run_num']}"
+    )
+
+
 class GridSearchConfig:
     """Defines and generates grid search configurations."""
     
