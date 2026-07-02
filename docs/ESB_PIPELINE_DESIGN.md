@@ -210,8 +210,11 @@ Plan: pool cores across **N machines** (no network between them), then physicall
 machine's results onto an SSD and **union-merge** them on the main machine.
 
 **Distribution — `--shard k/N` CLI flag (no infra, scales to any N).** The pipeline enumerates
-the full **deterministic** job list (lead_time × rotation × config × rep); machine *k* runs only
-jobs where `index % N == k`.
+the full **deterministic** job list (lead_time × rotation × config × rep); machine *k* (1-based:
+`1/40` = first of 40) runs only **contiguous block k** of the list split into N near-equal chunks
+(sizes differ by ≤1). Contiguous — not `index % N` — so a shard is a human-readable job range
+("machine 3 has jobs 241..360") for manual hand-out. Implemented in `esb/sharding.py` (single
+source of the formula, consumed by CLI `--dry-run`, validation, the tuner slice, and the tests).
 - Zero coordination, no races, reproducible, scales to as many machines as you want.
 - **Weight by capacity:** shard *finer* than the machine count (N ≫ #machines) and assign shards
   proportional to each machine's cores — finer granularity = better balance across heterogeneous
