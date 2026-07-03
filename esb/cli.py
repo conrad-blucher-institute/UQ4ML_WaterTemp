@@ -142,6 +142,11 @@ def main(argv: list[str] | None = None) -> int:
 
     argv = list(sys.argv[1:] if argv is None else argv)
 
+    # `help [subcommand]` — same as --help, for `ls help`-style muscle memory.
+    if argv and argv[0] == "help":
+        rest = argv[1:]
+        return main((rest + ["--help"]) if rest else ["--help"])
+
     # `profiles` / `gui` need no config parsing.
     if argv and argv[0] == "profiles":
         _list_profiles()
