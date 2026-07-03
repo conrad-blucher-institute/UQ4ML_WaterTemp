@@ -64,6 +64,16 @@ def _build_parser() -> argparse.ArgumentParser:
                      help="Print the fully-resolved config and exit (no training).")
     add_run_arguments(run)
 
+    status = sub.add_parser(
+        "status",
+        help="Read-only campaign progress: per-shard completed/expected counts "
+             "+ .keras artifact cross-check. Same flags/profile as `run`.",
+        fromfile_prefix_chars="@",
+    )
+    status.add_argument("--profile", type=str, default=None,
+                        help="Named profile under esb/profiles/ (e.g. mape_scaled).")
+    add_run_arguments(status)
+
     sub.add_parser("profiles", help="List available named profiles.")
     sub.add_parser(
         "gui",
@@ -154,6 +164,15 @@ def main(argv: list[str] | None = None) -> int:
     ns._explicit = _explicit_flags(_expand_tokens(rewritten))
 
     config = Config.from_namespace(ns)
+
+    if ns.command == "status":
+        try:
+            config.validate()
+        except Exception as e:
+            print(f"esb: error: {e}", file=sys.stderr)
+            return 2
+        from esb.status import run_status
+        return run_status(config)
 
     if ns.dry_run:
         ok = _print_resolved(config, validate=True)
