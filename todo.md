@@ -1,6 +1,13 @@
-# UQ4ML WaterTemp - TODO Tracker
+﻿# UQ4ML WaterTemp - TODO Tracker
 
-Last updated: 2026-07-01
+Last updated: 2026-07-05
+
+---
+
+## Cleanup pass (later, low priority)
+
+- Delete (or rename) `scripts/run_tests.py` — misnamed: it runs the training + viz drivers, not tests. Superseded conceptually by `scripts/tuning_tests/run_all_tests.py` (added 2026-07-05).
+- Decide fate of `scripts/tuning_tests/make_stability_charts.py` (added 2026-07-05) — keep if the CSV→xlsx-with-line-charts pattern proves useful for other tuning-test outputs; else fold into the eventual viz story or delete.
 
 ---
 

@@ -20,6 +20,27 @@
 - Next gate: the **rank-stability analysis** decides whether 3 repetitions are
   enough for Phase-1 screening.
 
+## Slide 1b — Data prep & lead-time FAQ (coworker questions)
+
+- **Normalization:** StandardScaler, fit on the *training years only*, then
+  applied to validation/test (no leakage); the fitted scaler is persisted as a
+  `.joblib` next to each model so operations can apply the identical transform.
+  (Note: the pre-refactor ESB pipeline had **no scaling at all** — adding it is
+  the Stage-C change this campaign is built on.)
+- **Gaps:** rows with missing values (NaN or −999 sentinels) are dropped during
+  data prep, after the lagged input columns are built — a gap therefore removes
+  the affected rows, not whole days. No imputation.
+- **Lead times: 21 total, the full 6-hourly ladder from 3 h to 120 h:**
+  3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108,
+  114, 120. The 4 bold ones (12/48/96/120) ran first as the core campaign
+  (complete); the other 17 are running now as their own campaign.
+- **Do we have tuning results?** Yes, interim: the full 4-lead-time grid is
+  trained (2,880 jobs) and the repetition pilots are analyzed (Slide 5);
+  final per-lead-time winners come after Phase 2.
+- **How is data live-fed to the model?** Operational-deployment question, out
+  of scope for this tuning update — the operational system feeds the persisted
+  scaler + model the same lagged-column layout used in training.
+
 ## Slide 2 — Why repetitions matter (the problem)
 
 - A single training run's validation score is a draw from a distribution:
@@ -71,15 +92,28 @@ flowchart TB
 
 ## Slide 5 — Interim test results: rank stability (mid-experiment, not final)
 
-Pilot data: shards 1 (LT12, 15 reps), 11 (LT48), 21 (LT96), 31 (LT120) at 10
-reps. Ranking metric: mean `val_mape` over the first k repetitions, compared
-to the all-repetition ranking.
+Pilot data: shards 1 (LT12), 11 (LT48), 21 (LT96), 31 (LT120), all trimmed to
+a common 10-repetition reference (shard 1's extra 5 reps changed nothing
+material — conclusion robust to reference size). Ranking metric: mean
+`val_mape` over the first k repetitions, compared to the all-rep ranking.
 
 | reps k | top-10 overlap (LT12 / 48 / 96 / 120) | Spearman (worst shard) |
 |--------|----------------------------------------|------------------------|
-| 1      | 0.5 / 0.6 / 0.5 / 0.8                  | 0.70                   |
-| 3      | 0.7 / 0.7 / **0.6** / 0.8              | **0.90**               |
-| 4      | 0.8 / 0.8 / 0.7 / 0.8                  | 0.92                   |
+| 1      | 0.5 / 0.6 / 0.5 / 0.8                  | 0.73                   |
+| 3      | 0.8 / 0.7 / **0.6** / 0.8              | **0.91**               |
+| 4      | 0.8 / 0.8 / 0.7 / 0.8                  | 0.93                   |
+
+Two companion tests on the same pilot data:
+
+- **Metric agreement**: val_mape and val_mae top-20 sets overlap 95–100%
+  (Spearman ≥ 0.98) on every shard — the ranking-metric choice is a non-issue.
+  (val_mae12 comparison pending.)
+- **Seed-noise heterogeneity**: noise varies mainly with model *size* —
+  128/256-neuron configs are ~10× steadier than 16/32-neuron ones, 3-layer
+  steadier than 1-layer. The likely winners are the most rankable configs, so
+  the table above is pessimistic about the top of the leaderboard. Activation
+  and dropout effects are small; selu and rotations 1–3 have no pilot coverage
+  (known blind spot).
 
 - **Global ordering stabilizes fast**: Spearman ≥ 0.90 on every shard by 3
   reps — 3-rep screening points at the right region of the grid.
@@ -174,6 +208,26 @@ flowchart TB
    (Slide 9).
 5. Select winners (mean-val + std, 2021 veto); hand over the rep closest to
    the config mean per lead time.
+
+## Slide 11 — Discussion: training/serving skew (one theme, three instances)
+
+**Theme: does the model see the same data distribution in operations that it
+saw in training?** Every gap between training-time prep and live-time reality
+is a place the model silently extrapolates. Three instances to discuss:
+
+1. **Station outages** — training data always has every station; live, 1+
+   stations can go down. What is the performance change, and which station
+   (or combination) hurts most — graceful degradation or collapse? (Cheap
+   offline test: mask a station's columns in the test set and re-score
+   existing models, no retraining needed.)
+2. **Outlier filtering** — training prep can drop extreme values; do we also
+   remove > 3.5 standard-deviation readings live/operationally? If the two
+   filter differently, inference sees a distribution training never saw —
+   and the extremes are exactly the cold-stunning events we care about.
+3. **Gap-filling causality** — any fill that uses a future window (e.g. a
+   5-hour centered average) is impossible on live data; operational gap
+   handling must be causal (past-only). Are training-time and operational
+   gap treatments consistent?
 
 ---
 
