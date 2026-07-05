@@ -11,5 +11,5 @@
 --epochs 2
 --workers 1
 --repetitions 1
---seed 42
+--seed 42  # best-effort: seeds python/numpy only — TF weight init stays UNSEEDED (runs not reproducible)
 --output_dir results/esb_smoke

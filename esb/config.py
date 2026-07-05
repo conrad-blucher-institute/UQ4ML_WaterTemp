@@ -150,7 +150,13 @@ FIELDS: list[Field] = [
           "CSV + provenance (no shared mutable files), so an offline SSD "
           "union-merge is a plain copy. Omit (or '0/1') = run everything.",
           stage="run", optional=True),
-    Field("seed", int, 42, "Seed applied (best-effort) before training.", stage="run"),
+    Field("seed", int, 42,
+          "Seed applied (best-effort) before training: PYTHONHASHSEED + python "
+          "random + numpy in the parent process ONLY. TensorFlow is NOT seeded "
+          "and training runs in worker processes, so weight init stays random "
+          "and trained models are NOT reproducible across runs. The guaranteed "
+          "invariant is the fit-INPUT digest (golden baseline), not weights.",
+          stage="run"),
     Field("verbose", int, 0, "Verbosity 0-3.", stage="run"),
     Field("debug", bool, False,
           "Debug mode: 2 epochs / 10 models / 1 worker / 2 reps (overridable).",
