@@ -18,8 +18,8 @@ Depends only on the ProgressTracker CSV schema (run_num, config columns,
 val_* metrics, status) — no imports from esb or the tuner package.
 
 Usage (on the machine holding the results):
-  python scripts/rank_stability.py results/esb_tuner_scaled --shards 1 11 21 31
-  python scripts/rank_stability.py results/esb_tuner_scaled --shards 1 --metric val_mae --top-n 20
+  python scripts/tuning_tests/rank_stability.py results/esb_tuner_scaled --shards 1 11 21 31
+  python scripts/tuning_tests/rank_stability.py results/esb_tuner_scaled --shards 1 --metric val_mae --top-n 20
 """
 
 import argparse
@@ -28,23 +28,7 @@ from pathlib import Path
 
 import pandas as pd
 
-CONFIG_COLS = ["cycle", "activation", "num_layers", "neurons", "dropout"]
-
-
-def load_shard(folder: Path, shard: int) -> pd.DataFrame:
-    matches = sorted(folder.glob(f"*progress_shard{shard}of*.csv"))
-    if len(matches) != 1:
-        sys.exit(f"ERROR: expected exactly 1 CSV for shard {shard} in {folder}, "
-                 f"found {len(matches)}: {[m.name for m in matches]}")
-    df = pd.read_csv(matches[0])
-    df = df[df["status"].str.lower().eq("completed")].copy()
-    if df.empty:
-        sys.exit(f"ERROR: {matches[0].name} has no completed rows")
-    lead_times = df["lead_time"].unique()
-    if len(lead_times) != 1:
-        sys.exit(f"ERROR: {matches[0].name} spans multiple lead times {lead_times} "
-                 f"— pilot shards must be single-lead-time")
-    return df
+from common import CONFIG_COLS, load_shard
 
 
 def ranking(df: pd.DataFrame, metric: str, k: int | None) -> pd.Series:

@@ -31,7 +31,9 @@ follows the same philosophy but is behavior-preserving (paper-replication baseli
   (`base_tuner.py`, `tuner_utils.py` with the ProgressTracker CSV schema, `*_tuner.py`)
 - `scripts/` — one-off / analysis scripts; may depend on the results-CSV *schema*
   but must not import from `esb` or the tuner package. Promote into `esb` only
-  when one becomes load-bearing (see rank_stability.py header)
+  when one becomes load-bearing. `scripts/tuning_tests/` holds the campaign
+  statistical tests (one test = one script: rank_stability, seed_noise_by_group,
+  metric_agreement) sharing `common.py`
 - `docs/` — design doc + per-stage reports + presentation source content
 - `results/` — gitignored run outputs, one folder per campaign
   (e.g. `esb_tuner_scaled`, `esb_tuner_scaled_17lt`); discover contents fresh, never assume

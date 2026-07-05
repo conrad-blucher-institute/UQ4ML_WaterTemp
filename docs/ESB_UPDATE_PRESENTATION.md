@@ -69,7 +69,34 @@ flowchart TB
 - Decision rule: high overlap + high Spearman across all 4 lead times → proceed
   with 3-rep Phase 1; otherwise raise Phase-1 reps.
 
-## Slide 5 — Campaign mechanics (sharding + resume)
+## Slide 5 — Interim test results: rank stability (mid-experiment, not final)
+
+Pilot data: shards 1 (LT12, 15 reps), 11 (LT48), 21 (LT96), 31 (LT120) at 10
+reps. Ranking metric: mean `val_mape` over the first k repetitions, compared
+to the all-repetition ranking.
+
+| reps k | top-10 overlap (LT12 / 48 / 96 / 120) | Spearman (worst shard) |
+|--------|----------------------------------------|------------------------|
+| 1      | 0.5 / 0.6 / 0.5 / 0.8                  | 0.70                   |
+| 3      | 0.7 / 0.7 / **0.6** / 0.8              | **0.90**               |
+| 4      | 0.8 / 0.8 / 0.7 / 0.8                  | 0.92                   |
+
+- **Global ordering stabilizes fast**: Spearman ≥ 0.90 on every shard by 3
+  reps — 3-rep screening points at the right region of the grid.
+- **The top-10 membership is the noisy part**: near the top, configs are
+  separated by less than seed noise, so the exact top-10 shuffles. The strict
+  bar (≥70% overlap + Spearman ≥0.9 on all shards) is first met at **k = 4**.
+- **Working recommendation: screen at 3 reps, carry the top-20 forward.**
+  The 3-rep failure mode is "a true top-10 config ranked ~11th–15th," not
+  "wrong region" — a top-20 Phase-2 cut absorbs it (Hyperband logic: the cheap
+  phase must not lose survivors; it doesn't need to order them) [4].
+- Honest caveats: (a) the k = max row is trivially 1.0 (ranking compared to
+  itself) and high-k rows share most data with the reference — only the low-k
+  rows carry evidential weight; (b) shards are contiguous, activation-biased
+  slices, so a per-activation seed-noise check on the existing pilot data is
+  pending before declaring the result grid-wide.
+
+## Slide 6 — Campaign mechanics (sharding + resume)
 
 ```mermaid
 flowchart TB
@@ -95,7 +122,7 @@ flowchart TB
   estimates ETA from the **median per-job duration** (measured inside the
   worker), replacing a timestamp-span method that idle gaps inflated 15–45×.
 
-## Slide 6 — The 17-lead-time extension
+## Slide 7 — The 17-lead-time extension
 
 - Core campaign covered LT 12/48/96/120; operations want the full ladder:
   **3, 6, 18, 24, 30, 36, 42, 54, 60, 66, 72, 78, 84, 90, 102, 108, 114 h**.
@@ -106,7 +133,7 @@ flowchart TB
 - Running **one lead time to completion at a time**, so per-lead-time analysis
   starts as each finishes rather than waiting for the whole campaign.
 
-## Slide 7 — Infrastructure recap (what got built)
+## Slide 8 — Infrastructure recap (what got built)
 
 - `esb` CLI: `run` (profiles, sharding, resume), `status` (read-only progress +
   artifact cross-check + ETA), `gui` (schema-driven form), `help`.
@@ -116,11 +143,36 @@ flowchart TB
 - Design philosophy: **one command, one named profile, smart defaults, loud
   failures** — complexity lives in the code, not the operator.
 
-## Slide 8 — Next steps
+## Slide 9 — Phase-2 side experiment: early-stopping calibration
 
-1. Finish rank-stability analysis → lock Phase-1 repetition count.
-2. Complete the 17-lead-time screen; run Phase 2 (top ~10–20/LT at 10+ reps).
-3. Select winners (mean-val + std, 2021 veto); hand over the rep closest to
+- Current settings: `early_stop_patience=25`, `lr_reducer_patience=15`,
+  `min_delta=0.001`.
+- Patience is denominated in **epochs**, and there is no universal value —
+  Prechelt's classic study found higher patience buys small generalization
+  gains at disproportionate compute cost, and recommends scaling patience to
+  the timescale on which the validation curve actually improves [5].
+- Our training lengths span a **big range**: some models stop near ~100 epochs
+  (e.g. a shard-11 config stopped at 107), while many run **past 2,000 epochs**.
+  A single patience value is a different fraction of training for each —
+  25 epochs is ~25% of a 100-epoch run but ~1% of a 2,500-epoch run.
+- Suspect: `min_delta=0.001` against a MAPE loss of ~47 is 0.002% of the loss —
+  effectively "any improvement counts," so noise can keep resetting the
+  patience counter and extend training past a well-calibrated stop.
+- Plan: **do not touch mid-campaign** (configs must be ranked under identical
+  stopping rules). In Phase 2, retrain a few top configs under patience 25 vs
+  ~100 and a larger min_delta; compare val MAPE shift against the seed-to-seed
+  std measured in the same phase. Epochs are ~40 ms, so the compute cost of
+  extra patience is trivial — the asymmetric risk favors patience.
+
+## Slide 10 — Next steps
+
+1. Per-activation seed-noise check on existing pilot data → confirm the
+   rank-stability result generalizes across the grid (Slide 5 caveat b).
+2. Lock Phase-1 repetition count (working answer: 3 reps + top-20 cut).
+3. Complete the 17-lead-time screen; run Phase 2 (top ~10–20/LT at 10+ reps).
+4. Phase-2 side experiment: early-stopping patience / min_delta calibration
+   (Slide 9).
+5. Select winners (mean-val + std, 2021 veto); hand over the rep closest to
    the config mean per lead time.
 
 ---
@@ -148,3 +200,9 @@ flowchart TB
     Optimization,"** *Journal of Machine Learning Research* 18(185), 2018.
     — Allocate small budgets broadly, large budgets only to surviving
     configurations; the principle behind our screen-then-confirm phases.
+
+[5] L. Prechelt, **"Early Stopping — But When?"** in *Neural Networks: Tricks
+    of the Trade*, Springer, 1998 (updated 2012 edition).
+    — No universal stopping criterion; higher patience yields small
+    generalization gains at disproportionate compute cost. Basis for the
+    Phase-2 patience/min_delta calibration experiment.
