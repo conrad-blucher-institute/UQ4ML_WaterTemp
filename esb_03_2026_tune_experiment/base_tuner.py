@@ -132,7 +132,7 @@ class BaseHyperparameterTuner:
                 config['model_type'], config['lead_time'], config['cycle'],
                 config['activation'], config['num_layers'], config['neurons'],
                 loss_value, status="completed", run_num=self.run_num, metrics=metrics_dict,
-                dropout=config.get('dropout', 0.0)
+                dropout=config.get('dropout', 0.0), duration_sec=train_time
             )
             
             config['loss_value'] = loss_value

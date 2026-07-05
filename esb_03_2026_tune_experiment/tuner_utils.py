@@ -68,7 +68,7 @@ class ProgressTracker:
         'neurons', 'dropout', 'loss_value',
         'val_mae', 'val_mae12', 'val_me', 'val_me12', 'val_mape',
         'mae_2021', 'mae12_2021', 'me_2021', 'me12_2021', 'mape_2021',
-        'metrics', 'timestamp', 'status',
+        'metrics', 'timestamp', 'status', 'duration_sec',
     ]
     # Promoted metric column -> key looked up in the metrics dict.
     _PROMOTED_METRICS = [
@@ -85,12 +85,22 @@ class ProgressTracker:
         if progress_path.exists():
             with open(progress_path, 'r', newline='') as f:
                 reader = csv.DictReader(f)
+                header = reader.fieldnames or []
                 for row in reader:
                     self.results.append(row)
                     status = str(row.get('status', '')).lower()
                     if not status.startswith('error') and status != '':
                         config_key = self._make_key(row)
                         self.completed.add(config_key)
+            # Schema migration: if the CSV predates a FIELDNAMES addition (e.g.
+            # duration_sec), rewrite it under the current header so appended rows
+            # and the header always agree (a bare append would desync them).
+            if header != self.FIELDNAMES:
+                with open(progress_path, 'w', newline='') as f:
+                    writer = csv.DictWriter(f, fieldnames=self.FIELDNAMES)
+                    writer.writeheader()
+                    for row in self.results:
+                        writer.writerow({k: row.get(k, '') for k in self.FIELDNAMES})
         else:
             # Create CSV with headers (include run_num so multiple runs append)
             with open(progress_path, 'w', newline='') as f:
@@ -121,7 +131,8 @@ class ProgressTracker:
     def log_result(self, model_type: str, lead_time: int, cycle: int,
                    activation: str, num_layers: int, neurons: int,
                    loss_value: float, status: str = "completed", run_num: int = 0,
-                   metrics: Dict[str, Any] = None, dropout: float = 0.0):
+                   metrics: Dict[str, Any] = None, dropout: float = 0.0,
+                   duration_sec: float = None):
         """Log a tuning result."""
         # Promote key metrics to top-level columns so the CSV is queryable without JSON parsing
         def _extract(key):
@@ -142,7 +153,8 @@ class ProgressTracker:
             'loss_value': loss_value,
             'metrics': '' if not metrics else json.dumps(metrics, default=lambda o: float(o) if hasattr(o, 'item') else str(o)),
             'timestamp': datetime.now().isoformat(),
-            'status': status
+            'status': status,
+            'duration_sec': '' if duration_sec is None else round(float(duration_sec), 1),
         }
         # Fill every promoted metric column from the metrics dict.
         for col in self._PROMOTED_METRICS:

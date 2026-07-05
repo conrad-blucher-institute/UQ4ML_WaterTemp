@@ -58,22 +58,44 @@ def _read_rows(csv_path: Path) -> list[dict]:
         return list(csv.DictReader(f))
 
 
-def _fmt_eta(rows: list[dict], done: int, remaining: int) -> str:
-    """Rough ETA from the completed rows' timestamp span (same-machine rate)."""
+def _fmt_eta(rows: list[dict], done: int, remaining: int, workers: int) -> str:
+    """ETA = remaining x median(duration_sec) / workers.
+
+    Per-job durations are measured inside the worker, so idle gaps between a
+    shard's turns in the sequential campaign loop cannot inflate the estimate
+    (the old timestamp-span method showed 30-90 h for a ~2 h shard). Median is
+    robust to stragglers; no sigma-based cut needed. Falls back to the span
+    method for CSVs that predate the duration_sec column.
+    """
     if remaining == 0:
         return "complete"
+    durations = []
+    for r in rows:
+        try:
+            durations.append(float(r.get("duration_sec") or ""))
+        except ValueError:
+            pass
+    if durations:
+        durations.sort()
+        n = len(durations)
+        median = (durations[n // 2] if n % 2 else
+                  (durations[n // 2 - 1] + durations[n // 2]) / 2)
+        hours = remaining * median / max(workers, 1) / 3600
+        return (f"~{hours:.1f} h compute at {workers} worker(s) "
+                f"(median {median:.0f}s/job; pass --workers to match your run)")
+    # fallback: timestamp span (pre-duration_sec CSVs) — inflated by idle gaps
     stamps = sorted(r["timestamp"] for r in rows if r.get("timestamp"))
-    if len(stamps) < 2:
+    if len(stamps) < 2 or done < 2:
         return "n/a"
     try:
         span = (datetime.fromisoformat(stamps[-1]) - datetime.fromisoformat(stamps[0])).total_seconds()
     except ValueError:
         return "n/a"
-    if span <= 0 or done < 2:
+    if span <= 0:
         return "n/a"
     rate = (done - 1) / span  # jobs/sec between first and last row
     hours = remaining / rate / 3600
-    return f"~{hours:.1f} h at this shard's observed rate"
+    return f"~{hours:.1f} h at this shard's observed rate (span-based; may include idle gaps)"
 
 
 def run_status(config: Config) -> int:
@@ -140,7 +162,7 @@ def run_status(config: Config) -> int:
                  "in progress" if known_done else "not started")
         lines.append(f"  {label:18s} {len(known_done):5d}/{len(expected_keys):<5d} "
                      f"({pct:5.1f}%)  {state:12s} "
-                     f"{_fmt_eta(done_rows, len(known_done), missing)}")
+                     f"{_fmt_eta(done_rows, len(known_done), missing, int(config.workers))}")
         if stray:
             # Distinguish "later repetitions" (informational — rerun status with a
             # higher --repetitions to audit them) from truly-unknown rows (loud).
