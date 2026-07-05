@@ -22,6 +22,23 @@ tkinter picker).
 Full design + visuals: **`docs/ESB_PIPELINE_DESIGN.md`**. The `main` clean-room refactor
 follows the same philosophy but is behavior-preserving (paper-replication baseline).
 
+## Repo layout (stable skeleton — update when structure changes, not contents)
+
+- `esb/` — the CLI package (`python -m esb` / `esb.bat`): `cli.py`, `config.py`,
+  `pipeline.py`, `sharding.py`, `status.py`, `stages/`, `gui/`, `tests/`,
+  `profiles/` (named run profiles, e.g. `mape_scaled.txt`, `mape_scaled_17lt.txt`)
+- `esb_03_2026_tune_experiment/` — tuner internals the CLI drives
+  (`base_tuner.py`, `tuner_utils.py` with the ProgressTracker CSV schema, `*_tuner.py`)
+- `scripts/` — one-off / analysis scripts; may depend on the results-CSV *schema*
+  but must not import from `esb` or the tuner package. Promote into `esb` only
+  when one becomes load-bearing (see rank_stability.py header)
+- `docs/` — design doc + per-stage reports + presentation source content
+- `results/` — gitignored run outputs, one folder per campaign
+  (e.g. `esb_tuner_scaled`, `esb_tuner_scaled_17lt`); discover contents fresh, never assume
+- `src/`, `main/` — legacy pipeline + clean-room refactor (see parent CLAUDE.md)
+- No pandas/TF on this laptop's Python — training and analysis run on grendal
+  (RDP over Tailscale)
+
 ## Parked WIP on this laptop (dev-Proto_Incorp)
 
 There is a stash on this laptop holding uncommitted work for `dev-Proto_Incorp`, parked while focus shifted back to `esb_dev`.
