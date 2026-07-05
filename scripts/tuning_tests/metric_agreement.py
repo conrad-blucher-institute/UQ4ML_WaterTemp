@@ -33,11 +33,14 @@ def main() -> None:
                    help="the two ranking metrics to compare (default: val_mape val_mae)")
     p.add_argument("--top-n", type=int, default=20,
                    help="top-set size for the overlap (default: 20, the Phase-2 cut)")
+    p.add_argument("--out", type=Path, default=None,
+                   help="optional CSV path for the per-shard agreement table")
     args = p.parse_args()
 
     if not args.folder.is_dir():
         sys.exit(f"ERROR: {args.folder} is not a directory")
 
+    rows = []
     m_a, m_b = args.metrics
     for shard in args.shards:
         df = load_shard(args.folder, shard)
@@ -57,6 +60,13 @@ def main() -> None:
         if only_a:
             print(f"  in top-{args.top_n} by {m_a} only: "
                   f"{sorted(only_a)[:5]}{' ...' if len(only_a) > 5 else ''}")
+        rows.append({"shard": shard, "lead_time": lead_time,
+                     "metric_a": m_a, "metric_b": m_b, "top_n": args.top_n,
+                     "overlap": overlap, "spearman": round(rho, 4)})
+
+    if args.out:
+        pd.DataFrame(rows).to_csv(args.out, index=False)
+        print(f"Saved agreement table -> {args.out}")
 
 
 if __name__ == "__main__":

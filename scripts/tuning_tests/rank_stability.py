@@ -75,6 +75,10 @@ def main() -> None:
                    help="size of the top set for overlap (default: 10)")
     p.add_argument("--out", type=Path, default=None,
                    help="optional CSV path for the combined stability table")
+    p.add_argument("--max-reps", type=int, default=None,
+                   help="cap every shard at its first N repetitions so shards "
+                        "with unequal rep counts share a comparable all-rep "
+                        "reference (e.g. --max-reps 10 trims shard 1's 15)")
     args = p.parse_args()
 
     if not args.folder.is_dir():
@@ -83,6 +87,9 @@ def main() -> None:
     combined = []
     for shard in args.shards:
         df = load_shard(args.folder, shard)
+        if args.max_reps:
+            first_n = sorted(df["run_num"].unique())[:args.max_reps]
+            df = df[df["run_num"].isin(first_n)]
         lead_time = int(df["lead_time"].iloc[0])
         n_reps = df["run_num"].nunique()
         n_configs = df.groupby(CONFIG_COLS).ngroups

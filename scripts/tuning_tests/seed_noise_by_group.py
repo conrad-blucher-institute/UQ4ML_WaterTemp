@@ -40,6 +40,9 @@ def main() -> None:
     p.add_argument("--shards", type=int, nargs="+", required=True)
     p.add_argument("--metric", default="val_mape",
                    help="metric for the seed-noise breakdown (default: val_mape)")
+    p.add_argument("--out", type=Path, default=None,
+                   help="optional CSV path: per-config noise table (mean/std/count "
+                        "+ rel_std), one row per config across all shards")
     args = p.parse_args()
 
     if not args.folder.is_dir():
@@ -77,6 +80,9 @@ def main() -> None:
     print("\nReading guide: ~1.0x everywhere = homogeneous noise (rank-stability "
           "result generalizes). A group at >2x = noisy slice; consider one "
           "targeted pilot shard covering it.")
+    if args.out:
+        pooled.to_csv(args.out, index=False)
+        print(f"Saved per-config noise table -> {args.out}")
 
 
 if __name__ == "__main__":
