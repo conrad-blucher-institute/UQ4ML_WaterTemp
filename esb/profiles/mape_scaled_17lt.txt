@@ -1,10 +1,10 @@
 # MAPE grid-search profile WITH input scaling (Stage C).
 # Identical grid to mape.txt, but --scale fits a StandardScaler on training data
 # only, transforms val/test, and persists the scaler (.joblib) per model.
-# Launch: python -m esb run --profile mape_scaled
+# Launch: python -m esb run --profile mape_scaled_17lt
 --loss mape
 --scale
---lead_times 12 48 96 120
+--lead_times 3 6 18 24 30 36 42 54 60 66 72 78 84 90 102 108 114
 --rotations 0 1 2 3
 --activations relu leaky_relu selu
 --num_layers 1 2 3
@@ -13,4 +13,4 @@
 --epochs 200000
 --workers 4
 --repetitions 1
---output_dir results/esb_tuner_scaled
+--output_dir results/esb_tuner_scaled_17lt
