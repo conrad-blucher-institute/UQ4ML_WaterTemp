@@ -134,6 +134,15 @@ def run_status(config: Config) -> int:
         return 2
     N = ns.pop() if ns else None
 
+    # Index keras_files/ ONCE. Every artifact check below is the same question —
+    # "does <base_name>.keras exist?" — so answer it against an in-memory set
+    # instead of stat-ing each path. On the big grids (12k+ jobs) the old
+    # per-job .is_file() approach was tens of thousands of syscalls and made
+    # status look frozen; one directory read replaces all of them.
+    keras_names: set[str] = (
+        {f.name for f in keras_dir.glob("*.keras")} if keras_dir.is_dir() else set()
+    )
+
     anomalies = 0
     total_done = total_expected = 0
     blocks: list[tuple[int, list[str]]] = []  # (shard k or 0, that block's lines)
@@ -155,7 +164,7 @@ def run_status(config: Config) -> int:
         # artifact cross-check: completed row -> .keras must exist
         by_key = {ProgressTracker._make_key(j): j for j in expected}
         lost = [k for k in sorted(known_done)
-                if not (keras_dir / f"{job_base_name(by_key[k])}.keras").is_file()]
+                if f"{job_base_name(by_key[k])}.keras" not in keras_names]
 
         pct = 100.0 * len(known_done) / len(expected_keys) if expected_keys else 0.0
         state = ("complete" if missing == 0 else
@@ -189,7 +198,7 @@ def run_status(config: Config) -> int:
         # file-but-no-row within this shard: crashed between model.save and the
         # CSV append — resume will RETRAIN and overwrite (harmless, but visible).
         pending = [k for k in sorted(expected_keys - known_done)
-                   if (keras_dir / f"{job_base_name(by_key[k])}.keras").is_file()]
+                   if f"{job_base_name(by_key[k])}.keras" in keras_names]
         if pending:
             lines.append(f"    -- FILE-BUT-NO-ROW: {len(pending)} .keras exist without a "
                          f"completed row (resume will retrain them) — e.g. {pending[0]}")
@@ -217,7 +226,7 @@ def run_status(config: Config) -> int:
     # -- global orphan check: .keras files no expected job would produce -------
     # Judged against ALL repetitions seen anywhere (not just --repetitions), so
     # later-rep artifacts are not misflagged as orphans.
-    if keras_dir.is_dir():
+    if keras_names:
         max_run = max(
             [int(config.repetitions)]
             + [_int(r.get("run_num")) for _, p in sharded.values()
@@ -231,8 +240,8 @@ def run_status(config: Config) -> int:
             for rep in range(1, max_run + 1)
             for j in base_jobs
         }
-        orphans = sorted(f.name for f in keras_dir.glob("*.keras")
-                         if f.name not in all_expected_names)
+        orphans = sorted(name for name in keras_names
+                         if name not in all_expected_names)
         if orphans:
             anomalies += len(orphans)
             print(f"  !! FILE-BUT-NO-EXPECTED-JOB: {len(orphans)} .keras file(s) no job in this "

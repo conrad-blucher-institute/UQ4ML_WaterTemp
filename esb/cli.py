@@ -143,8 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
 
     # `help [subcommand]` — same as --help, for `ls help`-style muscle memory.
+    # `help [subcommand] --examples` prints copy-pasteable invocations instead.
     if argv and argv[0] == "help":
         rest = argv[1:]
+        if "--examples" in rest:
+            return _print_examples([t for t in rest if t != "--examples"])
         return main((rest + ["--help"]) if rest else ["--help"])
 
     # `profiles` / `gui` need no config parsing.
@@ -195,6 +198,50 @@ def main(argv: list[str] | None = None) -> int:
     # Import here so config errors surface before the heavy TF import.
     from esb.pipeline import run_experiment
     run_experiment(config)
+    return 0
+
+
+# Copy-pasteable examples per subcommand: `esb help run --examples`.
+# Keep these REAL (commands actually used in the campaigns), not synthetic.
+_EXAMPLES = {
+    "run": """\
+# smoke test (2 epochs, tiny grid) before committing to a campaign
+esb run --profile mape_smoke
+
+# preview the fully-resolved config + exact job list of a shard, no training
+esb run --profile mape_scaled --shard 3/40 --dry-run
+
+# core campaign, one shard (72 jobs); repetitions multiplies every job
+esb run --profile mape_scaled --shard 3/40 --repetitions 3 --workers 4
+
+# 17-LT campaign: shard k/17 == one lead time (lead time is the outermost
+# grid loop), run to completion one at a time
+for k in $(seq 1 17); do
+  esb run --profile mape_scaled_17lt --shard $k/17 --repetitions 3 --workers 4
+done
+
+# bare flags, no profile — schema defaults fill the rest
+esb run --loss mape --lead_times 12 --rotations 0""",
+    "status": """\
+# progress of the core campaign (same flags/profile as `run`)
+esb status --profile mape_scaled
+
+# one shard's completed/expected + artifact cross-check + ETA
+esb status --profile mape_scaled_17lt --shard 2/17""",
+    "profiles": "esb profiles      # list named profiles with their descriptions",
+    "gui": "esb gui           # schema-driven web form (needs streamlit)",
+}
+
+
+def _print_examples(rest: list[str]) -> int:
+    """`esb help [subcommand] --examples` — print real invocations."""
+    names = rest or sorted(_EXAMPLES)
+    unknown = [n for n in names if n not in _EXAMPLES]
+    if unknown:
+        _die(f"no examples for {unknown}. Have: {sorted(_EXAMPLES)}")
+    for n in names:
+        print(f"── esb {n} ─────────────────────────────────")
+        print(_EXAMPLES[n], end="\n\n")
     return 0
 
 

@@ -152,3 +152,6 @@ results/esb_tuner_scaled/
 
 # R4 debug side-effect CSVs written to CWD by preparingData (Stage D cleanup)
 debug_*.csv
+
+# make_deck two-way-sync sidecar (machine-local mtime marker)
+docs/.*.sync

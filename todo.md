@@ -4,10 +4,18 @@ Last updated: 2026-07-05
 
 ---
 
+## Promote tuning tests into the CLI (soon, but NOT mid-campaign)
+
+- `esb analysis all_tune_tests -p mape_scaled -s 1 11 21 23 28 31 --max-reps 10 --out-dir results/tuning_tests_phase1`
+  — new `analysis` subcommand wrapping `scripts/tuning_tests/`; test name positional
+  (`all_tune_tests` = the run_all_tests dispatcher; individual tests keep their names),
+  `-p/--profile` resolves the results folder from the profile's output_dir, `-s/--shards`.
+  Charts stay default-ON with `--no-charts` opt-out. (Requested 2026-07-05.)
+
 ## Cleanup pass (later, low priority)
 
 - Delete (or rename) `scripts/run_tests.py` — misnamed: it runs the training + viz drivers, not tests. Superseded conceptually by `scripts/tuning_tests/run_all_tests.py` (added 2026-07-05).
-- Decide fate of `scripts/tuning_tests/make_stability_charts.py` (added 2026-07-05) — keep if the CSV→xlsx-with-line-charts pattern proves useful for other tuning-test outputs; else fold into the eventual viz story or delete.
+- ~~Decide fate of `scripts/tuning_tests/make_stability_charts.py`~~ — resolved 2026-07-05: rewritten to PNG output (Excel dropped from the chart path); charts now auto-run from `run_all_tests.py --out-dir`.
 
 ---
 

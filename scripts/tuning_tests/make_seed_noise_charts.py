@@ -45,8 +45,10 @@ def main() -> None:
 
         # Box plot of relative noise by group value.
         fig, ax = plt.subplots(figsize=(7, 4.5))
-        ax.boxplot([df.loc[df[param] == g, "rel_std"] for g in groups],
-                   tick_labels=[str(g) for g in groups])
+        # tick_labels= kwarg needs matplotlib >= 3.9; set ticks portably instead
+        ax.boxplot([df.loc[df[param] == g, "rel_std"] for g in groups])
+        ax.set_xticks(range(1, len(groups) + 1),
+                      labels=[str(g) for g in groups])
         ax.set_xlabel(param)
         ax.set_ylabel("seed noise (std relative to shard median)")
         ax.set_title(f"Seed-noise distribution by {param}")

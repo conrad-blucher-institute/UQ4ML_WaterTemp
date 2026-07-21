@@ -1,0 +1,165 @@
+# Deck spec — SINGLE SOURCE for the ESB tuning-update PowerPoint.
+# Built/updated by scripts/make_deck.py (see its --help).
+#
+# One list entry = one slide. Fields:
+#   id      required, unique string — stable address for --slide (never renumber)
+#   title   required
+#   bullets list of strings; two leading spaces = sub-bullet (one level)
+#   image   path to a PNG, relative to the repo root; placed right of bullets
+#           (or full-width if no bullets). MUST exist or the build fails loud.
+#   images  list of PNG paths (alternative to image): side by side when
+#           full-width, stacked when sharing the slide with bullets/table
+#   table   list of rows (each a list of cell strings); first row = header
+#   notes   speaker-notes prose (markdown-ish plain text; goes in the notes pane)
+#
+# Chart paths assume the Phase-1 test run:
+#   python scripts/tuning_tests/run_all_tests.py --shards 1 11 21 23 28 31 \
+#          --max-reps 10 --out-dir results/tuning_tests_phase1
+# which writes PNGs to results/tuning_tests_phase1/charts/
+
+- id: '1'
+  title: Where we are (TL;DR)
+  bullets:
+  - 'Scaled-MAPE grid campaign COMPLETE for the 4 core lead times: 2,880 jobs'
+  - '  4 lead times x 4 rotations x 3 activations x 3 layer counts x 5 widths x 4 dropout rates'
+  - 17-lead-time extension (3-114 h) running now, one lead time at a time
+  - 'Repetition pilots done: shard 1/11/21/31 @ 10 reps (one per lead time)'
+  - 'Next gate: rank-stability analysis decides whether 3 reps suffice for Phase-1 screening'
+  notes: StandardScaler fit on train only, persisted per model. The 17-LT campaign runs sequentially per lead time so per-LT analysis can start midway.
+- id: 1b
+  title: Data prep & lead-time FAQ
+  bullets:
+  - 'Normalization: StandardScaler fit on TRAINING years only (no leakage); scaler persisted as .joblib next to each model'
+  - '  pre-refactor ESB pipeline had NO scaling at all'
+  - 'Gaps: rows with NaN / -999 dropped after lagged columns are built; no imputation'
+  - 'Lead times: all 21 — the full 6-hourly ladder 3 h to 120 h (12/48/96/120 ran first)'
+  - 'Tuning results? Yes, interim: full 4-LT grid trained; pilots analyzed (slide 5)'
+  - 'Live data feed: operational-deployment question, out of scope for this update'
+  notes: 'Coworker FAQ slide. Live feed answer: the operational system feeds the persisted scaler + model the same lagged-column layout used in training.'
+- id: '2'
+  title: Why repetitions matter (the problem)
+  bullets:
+  - 'A single run''s validation score is a draw from a distribution: weight init, shuffling, GPU nondeterminism'
+  - '1-rep rankings risk selecting noise: seed choice alone shifts accuracy by amounts comparable to published improvements (Picard [3]; Bouthillier [1])'
+  - 'Budget reality: 2,880 jobs x 10 reps ~ multi-week compute'
+  - 'Goal: the CHEAPEST rep count that preserves the ranking, not the most statistically pure one'
+- id: '3'
+  title: Phased tuning plan (the design)
+  bullets:
+  - Phase 1 — screen the full 2,880-config grid at 3 repetitions; rank by mean val metric (low std as tiebreak)
+  - Phase 2 — confirm top ~10-20 configs per lead time at 10+ repetitions
+  - 'Winner per lead time: best mean val + low std; 2021 (Uri) used as VETO only'
+  - 'Deliverable: the repetition closest to the config''s mean (a typical model, not a lucky one)'
+  - Screen-then-confirm mirrors successive halving / Hyperband [4]; mean±std reporting follows Show Your Work [2]
+  image: docs/deck_assets/funnel_phases.png
+  notes: 2021 is out-of-distribution; ranking on it would tune to one anomalous event. Diagram from scripts/make_deck_visuals.py (matplotlib version of the doc's mermaid).
+- id: 3b
+  title: Phased tuning plan (the design) — v2 visual
+  bullets:
+  - Phase 1 — screen the full 2,880-config grid at 3 repetitions; rank by mean val metric (low std as tiebreak)
+  - Phase 2 — confirm top ~10-20 configs per lead time at 10+ repetitions
+  - 'Winner per lead time: best mean val + low std; 2021 (Uri) used as VETO only'
+  - 'Deliverable: the repetition closest to the config''s mean (a typical model, not a lucky one)'
+  - Screen-then-confirm mirrors successive halving / Hyperband [4]; mean±std reporting follows Show Your Work [2]
+  image: docs/deck_assets/funnel_phases_v2.png
+  notes: Duplicate of slide 3 with the decluttered funnel layout (v2) — keep whichever version reads better, then delete the other slide in PowerPoint AND its spec entry.
+- id: '4'
+  title: Rank-stability pilots (does 3 reps suffice?)
+  bullets:
+  - 'Question: does the top-10 list at 3 reps match the list at 10-15 reps?'
+  - 'Design: one pilot shard per lead time — shard 1 (LT12, 15 reps); 11/21/31 (LT48/96/120, 10 reps)'
+  - '  ~10 h of compute instead of ~50 h for whole-grid repetition'
+  - 'Statistics per shard: top-10 overlap + Spearman rank correlation, k-rep vs all-rep ranking [1,2]'
+  - 'Decision rule: high overlap + high Spearman on ALL lead times -> 3-rep Phase 1; else raise reps'
+- id: '5'
+  title: 'Interim results: rank stability (mid-experiment, not final)'
+  bullets:
+  - 'Global ordering stabilizes fast: Spearman >= 0.90 on every shard by 3 reps'
+  - Top-10 MEMBERSHIP is the noisy part; strict bar (>=70% overlap + Sp>=0.9 everywhere) first met at k = 4
+  - 'Recommendation: screen at 3 reps, carry the TOP-20 forward — the cheap phase must not lose survivors, it needn''t order them [4]'
+  - 'Metric agreement: val_mape vs val_mae top-20 overlap 95-100%, Sp >= 0.98 — metric choice is a non-issue'
+  images:
+  - results/tuning_tests_phase1/charts/stability_spearman_all_configs.png
+  - results/tuning_tests_phase1/charts/stability_top10_overlap.png
+  table:
+  - - reps k
+    - top-10 overlap (LT12/48/96/120)
+    - Spearman (worst shard)
+  - - '1'
+    - 0.5 / 0.6 / 0.5 / 0.8
+    - '0.73'
+  - - '3'
+    - 0.8 / 0.7 / 0.6 / 0.8
+    - '0.91'
+  - - '4'
+    - 0.8 / 0.8 / 0.7 / 0.8
+    - '0.93'
+  notes: 'Caveats: (a) k = max row is trivially 1.0 and high-k rows share most data with the reference — only low-k rows carry evidential weight; (b) shards are contiguous activation-biased slices; selu + rotations 1-3 blind spot is being closed by shards 23/28 — RE-CHECK these numbers after rerunning the tests.'
+- id: 5b
+  title: 'Interim results: seed-noise heterogeneity'
+  bullets:
+  - 'Noise varies mainly with model SIZE: 128/256-neuron configs ~10x steadier than 16/32; 3-layer steadier than 1-layer'
+  - The likely winners are the most rankable configs — slide 5's table is pessimistic about the top of the leaderboard
+  - Activation and dropout effects are small
+  - Pilot blind spot (selu + rotations 1-3) closed by shards 23/28 — rerun confirms/updates this slide
+  images:
+  - results/tuning_tests_phase1/charts/box_neurons.png
+  - results/tuning_tests_phase1/charts/box_num_layers.png
+  notes: 'Box charts: seed-noise (rel_std) by hyperparameter value. Companion scatter_<param>.png charts (config mean vs std) are in the same folder if a quality-vs-stability view is asked for.'
+- id: '6'
+  title: Campaign mechanics (sharding + resume)
+  bullets:
+  - 40 shards x 72 contiguous jobs; lead time is the outermost grid loop, so shards align with lead times
+  - '  shards 1-10 = LT12, 11-20 = LT48, 21-30 = LT96, 31-40 = LT120'
+  - 'One command per shard: esb run --profile mape_scaled --shard k/40'
+  - 'Per-shard CSV checkpointing: crash-safe resume, skip completed jobs, per-job duration_sec'
+  - 'esb status: cross-checks CSVs vs on-disk artifacts; ETA from MEDIAN per-job duration (old span method was inflated 15-45x by idle gaps)'
+  image: docs/deck_assets/sharding_map.png
+- id: '7'
+  title: The 17-lead-time extension
+  bullets:
+  - Core campaign covered LT 12/48/96/120; operations want the full ladder (17 more lead times)
+  - 'Same grid otherwise: 720 configs per lead time'
+  - Own profile (mape_scaled_17lt) and own output directory — shard bookkeeping can't collide with the core campaign
+  - Running one lead time to completion at a time, so per-LT analysis starts as each finishes
+  image: docs/deck_assets/leadtime_ladder.png
+- id: '8'
+  title: Infrastructure recap (what got built)
+  bullets:
+  - 'esb CLI: run (profiles, sharding, resume) / status (progress + artifact cross-check + ETA) / gui (schema-driven form) / help'
+  - 'Pipeline stages, low coupling: data prep -> scaling (train-only fit, persisted .joblib) -> training -> metrics'
+  - Loud failures on misconfiguration (e.g. mixed-shard-denominator guard)
+  - 'Philosophy: one command, one named profile, smart defaults, loud failures — complexity lives in the code, not the operator'
+- id: '9'
+  title: 'Phase-2 side experiment: early-stopping calibration'
+  bullets:
+  - 'Current: early_stop_patience=25, lr_reducer_patience=15, min_delta=0.001'
+  - Patience is denominated in epochs and there is no universal value (Prechelt [5])
+  - Training lengths span ~100 to 2,000+ epochs — patience 25 is ~25% of one run, ~1% of another
+  - 'Suspect: min_delta=0.001 vs MAPE ~47 is 0.002% — ''any improvement counts'', noise keeps resetting the counter'
+  - 'Plan: DO NOT touch mid-campaign; Phase 2 retrains top configs at patience 25 vs ~100 + larger min_delta'
+  - 'Epochs ~40 ms: extra patience is cheap, the asymmetric risk favors patience'
+  image: docs/deck_assets/patience_fraction.png
+- id: '10'
+  title: Next steps
+  bullets:
+  - 1. Per-activation seed-noise check on pilot data (closes slide-5 caveat b)
+  - '2. Lock Phase-1 rep count (working answer: 3 reps + top-20 cut)'
+  - 3. Complete the 17-LT screen; run Phase 2 (top ~10-20/LT at 10+ reps)
+  - '4. Phase-2 side experiment: early-stopping patience / min_delta calibration'
+  - 5. Select winners (mean val + std, 2021 veto); hand over the rep closest to the config mean per lead time
+- id: '11'
+  title: 'Discussion: training/serving skew (one theme, three instances)'
+  bullets:
+  - 'Theme: does the model see the same distribution live that it saw in training? Every prep gap = silent extrapolation'
+  - '1. Station outages — mask a station''s columns in the test set and re-score (no retraining): graceful degradation or collapse?'
+  - 2. Outlier filtering — if training drops >3.5-sigma readings but live doesn't, inference sees a distribution training never saw — and extremes ARE the cold-stunning events
+  - 3. Gap-filling causality — any fill using a future window is impossible live; operational gap handling must be past-only
+- id: refs
+  title: References
+  bullets:
+  - '[1] Bouthillier et al., Accounting for Variance in ML Benchmarks, MLSys 2021'
+  - '[2] Dodge et al., Show Your Work: Improved Reporting of Experimental Results, EMNLP 2019'
+  - '[3] Picard, torch.manual_seed(3407) is all you need, arXiv:2109.08203, 2021'
+  - '[4] Li et al., Hyperband, JMLR 18(185), 2018'
+  - '[5] Prechelt, Early Stopping — But When?, Neural Networks: Tricks of the Trade, 1998/2012'
