@@ -46,9 +46,12 @@ def pick_folder():
 
 
 def discover_csvs(folder):
-    csvs = sorted(glob.glob(str(folder / '*_progress.csv')))
+    # Match both the plain `*_progress.csv` and the sharded campaign names
+    # (e.g. mape_progress_shard10of40.csv) — the shard suffix means the file no
+    # longer *ends* in _progress.csv, so anchor on 'progress' anywhere instead.
+    csvs = sorted(glob.glob(str(folder / '*progress*.csv')))
     if not csvs:
-        print(f"No *_progress.csv files found in {folder}")
+        print(f"No *progress*.csv files found in {folder}")
         sys.exit(1)
     return csvs
 
@@ -60,15 +63,24 @@ def infer_metric_column(csv_path):
 def load_data(csv_paths, metric_column, test_iterations=0):
     loader = TuningResultsLoader(metric_column=metric_column)
     if test_iterations > 0:
+        # TEST MODE only: fake N iterations by duplicating one file, each with a
+        # distinct iteration_id so the iteration-stability plot has something to
+        # compare. Real shard files are NOT iterations (see below).
         paths = [csv_paths[0]] * test_iterations
         print(f"[TEST MODE] Duplicating {csv_paths[0]} x{test_iterations}")
-    else:
-        paths = csv_paths
-    dfs = []
-    for i, path in enumerate(paths, start=1):
-        df = loader.load(path, iteration_id=i)
-        dfs.append(df)
-    return pd.concat(dfs, ignore_index=True)
+        dfs = [loader.load(p, iteration_id=i) for i, p in enumerate(paths, start=1)]
+        return pd.concat(dfs, ignore_index=True)
+
+    # Real data: the files are disjoint config SHARDS of one campaign, not
+    # repetitions. Pool them, then drive `iteration` from each row's run_id
+    # (the loader's rename of run_num) so the actual repetitions — 3 reps per
+    # config here — become the iteration axis the stability plot groups over.
+    # (The loader stamps iteration with a constant per file; we overwrite it.)
+    dfs = [loader.load(path, iteration_id=1) for path in csv_paths]
+    combined = pd.concat(dfs, ignore_index=True)
+    if 'run_id' in combined.columns:
+        combined['iteration'] = pd.to_numeric(combined['run_id'], errors='coerce')
+    return combined
 
 
 def run_v16(data, metric_column, output_dir, results_folder=None):
@@ -142,10 +154,11 @@ if __name__ == "__main__":
     print(f"Found CSVs: {[Path(p).name for p in csv_paths]}")
     print(f"Output dir: {output_dir}")
 
-    for csv_path in csv_paths:
-        metric_column = infer_metric_column(csv_path)
-        data = load_data([csv_path], metric_column, test_iterations=args.test_iterations)
-        run_v16(data, metric_column, output_dir, results_folder=str(folder))
+    # Pool ALL shard CSVs into one dataset, then plot once. (Previously this
+    # looped per-file and each run_v16() call overwrote the last shard's plots.)
+    metric_column = infer_metric_column(csv_paths[0])
+    data = load_data(csv_paths, metric_column, test_iterations=args.test_iterations)
+    run_v16(data, metric_column, output_dir, results_folder=str(folder))
 
     if not args.no_serve:
         print("\nLaunching local server for visualizations...")
