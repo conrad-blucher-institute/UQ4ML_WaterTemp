@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html><head>
+<title>Histogram Explorer: val_mae</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           margin: 0; padding: 20px; }
+    .controls { background: #f8f9fa; padding: 12px 20px; border-radius: 8px; margin-bottom: 8px; }
+    .controls h2 { margin: 0 0 8px 0; font-size: 18px; }
+    .controls p { margin: 4px 0 8px 0; font-size: 13px; color: #666; }
+    .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+    .filter-group { display: flex; align-items: center; gap: 6px; }
+    .filter-group label { font-size: 13px; font-weight: 600; color: #555; white-space: nowrap; }
+    .filter-group input { font-size: 13px; padding: 4px 8px; border: 1px solid #ccc;
+                           border-radius: 4px; width: 80px; }
+    .filter-group select { font-size: 13px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+    .summary { background: #e7f3f4; padding: 10px 16px; border-radius: 6px; margin: 10px 0;
+                font-size: 13px; border: 1px solid #52a8ad; }
+    #plotDiv { width: 100%; }
+</style>
+</head><body>
+<div class="controls">
+    <h2>Histogram Explorer: val_mae</h2>
+    <p>Pick any column to histogram. Numeric columns bin into a distribution;
+       categorical columns show per-category counts. Optionally split by a hyperparameter.</p>
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label>X variable:</label>
+            <select id="xVar" onchange="rebuild()"><option value="val_mae" selected>val_mae</option>
+<option value="val_mape">val_mape</option>
+<option value="neurons">neurons</option>
+<option value="num_layers">num_layers</option>
+<option value="leadtime">leadtime</option>
+<option value="cycle">cycle</option>
+<option value="activation">activation</option>
+</select>
+        </div>
+        <div class="filter-group">
+            <label>Group by:</label>
+            <select id="groupBy" onchange="rebuild()"><option value="" selected>None</option>
+<option value="activation">activation</option>
+<option value="leadtime">leadtime</option>
+<option value="cycle">cycle</option>
+</select>
+        </div>
+        <div class="filter-group">
+            <label>Bins:</label>
+            <input type="number" id="binCount" value="30" min="2" max="200" step="1" onchange="rebuild()">
+        </div>
+    </div>
+</div>
+<div id="summary" class="summary"></div>
+<div id="plotDiv"></div>
+
+<script>
+var allRecords = [{"val_mae": 1.0, "val_mape": 10.0, "neurons": 32.0, "num_layers": 1.0, "leadtime": 24.0, "cycle": 0.0, "activation": "relu"}, {"val_mae": 2.0, "val_mape": 12.0, "neurons": 64.0, "num_layers": 1.0, "leadtime": 24.0, "cycle": 0.0, "activation": "tanh"}, {"val_mae": 2.0, "val_mape": 11.0, "neurons": 64.0, "num_layers": 2.0, "leadtime": 48.0, "cycle": 1.0, "activation": "relu"}, {"val_mae": 3.0, "val_mape": 13.0, "neurons": 128.0, "num_layers": 2.0, "leadtime": 48.0, "cycle": 1.0, "activation": "tanh"}, {"val_mae": 3.0, "val_mape": 14.0, "neurons": 128.0, "num_layers": 3.0, "leadtime": 72.0, "cycle": 2.0, "activation": "relu"}, {"val_mae": 3.0, "val_mape": 15.0, "neurons": 128.0, "num_layers": 3.0, "leadtime": 72.0, "cycle": 2.0, "activation": "tanh"}, {"val_mae": 4.0, "val_mape": 16.0, "neurons": 256.0, "num_layers": 4.0, "leadtime": 96.0, "cycle": 3.0, "activation": "relu"}];
+var colTypes = {"val_mae": "numeric", "val_mape": "numeric", "neurons": "numeric", "num_layers": "numeric", "leadtime": "numeric", "cycle": "numeric", "activation": "categorical"};
+
+function makeTrace(vals, type, nbins, name) {
+    if (type === 'numeric') {
+        return { x: vals, type: 'histogram', nbinsx: nbins, name: name, opacity: 0.65 };
+    }
+    // categorical: count occurrences per category
+    var counts = {};
+    vals.forEach(function(v) { counts[v] = (counts[v] || 0) + 1; });
+    var cats = Object.keys(counts).sort();
+    return {
+        x: cats,
+        y: cats.map(function(c) { return counts[c]; }),
+        type: 'bar', name: name, opacity: 0.75,
+    };
+}
+
+function rebuild() {
+    var xVar = document.getElementById('xVar').value;
+    var groupBy = document.getElementById('groupBy').value;
+    var nbins = parseInt(document.getElementById('binCount').value) || 30;
+    var type = colTypes[xVar];
+
+    var traces = [];
+    var totalNonNull = 0;
+
+    if (groupBy) {
+        var groups = {};
+        allRecords.forEach(function(r) {
+            var g = r[groupBy];
+            if (g === null || g === undefined) return;
+            if (r[xVar] === null || r[xVar] === undefined) return;
+            if (!(g in groups)) groups[g] = [];
+            groups[g].push(r[xVar]);
+        });
+        Object.keys(groups).sort().forEach(function(g) {
+            totalNonNull += groups[g].length;
+            traces.push(makeTrace(groups[g], type, nbins, String(g)));
+        });
+    } else {
+        var vals = allRecords
+            .map(function(r) { return r[xVar]; })
+            .filter(function(v) { return v !== null && v !== undefined; });
+        totalNonNull = vals.length;
+        traces.push(makeTrace(vals, type, nbins, xVar));
+    }
+
+    document.getElementById('summary').innerHTML =
+        '<b>Summary:</b> ' + allRecords.length + ' total configs | ' +
+        totalNonNull + ' non-null ' + xVar + ' values | ' +
+        (type === 'numeric' ? nbins + ' bins' : 'categorical') +
+        (groupBy ? ' | grouped by ' + groupBy + ' (' + traces.length + ' series)' : '');
+
+    var layout = {
+        barmode: (type === 'numeric') ? 'overlay' : 'group',
+        xaxis: { title: xVar, type: (type === 'categorical') ? 'category' : 'linear' },
+        yaxis: { title: 'Count' },
+        height: 600,
+        margin: { t: 30, b: 70, l: 70, r: 30 },
+        showlegend: !!groupBy,
+    };
+
+    Plotly.newPlot('plotDiv', traces, layout, { responsive: true });
+}
+
+rebuild();
+</script>
+</body></html>

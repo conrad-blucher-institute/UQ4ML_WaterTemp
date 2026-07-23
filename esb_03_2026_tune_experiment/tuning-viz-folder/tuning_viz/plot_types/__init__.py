@@ -6,6 +6,7 @@ from .top_configs_plot_v12 import plot_top_configs_v12, plot_top10_per_cycle_v12
 from .parallel_coords_v8 import plot_parallel_coords_v8
 from .iteration_comparison_plot_v8 import plot_iteration_comparison_v8
 from .timeseries_compare_v16 import plot_timeseries_compare_v16
+from .histogram_plot_v1 import plot_histogram_v1
 
 __all__ = [
     'plot_unified_v15',
@@ -15,4 +16,5 @@ __all__ = [
     'plot_parallel_coords_v8',
     'plot_iteration_comparison_v8',
     'plot_timeseries_compare_v16',
+    'plot_histogram_v1'
 ]
