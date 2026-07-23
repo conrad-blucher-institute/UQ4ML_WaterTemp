@@ -25,7 +25,7 @@ from tuning_viz.plot_types.top_configs_plot_v12 import plot_top_configs_v12, plo
 from tuning_viz.plot_types.parallel_coords_v8 import plot_parallel_coords_v8
 from tuning_viz.plot_types.iteration_comparison_plot_v8 import plot_iteration_comparison_v8
 from tuning_viz.plot_types.timeseries_compare_v16 import plot_timeseries_compare_v16
-
+from tuning_viz.plot_types.histogram_plot_v1 import plot_histogram_v1
 
 _VIZ_DIR = Path(__file__).resolve().parent
 _DEFAULT_RESULTS = str((_VIZ_DIR / '../../results').resolve())
@@ -98,6 +98,9 @@ def run_v16(data, metric_column, output_dir, results_folder=None):
 
     print("\n--- Iteration Stability ---")
     plot_iteration_comparison_v8(data, metric_column, output_dir=output_dir)
+
+    print("\n--- Histogram ---")
+    plot_histogram_v1(data, metric_column, output_dir=output_dir)
 
     if results_folder:
         pred_dir = str(Path(results_folder) / 'predictions')
