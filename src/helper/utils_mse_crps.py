@@ -594,9 +594,9 @@ def deletingMissingValues(df):
     if initial_rows > 0:
         pct_removed = (rows_removed / initial_rows * 100)
         rows_with_999_after = (df[cols_to_check] == -999).any(axis=1).sum() if len(df) > 0 else 0
-        print(f"  Rows: {initial_rows} → {final_rows} (removed {rows_removed}, {pct_removed:.1f}%)")
+        print(f"  Rows: {initial_rows} -> {final_rows} (removed {rows_removed}, {pct_removed:.1f}%)")
         if rows_with_999_after > 0:
-            print(f"  ⚠️  WARNING: {rows_with_999_after} rows still contain -999 after deletion!")
+            print(f"  WARNING: {rows_with_999_after} rows still contain -999 after deletion!")
     
     return df
 

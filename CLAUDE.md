@@ -38,8 +38,6 @@ follows the same philosophy but is behavior-preserving (paper-replication baseli
 - `results/` — gitignored run outputs, one folder per campaign
   (e.g. `esb_tuner_scaled`, `esb_tuner_scaled_17lt`); discover contents fresh, never assume
 - `src/`, `main/` — legacy pipeline + clean-room refactor (see parent CLAUDE.md)
-- No pandas/TF on this laptop's Python — training and analysis run on grendal
-  (RDP over Tailscale)
 
 ## Parked WIP on this laptop (dev-Proto_Incorp)
 
