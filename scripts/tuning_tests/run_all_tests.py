@@ -9,7 +9,7 @@ With --out-dir, the chart scripts run afterwards on the saved CSVs
 (PNGs land in <out-dir>/charts). Pass --no-charts to skip them.
 
 Usage:
-  python scripts/tuning_tests/run_all_tests.py --shards 1 11 21 23 28 31 --max-reps 10 --out-dir results/tuning_tests_phase1
+  python scripts/tuning_tests/run_all_tests.py --shards 1 11 21 23 28 31 --max-reps 10 --out-dir results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1
   (--results-dir defaults to results/esb_tuner_scaled; keyword-only, no positionals)
 """
 

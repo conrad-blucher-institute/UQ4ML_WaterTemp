@@ -11,7 +11,7 @@ as dashed reference lines so the sufficient rep count reads straight off
 the chart.
 
 Usage (analysis env with pandas + matplotlib):
-  python scripts/tuning_tests/make_stability_charts.py results/tuning_tests_phase1/rank_stability.csv
+  python scripts/tuning_tests/make_stability_charts.py results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1/rank_stability.csv
 """
 
 import argparse

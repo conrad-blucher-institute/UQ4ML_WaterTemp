@@ -118,3 +118,23 @@ version pruning there is really a branch-merge/checkout decision, not file delet
 2. Batch 5 edits → one commit each, golden checks mandatory (these touch live files).
 3. Batch 4 → mostly "keep" decisions recorded here; the few deletes ride along.
 4. Batch 6 → branch deletions (after push-state check), GridExplorer merge as its own task.
+
+---
+
+## Follow-ups queued (2026-08-14, `esb_scaler_layer` branch)
+
+Recorded here so they are not lost; **none of these are decided yet — Hector reviews.**
+
+| Item | Why it is queued | Owner action |
+|---|---|---|
+| **Re-read this ledger** | Evidence snapshot is 2026-07-05 and the cross-repo rows explicitly say "re-verify before executing". The scaler-layer work since then deleted `scale_arrays`, `ScaledArrays` and `save_scaler`, which may resolve or invalidate rows below. | Hector to review row-by-row and fill DECISION |
+| **Close re-read of `ESB_PIPELINE_CURRENT.md`** | Only the *scaling* claims were corrected on 2026-08-14 (the "no scale stage" pain line, the infer note box, two gap-table rows). The rest of the file was NOT audited and may hold other stale statements. | Hector to read end-to-end |
+| **Close re-read of `ESB_PIPELINE_DESIGN.md`** | Decision C4 was added and §4/§6 updated, but the doc still does not distinguish **implemented** stages from **aspirational** ones. Stages D and F were never done — a fact currently recorded only in `docs/archive/ESB_REFACTOR_STAGE_PROMPTS.md`. Candidate fix: an implementation-status column on the §4 stage table. | Hector to read; decide on status column |
+
+### Deletion candidates created by the scaler-layer change
+
+| Candidate | Evidence | Risk | DECISION |
+|---|---|---|---|
+| `results/phase3_selected/keras_files/*_scaler.joblib` (360 files) | Superseded by the frozen Normalization layer inside each `*_rawinput.keras`. Equivalence verified by `wrap_models_with_scaler.py` (all pairs passed) and by `esb/tests/test_scaler_layer.py` + `test_scale_leakage.py` (all passing, 2026-08-14). | med — irreversible; the paired originals are the only copy of those trained weights | |
+| `results/phase3_selected/keras_files/<base>.keras` (360 originals) | Weights survive nested inside the wrapped model. But these are the pre-wrap artifacts. | **high** — one-way door on trained models | |
+| `docs/scaler_joblib_to_txt.md` | DONE — deleted 2026-08-14. Described applying a sidecar scaler by hand, which would now DOUBLE-SCALE. Column-order content survives in `esb/stages/features.py::feature_names()` and in each `*_metadata.json`. | — | done |

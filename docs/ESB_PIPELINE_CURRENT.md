@@ -47,8 +47,10 @@ flowchart TB
 ```
 
 **Pain:** all stages live in one function with debug prints/CSV dumps interleaved; the
-`col_start` rule is duplicated wherever arrays are sliced; there is **no scale stage**, so
-models extrapolate badly on out-of-distribution inputs (Uri 2021).
+`col_start` rule is duplicated wherever arrays are sliced. **Historically there was no scale
+stage**, so models extrapolated badly on out-of-distribution inputs (Uri 2021); a `scale`
+stage now exists (opt-in via `scale=True`) and, since decision C4, the fitted scaler is
+baked into the model as a frozen `Normalization` layer rather than applied to the arrays.
 
 ## 3. Inference path (separate, bolted on)
 
@@ -56,7 +58,7 @@ models extrapolate badly on out-of-distribution inputs (Uri 2021).
 flowchart LR
   indep[("independent year CSV<br/>e.g. esb_2020_2021.csv")] --> pi["prepare_independent_year()<br/>re-runs feature engineering<br/>on a single CSV"]
   pi --> ev["model.evaluate / predict"]
-  note2["assumes csv_files[0] is the<br/>independent year; no shared<br/>scaler with training"]:::warn
+  note2["assumes csv_files[0] is the<br/>independent year (still hardcoded);<br/>inputs go in RAW — the model scales"]:::warn
   pi -.-> note2
   classDef warn stroke:#d33,stroke-width:3px;
 ```
@@ -77,6 +79,6 @@ flowchart LR
 |-------|--------|
 | 4 entry scripts, flags in your head | 1 command + named profile + defaults |
 | `preparingData()` monolith | cohesive `read → features → clean → split → reshape` stages |
-| no scaling | dedicated `scale` stage (reconciled, fit-on-train-only) |
-| inference bolted on | `infer` stage sharing the fitted scaler + `column_map` |
+| no scaling | dedicated `scale` stage (fit-on-train-only, leakage-asserted) — DONE; scaler now lives *inside* the model (C4) |
+| inference bolted on | `infer` stage + `column_map`; no scaler to share — the model scales its own inputs |
 | `exit()` / silent issues | loud validation + inter-stage asserts |

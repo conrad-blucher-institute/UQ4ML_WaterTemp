@@ -1,4 +1,4 @@
-"""Build or update the ESB update deck (.pptx) from docs/deck_spec.yaml.
+"""Build or update the ESB update deck (.pptx) from docs/update/deck_spec.yaml.
 
 The spec is the single source of content. The .pptx is edited IN PLACE when it
 already exists: only the slides you target are touched, and within them only
@@ -32,7 +32,7 @@ shapes cannot round-trip (yaml holds plain text); polish once, at the end.
 Examples:
   # Full refresh after new tuning results (run tests on grendal first):
   #   python scripts/tuning_tests/run_all_tests.py --shards 1 11 21 23 28 31 \
-  #          --max-reps 10 --out-dir results/tuning_tests_phase1
+  #          --max-reps 10 --out-dir results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1
   # then rebuild the deck (auto-pulls any PowerPoint text edits first):
   python scripts/make_deck.py
 
@@ -55,8 +55,8 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SPEC = REPO_ROOT / "docs" / "deck_spec.yaml"
-DEFAULT_OUT = REPO_ROOT / "docs" / "ESB_update_deck.pptx"
+DEFAULT_SPEC = REPO_ROOT / "docs" / "update" / "deck_spec.yaml"
+DEFAULT_OUT = REPO_ROOT / "docs" / "update" / "ESB_update_deck.pptx"
 THEME_DIR = Path(__file__).resolve().parent / "deck_themes"
 
 try:

@@ -8,7 +8,7 @@ Replaces the by-hand Excel workflow (Excel PivotCharts cannot do XY scatter,
 and manual series-per-group setup doesn't scale to 5 hyperparameters).
 
 Usage (analysis env with pandas + matplotlib):
-  python scripts/tuning_tests/make_seed_noise_charts.py results/tuning_tests_phase1/seed_noise_by_group.csv
+  python scripts/tuning_tests/make_seed_noise_charts.py results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1/seed_noise_by_group.csv
 """
 
 import argparse

@@ -14,8 +14,8 @@
 #
 # Chart paths assume the Phase-1 test run:
 #   python scripts/tuning_tests/run_all_tests.py --shards 1 11 21 23 28 31 \
-#          --max-reps 10 --out-dir results/tuning_tests_phase1
-# which writes PNGs to results/tuning_tests_phase1/charts/
+#          --max-reps 10 --out-dir results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1
+# which writes PNGs to results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1/charts/
 
 - id: '1'
   title: Where we are (TL;DR)
@@ -36,6 +36,26 @@
   - 'Tuning results? Yes, interim: full 4-LT grid trained; pilots analyzed (slide 5)'
   - 'Live data feed: operational-deployment question, out of scope for this update'
   notes: 'Coworker FAQ slide. Live feed answer: the operational system feeds the persisted scaler + model the same lagged-column layout used in training.'
+- id: 1c
+  title: How the pipeline fits together (end to end)
+  bullets:
+  - 'Prep (once per lead time / cycle / structure): year CSVs -> lagged air+water features -> drop NaN/-999 rows -> split by cycle into train/val/test -> reshape to X, y'
+  - 'Feature width is DERIVABLE from config: W + 1 + A + 1 + F/I (water lags, current water, air lags, current air, forecast block)'
+  - StandardScaler is fit on the TRAINING rows only — leakage-asserted in code, not by convention
+  - 'CHANGE: the scaler''s mean/variance now cross INTO the model as frozen weights, instead of leaving the pipeline as a _scaler.joblib the ops team must apply correctly'
+  - The model therefore trains on RAW inputs and scales them itself; output is ONE self-contained .keras
+  - Operational hand-off collapses to load_model(path) — no sidecar file, no column-formula to reimplement
+- id: 1d
+  title: Inside the model
+  bullets:
+  - 'Input: RAW, unscaled, shape (W + 1 + A + 1 + F/I,)'
+  - 'Normalization layer — frozen, non-trainable: (x - mean) / sqrt(variance)'
+  - '  variance = scaler.scale_ squared, NEVER var_ — scale_ carries sklearn''s zero-variance guard'
+  - '  deterministic and non-trainable => identical forward pass AND identical gradients vs pre-scaling the arrays'
+  - 'Then x num_layers: Dense(neurons, activation) + optional dropout (AlphaDropout for selu, which preserves its self-normalization; rate 0.0 = no layer at all)'
+  - 'Output head: Dense(1, linear) — one number, the water temperature at +F hours; loss = MAPE'
+  - '  (the 100-unit CRPS head is a different model — see the ensemble-packaging slide)'
+  - Everything above the repeat block is fixed by the data contract; everything inside it is what the grid search moves (3 layer counts x 5 widths x 3 activations x 4 dropout rates)
 - id: '2'
   title: Why repetitions matter (the problem)
   bullets:
@@ -62,7 +82,6 @@
   - 'Deliverable: the repetition closest to the config''s mean (a typical model, not a lucky one)'
   - Screen-then-confirm mirrors successive halving / Hyperband [4]; mean±std reporting follows Show Your Work [2]
   image: docs/deck_assets/funnel_phases_v2.png
-  notes: Duplicate of slide 3 with the decluttered funnel layout (v2) — keep whichever version reads better, then delete the other slide in PowerPoint AND its spec entry.
 - id: '4'
   title: Rank-stability pilots (does 3 reps suffice?)
   bullets:
@@ -79,8 +98,8 @@
   - 'Recommendation: screen at 3 reps, carry the TOP-20 forward — the cheap phase must not lose survivors, it needn''t order them [4]'
   - 'Metric agreement: val_mape vs val_mae top-20 overlap 95-100%, Sp >= 0.98 — metric choice is a non-issue'
   images:
-  - results/tuning_tests_phase1/charts/stability_spearman_all_configs.png
-  - results/tuning_tests_phase1/charts/stability_top10_overlap.png
+  - results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1/charts/stability_spearman_all_configs.png
+  - results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1/charts/stability_top10_overlap.png
   table:
   - - reps k
     - top-10 overlap (LT12/48/96/120)
@@ -103,8 +122,8 @@
   - Activation and dropout effects are small
   - Pilot blind spot (selu + rotations 1-3) closed by shards 23/28 — rerun confirms/updates this slide
   images:
-  - results/tuning_tests_phase1/charts/box_neurons.png
-  - results/tuning_tests_phase1/charts/box_num_layers.png
+  - results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1/charts/box_neurons.png
+  - results/esb_tuning_phase1_grid_21lt/tuning_tests_phase1/charts/box_num_layers.png
   notes: 'Box charts: seed-noise (rel_std) by hyperparameter value. Companion scatter_<param>.png charts (config mean vs std) are in the same folder if a quality-vs-stability view is asked for.'
 - id: '6'
   title: Campaign mechanics (sharding + resume)
@@ -155,6 +174,18 @@
   - '1. Station outages — mask a station''s columns in the test set and re-score (no retraining): graceful degradation or collapse?'
   - 2. Outlier filtering — if training drops >3.5-sigma readings but live doesn't, inference sees a distribution training never saw — and extremes ARE the cold-stunning events
   - 3. Gap-filling causality — any fill using a future window is impossible live; operational gap handling must be past-only
+- id: '12'
+  title: 'Discussion: packaging an ensemble as ONE .keras'
+  bullets:
+  - 10 CRPS members share one input and one output structure -> they can be ONE model file, not 10
+  - '  one Input -> 10 member sub-models -> concatenated output; assembled from ALREADY-TRAINED members, no retraining'
+  - 'Output shape is OUR choice: flat 1000, or 10 x 100 (member axis x distribution samples)'
+  - '  1000 flat = simplest consumer contract, but nothing marks where member 3 ends and member 4 begins'
+  - '  10 x 100 = the shape IS the documentation; a wrong slice fails loud instead of returning plausible numbers'
+  - '  open question for ops: do they want samples, or should aggregation (mean / quantiles) also be a layer?'
+  - 'Why package: one file to version, one predict() call (members batch on GPU instead of a 10-iteration Python loop), and it is ATOMIC — you cannot ship 9 of 10 members or mismatch weights to configs'
+  - 'Composes with the in-graph scaler: if each member carries its own Normalization layer, members trained on different rotations/scalers assemble safely with no cross-member agreement needed'
+  - 'Costs to weigh: layer-name collisions must be resolved at assembly; per-member provenance (run_num) must be carried deliberately; cannot swap one member without rebuilding the package'
 - id: refs
   title: References
   bullets:

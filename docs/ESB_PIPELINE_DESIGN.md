@@ -55,7 +55,7 @@ flowchart TB
     ST["read → features → clean → split → reshape → scale → model → train → evaluate → (infer)"]
   end
   subgraph IOL["IO / PRIMITIVES"]
-    ION["read csv · save .keras · save .joblib · write csv"]
+    ION["read csv · save .keras · save metadata.json · write csv"]
   end
   INTERFACE -->|"Config (validated, defaulted)"| ORCH
   ORCH -->|"typed data contracts only"| STAGES
@@ -72,15 +72,14 @@ flowchart TB
   clean["<b>clean</b><br/>-999 + NaN handling, loud checks<br/>→ CleanFrames"] --> split
   split["<b>split</b><br/>4-year temporal rotation by cycle<br/>→ Split (train/val/test + dates)"] --> reshape
   reshape["<b>reshape</b><br/>col_start = 1 desc / 3 asc (SINGLE source)<br/>→ Arrays"] --> scale
-  scale["<b>scale</b> &nbsp;◀ RECONCILE<br/>fit StandardScaler on x_train ONLY<br/>→ ScaledArrays + scaler"] --> model
-  model["<b>model</b><br/>build + train"] --> evaluate
+  scale["<b>scale</b> &nbsp;◀ RECONCILE<br/>fit StandardScaler on x_train ONLY<br/>→ scaler (arrays stay RAW)"] --> model
+  model["<b>model</b><br/>build + train<br/>frozen Normalization layer = the scaler"] --> evaluate
   evaluate["<b>evaluate</b><br/>mae / mae12 / me / me12 / crps"] --> out
 
   indep[("independent year CSV<br/>2021 / Laguna Madre")] --> infer
-  scale -.->|"fitted scaler"| infer
-  infer["<b>infer</b><br/>predict on indep. year<br/>(scaler + column_map)"] --> out
+  infer["<b>infer</b><br/>predict on indep. year<br/>RAW inputs — model scales itself"] --> out
 
-  out[("results:<br/>predictions.csv · *.keras<br/>scaler.joblib · metrics.csv<br/>compute_times.pkl")]
+  out[("results:<br/>predictions.csv · *.keras (self-contained)<br/>*_metadata.json · metrics.csv<br/>compute_times.pkl")]
 ```
 
 ## 4. Stage contracts (coupling is via data, not globals)
@@ -92,13 +91,13 @@ flowchart TB
 | clean     | FeatureFrames    | CleanFrames       | -999 + NaN rules, loud row-count reporting     |
 | split     | CleanFrames      | Split             | 4-year temporal rotation by `cycle`            |
 | reshape   | Split            | Arrays            | `col_start` invariant (1 desc / 3 asc) — one place |
-| scale     | Arrays           | ScaledArrays+scaler | fit-on-train-only; persistence; inference transform |
-| model     | Config           | keras.Model       | architecture, loss/metric wiring               |
+| scale     | Arrays           | scaler            | fit-on-train-only + leakage assert. Does NOT transform |
+| model     | Config, scaler   | keras.Model       | architecture, loss/metric wiring, **frozen Normalization layer** |
 | train     | Model, Arrays    | Model, History    | callbacks, batch size, epochs                  |
 | evaluate  | Model, Arrays    | Metrics           | metric computation                             |
-| infer     | Model, scaler, csv | predictions     | `column_map` for non-ESB stations              |
+| infer     | Model, csv       | predictions       | `column_map`. No scaler — inputs go in RAW     |
 
-**Typed containers** (e.g. small dataclasses: `RawFrames`, `Split`, `Arrays`, `ScaledArrays`,
+**Typed containers** (e.g. small dataclasses: `RawFrames`, `Split`, `Arrays`,
 `Metrics`) are the *only* thing passed between stages. No stage reaches into another's internals.
 
 ## 5. Loud-failure checkpoints
@@ -130,11 +129,13 @@ implementations already exist (see `SCALING_RECONCILIATION` note). Merge them in
 |---|---|---|
 | **C1** | **Scaling is opt-in, OFF by default** (`--scale`). | The Stage B golden fit-input digest `d80ae5421e8ba0c69593777ac3857512609a16b962ccd7cd1cd7da2fbb63c9e7` stays valid; Stage C is behavior-preserving until `--scale` is passed. |
 | **C2** | **Base branch = `origin/esb_dev_normalization`.** | It already has BOTH halves: the fit-on-train-only `StandardScaler` (gated by a `scale` flag) AND `prepare_independent_year(scaler=, column_map=)`. Lift, don't re-merge. `esb_dev_add_training_trace_*` (has `mape_scaled_driver.py`) is NOT the base. |
-| **C3** | **Introduce typed containers now (`Arrays` / `ScaledArrays`).** Guardrail-3 sign-off given. | `scale` becomes a real cohesive stage (`Arrays → ScaledArrays + scaler`); scaler persisted as `.joblib` at the single io write site and threaded to `infer`. Replaces the legacy 10-vs-11-tuple variable-length return of `preparingData`. |
+| **C3** | **Introduce typed containers now (`Arrays`).** Guardrail-3 sign-off given. | `scale` becomes a real cohesive stage (`Arrays → scaler`). Replaces the legacy 10-vs-11-tuple variable-length return of `preparingData`. *Superseded in part by C4: `ScaledArrays` existed briefly and was deleted.* |
+| **C4** | **The scaler lives INSIDE the model** (2026-08-14, Hector), as a frozen `keras.layers.Normalization` first layer built from `mean=scaler.mean_`, `variance=scaler.scale_**2`. | The `.keras` becomes self-contained: it takes RAW inputs and standardizes them itself, so `_scaler.joblib` is gone (`save_scaler` deleted) and ops does `load_model(path)` with no sidecar and no custom class. The stage stops transforming — `scale_arrays`/`ScaledArrays` deleted, arrays stay raw to `model.fit`. Layer is non-trainable + deterministic ⇒ identical forward pass AND gradients, so this relocates the transform without changing the training math. **`scale_**2` not `var_`**: `scale_` carries sklearn's zero-variance guard. What CANNOT move into the model is the input column ORDER (applied positionally, unverifiable by the model) — it ships as `<base>_metadata.json` for consumers to assert against. |
 
 **Two load-bearing guardrails for Stage C:**
-1. **Leakage is now possible.** The CV-leakage verdict ("safe because no scaler exists") no longer auto-holds. `fit` MUST be on `x_train` only; add an explicit assert/test proving val/test are transform-only.
-2. **`--scale` changes the digest.** With scaling on, the fit-input arrays are standardized, so digest `d80ae54…` only covers the UNSCALED path. Freeze a SECOND golden baseline for the scaled path — do not overwrite the first.
+1. **Leakage is now possible.** The CV-leakage verdict ("safe because no scaler exists") no longer auto-holds. `fit` MUST be on `x_train` only; `fit_scaler()` asserts this explicitly (single fit site).
+2. **`--scale` changes the digest.** Freeze a SECOND golden baseline for the scaled path — do not overwrite the first. **Re-frozen under C4:** the scaled path's fit inputs are now RAW, so the array digests no longer distinguish scaled from unscaled; the scaler's `mean`/`variance` are folded into the config payload instead, so a change to the scaler still moves the digest.
+3. **Two models that look alike must not be confusable.** A model with the layer takes raw inputs; one without takes scaled inputs. Same shape, same file extension, silently different. Retrofitted models are named `<base>_rawinput.keras`, and `metadata.json` records `"scaling": "in_graph" | "none"`.
 
 ## 7. Migration strategy: strangler fig (keep it runnable the whole time)
 
@@ -251,7 +252,7 @@ esb/
     read.py  features.py  clean.py  split.py  reshape.py
     scale.py  model.py  train.py  evaluate.py  infer.py
   io/
-    results.py      # write_predictions, save_model, save_scaler, write_metrics
+    results.py      # write_predictions, save_model, save_model_metadata, write_metrics
                     # → calls run_provenance.write_provenance() automatically
   profiles/         # named configs: mse_12h.txt, crps_120h.txt, ...
   gui/              # FUTURE capstone: schema-driven form over the same Config
