@@ -1,11 +1,12 @@
 """Typed stage contracts — the only things passed between pipeline stages.
 
-Stage C introduces the first two (design doc §4, decision C3): ``Arrays`` (the raw
-x/y arrays out of ``reshape``) and ``ScaledArrays`` (post-``scale``, carrying the
-fitted ``scaler`` — ``None`` when scaling is off). They REPLACE the legacy
-variable-length return of ``preparingData`` (10 values unscaled / 11 when scaled):
-the esb path is now always ``Arrays -> ScaledArrays``, with the scaler a *field*
-rather than an extra positional that appears and disappears.
+Stage C introduces ``Arrays`` (design doc §4, decision C3) — the raw x/y arrays
+out of ``reshape``. It REPLACES the legacy variable-length return of
+``preparingData`` (10 values unscaled / 11 when scaled) with one fixed shape.
+
+There is no ``ScaledArrays``: the scale stage fits a scaler but does not
+transform, because scaling moved into the model as a frozen Normalization layer.
+Arrays are raw from ``reshape`` all the way to ``model.fit``.
 
 Behavior-preservation: ``Arrays.from_preparing_data`` accepts the existing 10-tuple
 unchanged, so nothing in ``preparingData`` (or its other callers, or the Stage B
@@ -68,29 +69,7 @@ class Arrays:
         )
 
 
-@dataclass
-class ScaledArrays:
-    """Arrays after the scale stage. ``scaler`` is ``None`` when scaling is off.
-
-    Same six x/y arrays as :class:`Arrays` (x already standardized when
-    ``scaler`` is not None), plus the fitted scaler so the io site can persist it
-    and the infer stage can apply the SAME transform to the independent year.
-    The auxiliary date/air-temp fields pass through untouched.
-    """
-
-    x_train: np.ndarray
-    y_train: np.ndarray
-    x_val: np.ndarray
-    y_val: np.ndarray
-    x_test: np.ndarray
-    y_test: np.ndarray
-    scaler: Any = None
-    training_dates: Any = field(default_factory=list)
-    validation_dates: Any = field(default_factory=list)
-    testing_dates: Any = field(default_factory=list)
-    testing_air_temps: Any = field(default_factory=list)
-
-    @property
-    def scaled(self) -> bool:
-        """True when a scaler was fitted (scaling was on)."""
-        return self.scaler is not None
+# ScaledArrays was DELETED along with scale_arrays(). Scaling now happens
+# inside the model (a frozen Normalization layer), so no stage produces
+# "arrays that have been standardized" any more. The scale stage returns a
+# fitted scaler; the arrays stay raw all the way to model.fit.

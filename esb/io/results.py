@@ -33,20 +33,78 @@ def finalize_run(output_dir: str | Path, resolved_config: dict[str, Any],
     return _write_provenance()(str(output_dir), resolved_config, filename=filename)
 
 
-def save_scaler(save_dir: str | Path, base_name: str, scaler: Any) -> str | None:
-    """Persist a fitted scaler as ``<base_name>_scaler.joblib`` (single site).
+def save_model_metadata(save_dir: str | Path, base_name: str, *,
+                        feature_names: list[str] | None,
+                        config: dict[str, Any],
+                        scaling: str,
+                        input_width: int | None = None,
+                        history: dict[str, Any] | None = None) -> str:
+    """Write ``<base_name>_metadata.json`` next to the ``.keras`` (single site).
 
-    The ONE place a scaler is written, so it always lands next to the ``.keras``
-    it belongs to (same ``base_name``) and can never drift from its model. A
-    ``None`` scaler (scaling off) is a no-op and returns ``None`` — the contract
-    stays uniform whether or not scaling ran. Returns the path written.
+    This is the artifact that replaces ``_scaler.joblib``. The scaler's NUMBERS
+    now live inside the model (frozen Normalization layer), but two things still
+    cannot live in the model and so must ship beside it:
+
+      * ``feature_names`` - the input COLUMN ORDER. The Normalization layer
+        applies mean/scale positionally and cannot detect a reordered matrix, so
+        a wrong order is silently wrong. Consumers assert against this list.
+      * ``input_width`` - the cheap count guard (wrong width fails loudly).
+
+    Plus the per-model provenance needed to resolve this artifact back to the
+    run that made it. NOTE this is per-MODEL scope; ``run_provenance*.json``
+    stays, since the campaign-level grid fingerprint is a check ACROSS models
+    that no per-model file can perform.
+
+    ``history`` is the Keras training history (per-epoch metric lists). It used
+    to be its own ``<base_name>_history.json``; it lives here now so one model is
+    one model file plus one sidecar, not three. It sits under a single top-level
+    ``"history"`` key so it stays trivially separable if a campaign ever grows
+    large enough to want the curves in one columnar file instead.
     """
-    if scaler is None:
-        return None
-    import joblib
+    import json
 
     save_dir = Path(save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
-    out_path = save_dir / f"{base_name}_scaler.joblib"
-    joblib.dump(scaler, out_path)
+
+    payload = {
+        "schema_version": 1,
+        "base_name": base_name,
+        "scaling": scaling,               # "in_graph" | "none"
+        "precision_note": "predictions are degrees C; sensor accuracy ~0.1 C",
+        # Prefer a width measured from the artifact (the wrap path knows it from
+        # scaler.n_features_in_) over one merely derived from the name list.
+        "input_width": (input_width if input_width is not None
+                        else (len(feature_names) if feature_names else None)),
+        "feature_names": feature_names,
+        "feature_order_note": (
+            "Feed model inputs in EXACTLY this column order. The model scales "
+            "internally; pass RAW values. Order is positional and unverifiable "
+            "by the model - assert against this list before predicting."
+        ),
+        "provenance": {
+            k: config.get(k) for k in (
+                "model_type", "lead_time", "cycle", "activation", "num_layers",
+                "neurons", "dropout", "run_num", "input_structure",
+                "atp_hours_back", "wtp_hours_back", "pred_atp_interval",
+                "input_hours_forecast",
+            )
+        },
+    }
+    if history is not None:
+        payload["history"] = history
+
+    out_path = save_dir / f"{base_name}_metadata.json"
+    with open(out_path, "w") as fh:
+        json.dump(payload, fh, indent=2)
     return str(out_path)
+
+
+# save_scaler() was DELETED here. The pipeline no longer persists a sklearn
+# scaler beside the model: its statistics are frozen into the model's own
+# Normalization layer, so the .keras is self-contained and there is no sidecar
+# for a consumer to locate, pair and apply correctly. What still ships beside the
+# model is save_model_metadata() above — the column ORDER, which the model cannot
+# check for itself.
+#
+# Scalers already on disk from earlier campaigns are untouched;
+# scripts/wrap_models_with_scaler.py reads them to upgrade those models.

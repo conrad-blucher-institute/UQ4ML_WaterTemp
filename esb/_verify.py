@@ -91,14 +91,19 @@ def compute_fit_inputs(config: Config) -> dict:
     x_val = np.asarray(getattr(X_val, "values", X_val), dtype=float)
     y_val = np.asarray(getattr(y_val, "values", y_val), dtype=float)
 
-    # Apply the scale stage exactly as mape_tuner._train_model does, so the scaled
-    # baseline's digest reflects the STANDARDIZED fit inputs (C1 guardrail).
+    # Mirror mape_tuner._train_model exactly. Since scaling moved INTO the model
+    # (frozen Normalization layer), the tuner fits on RAW arrays — so the digest
+    # must cover raw arrays too, or this verifier stops verifying the thing it
+    # claims to. The scaler still gets fitted (same leakage-checked call) and its
+    # statistics are folded into the config payload below, so a change to the
+    # scaler still moves the digest.
+    norm_stats = None
     if config.scale:
         from esb.contracts import Arrays
-        from esb.stages.scale import scale_arrays
-        scaled = scale_arrays(Arrays.from_preparing_data(data), enabled=True)
-        x_train, y_train = scaled.x_train, scaled.y_train
-        x_val, y_val = scaled.x_val, scaled.y_val
+        from esb.stages.scale import fit_scaler, normalization_stats
+        _scaler = fit_scaler(Arrays.from_preparing_data(data).x_train)
+        _mean, _var = normalization_stats(_scaler)
+        norm_stats = {"norm_mean": _mean.tolist(), "norm_variance": _var.tolist()}
 
     batch_size = config.batch_size if config.batch_size is not None else int(x_train.shape[0])
 
@@ -115,10 +120,16 @@ def compute_fit_inputs(config: Config) -> dict:
         "learning_rate": config.learning_rate,
     }
     # Only record scale when ON, so the UNSCALED payload stays byte-identical to
-    # the Stage B baseline and reproduces digest d80ae54 exactly (C1). The scaled
-    # path's difference is already captured by the standardized array digests.
+    # the Stage B baseline and reproduces digest d80ae54 exactly (C1).
+    #
+    # The scaled path's arrays are now RAW (the model scales in-graph), so the
+    # array digests no longer distinguish scaled from unscaled. The scaler's
+    # statistics carry that difference instead — they are part of the model that
+    # gets built, so a change in them is a change in the run.
     if config.scale:
         config_payload["scale"] = True
+        if norm_stats is not None:
+            config_payload.update(norm_stats)
 
     payload = {
         "config": config_payload,

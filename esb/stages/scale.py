@@ -1,26 +1,32 @@
-"""scale stage — the first truly cohesive stage (Stage C, decision C1/C2/C3).
+"""scale stage — fits the scaler; the MODEL applies it (Stage C, decision C1/C2/C3).
 
 Reconciles the two pre-existing StandardScaler implementations into one
 leakage-safe, opt-in stage (design doc §6). The scaling LOGIC is lifted from
-``origin/esb_dev_normalization`` (``StandardScaler`` fit-on-train-only); the
-inference half lives in ``infer`` (``prepare_independent_year(scaler=, column_map=)``).
+``origin/esb_dev_normalization`` (``StandardScaler`` fit-on-train-only).
 
-Contract: ``Arrays -> ScaledArrays + scaler``.
+Contract: ``Arrays -> scaler``. The stage no longer transforms anything. Its
+statistics become a **frozen** ``keras.layers.Normalization`` layer inside the
+model, so the arrays reaching ``model.fit`` are RAW and the saved ``.keras``
+scales its own inputs. That is what makes the artifact self-contained: no
+``_scaler.joblib`` for a consumer to locate, pair with the right model, and apply
+in the right column order.
+
+Because the layer is non-trainable and deterministic, this is a relocation of the
+transform, not a change to the training math — same forward pass, same gradients.
 
 Guardrails (design doc §6):
-  * **Leakage is now possible.** ``fit`` runs on ``x_train`` ONLY; ``x_val`` and
-    ``x_test`` are transform-only. :func:`scale_arrays` asserts this explicitly
-    (``scaler.mean_`` must equal the training-set column means), so a future edit
-    that accidentally fits on more than the training data fails loudly.
-  * **Opt-in, OFF by default (C1).** ``enabled=False`` returns the same arrays
-    with ``scaler=None`` — byte-identical to the unscaled path, so the Stage B
-    golden digest d80ae54… stays valid.
+  * **Leakage is now possible.** ``fit`` runs on ``x_train`` ONLY. :func:`fit_scaler`
+    asserts this explicitly (``scaler.mean_`` must equal the training-set column
+    means), so a future edit that accidentally fits on more than the training data
+    fails loudly.
+  * **Opt-in, OFF by default (C1).** With scaling off no scaler is fitted and no
+    layer is added — byte-identical to the unscaled path, so the Stage B golden
+    digest d80ae54… stays valid.
+  * **``variance = scale_ ** 2``, never ``var_``** — see :func:`normalization_stats`.
 """
 from __future__ import annotations
 
 import numpy as np
-
-from esb.contracts import Arrays, ScaledArrays
 
 
 def _assert_fit_on_train_only(scaler, x_train: np.ndarray) -> None:
@@ -45,44 +51,38 @@ def _assert_fit_on_train_only(scaler, x_train: np.ndarray) -> None:
         )
 
 
-def scale_arrays(arrays: Arrays, enabled: bool) -> ScaledArrays:
-    """Fit a StandardScaler on ``x_train`` only, transform train/val/test.
+def fit_scaler(x_train: np.ndarray):
+    """Fit a StandardScaler on ``x_train`` and leakage-check it. Single fit site.
 
-    Args:
-        arrays: reshape-stage output (raw, unscaled).
-        enabled: when False (the default everywhere), this is an identity
-            passthrough returning the same arrays with ``scaler=None``.
-
-    Returns:
-        ScaledArrays — x arrays standardized (when enabled), the fitted scaler
-        (or None), and the auxiliary date/air-temp fields unchanged.
+    The ONE place a scaler is fitted. Callers (the tuner and the golden-digest
+    verifier) get the leakage guard for free; nobody transforms arrays, because
+    the model's Normalization layer does that in-graph.
     """
-    common = dict(
-        y_train=arrays.y_train, y_val=arrays.y_val, y_test=arrays.y_test,
-        training_dates=arrays.training_dates,
-        validation_dates=arrays.validation_dates,
-        testing_dates=arrays.testing_dates,
-        testing_air_temps=arrays.testing_air_temps,
-    )
-
-    if not enabled:
-        return ScaledArrays(
-            x_train=arrays.x_train, x_val=arrays.x_val, x_test=arrays.x_test,
-            scaler=None, **common,
-        )
-
     from sklearn.preprocessing import StandardScaler
 
     scaler = StandardScaler()
-    scaler.fit(arrays.x_train)                 # TRAIN ONLY — never val/test
-    _assert_fit_on_train_only(scaler, arrays.x_train)
+    scaler.fit(x_train)                        # TRAIN ONLY — never val/test
+    _assert_fit_on_train_only(scaler, x_train)
+    return scaler
 
-    x_train = scaler.transform(arrays.x_train)
-    # Empty val/test frames (e.g. some edge configs) have 0 columns; guard the
-    # transform so an empty array doesn't trip sklearn's feature-count check.
-    x_val = scaler.transform(arrays.x_val) if arrays.x_val.size else arrays.x_val
-    x_test = scaler.transform(arrays.x_test) if arrays.x_test.size else arrays.x_test
 
-    return ScaledArrays(
-        x_train=x_train, x_val=x_val, x_test=x_test, scaler=scaler, **common,
-    )
+def normalization_stats(scaler) -> tuple[np.ndarray, np.ndarray]:
+    """``(mean, variance)`` for a ``keras.layers.Normalization`` built from ``scaler``.
+
+    Keras computes ``(x - mean) / max(sqrt(variance), epsilon)``. Squaring
+    ``scale_`` — NOT returning ``var_`` — is what makes that identical to
+    ``StandardScaler.transform``: ``scale_`` carries sklearn's zero-variance
+    guard (a constant feature gets ``scale_ = 1.0``, while ``var_`` stays 0.0,
+    which would divide by ~epsilon and blow the feature up).
+    """
+    mean = np.asarray(scaler.mean_, dtype="float32")
+    variance = np.asarray(scaler.scale_, dtype="float32") ** 2
+    return mean, variance
+
+
+# scale_arrays() was DELETED. It fitted a scaler and transformed the arrays,
+# returning ScaledArrays. Scaling now happens INSIDE the model (a frozen
+# Normalization layer built from fit_scaler + normalization_stats above), so the
+# arrays that reach model.fit are raw and there is nothing left to transform. The
+# stage contract is therefore ``Arrays -> scaler`` rather than
+# ``Arrays -> ScaledArrays``; ScaledArrays went with it.

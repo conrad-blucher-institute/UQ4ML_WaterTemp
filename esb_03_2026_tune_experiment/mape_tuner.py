@@ -74,6 +74,37 @@ class MAPETuner(BaseHyperparameterTuner):
         from tensorflow.keras.layers import Input
         model.add(Input(shape=input_shape))
 
+        # In-graph scaling: when the scale stage fitted a scaler, its statistics
+        # become a FROZEN Normalization layer here instead of being applied to the
+        # arrays beforehand. The model then consumes RAW inputs and standardizes
+        # them itself, so the .keras is self-contained (no _scaler.joblib for the
+        # consumer to locate, pair and apply correctly).
+        #
+        # The layer is non-trainable and deterministic, so the forward pass AND
+        # the gradients are identical to pre-transforming the arrays -- this is a
+        # relocation of the transform, not a change to the training math.
+        norm_mean = config.get('norm_mean')
+        norm_variance = config.get('norm_variance')
+        if (norm_mean is None) != (norm_variance is None):
+            raise ValueError(
+                'norm_mean and norm_variance must be provided together '
+                f'(got mean={norm_mean is None and "None" or "set"}, '
+                f'variance={norm_variance is None and "None" or "set"})'
+            )
+        if norm_mean is not None:
+            import numpy as _np
+            from tensorflow.keras.layers import Normalization
+            mean_arr = _np.asarray(norm_mean, dtype='float32')
+            var_arr = _np.asarray(norm_variance, dtype='float32')
+            # Loud guard: a scaler fitted on a different feature count than the
+            # model's input would otherwise broadcast or fail deep inside Keras.
+            if mean_arr.shape[-1] != input_shape[-1]:
+                raise ValueError(
+                    f'scaler width {mean_arr.shape[-1]} != model input width '
+                    f'{input_shape[-1]} -- the scaler does not belong to this model'
+                )
+            model.add(Normalization(axis=-1, mean=mean_arr, variance=var_arr))
+
         # Add hidden layers, each optionally followed by a dropout layer
         for _ in range(num_layers):
             model.add(Dense(units=neurons, activation=activation))
@@ -152,8 +183,11 @@ class MAPETuner(BaseHyperparameterTuner):
             # store as list for JSON-serializable configs
             config['input_shape'] = list(input_shape)
 
-        # Now build the model (with injected input shape) from preview
-        model = self._build_model(config)
+        # NOTE: the model is NOT built here any more. It is built ONCE further
+        # down, after the scale stage has fitted the scaler, because the frozen
+        # Normalization layer needs its mean/variance at construction time.
+        # (This previously built here and then rebuilt below, discarding the
+        # first model.)
 
         # Get the actual training/validation data. Reuse the earlier preview
         # if available to avoid duplicate work; otherwise call preparingData().
@@ -183,25 +217,35 @@ class MAPETuner(BaseHyperparameterTuner):
             raise RuntimeError(f'Error unpacking data from preparingData(): {e}')
 
         # --- scale stage (Stage C, decision C1; opt-in via config['scale']) ----
-        # OFF by default -> identity passthrough, byte-identical to the unscaled
-        # path (the Stage B golden digest d80ae54 stays valid). ON -> fit a
-        # StandardScaler on x_train ONLY (leakage-checked inside scale_arrays) and
-        # transform train/val/test with it. The fitted scaler is persisted next to
-        # the .keras (single io site) and reused for the 2021 inference below, so
-        # the independent year is scaled identically to training.
+        # OFF by default -> nothing happens, byte-identical to the unscaled path
+        # (the Stage B golden digest d80ae54 stays valid).
+        #
+        # ON -> fit a StandardScaler on x_train ONLY (leakage-checked inside
+        # fit_scaler) and hand its statistics to the model as a frozen
+        # Normalization layer. The ARRAYS ARE LEFT RAW on purpose: the model now
+        # performs the transform in-graph, so the saved .keras is self-contained
+        # and the consumer never applies a scaler by hand.
+        #
+        # Consequence to be aware of: the fit inputs are now raw rather than
+        # standardized, so the scaled-path golden digest legitimately changes and
+        # must be re-frozen deliberately.
         fitted_scaler = None
         if config.get('scale', False):
             from esb.contracts import Arrays
-            from esb.stages.scale import scale_arrays
+            from esb.stages.scale import fit_scaler, normalization_stats
             if len(data) < 6:
                 raise RuntimeError(
                     'scale=True requires preparingData to return the full 6 arrays'
                 )
-            scaled = scale_arrays(Arrays.from_preparing_data(data), enabled=True)
-            fitted_scaler = scaled.scaler
-            x_train = scaled.x_train
-            y_train = scaled.y_train
-            validation = (scaled.x_val, scaled.y_val)
+            arrays = Arrays.from_preparing_data(data)
+            fitted_scaler = fit_scaler(arrays.x_train)
+            mean, variance = normalization_stats(fitted_scaler)
+            # Consumed by _build_model below to construct the frozen layer.
+            # Stored as plain lists, not ndarrays: config dicts get JSON-dumped
+            # into provenance/progress records and numpy arrays are not
+            # serializable.
+            config['norm_mean'] = mean.tolist()
+            config['norm_variance'] = variance.tolist()
 
         # Determine input shape and batch size from the actual data (ensures correctness)
         try:
@@ -215,10 +259,19 @@ class MAPETuner(BaseHyperparameterTuner):
 
         print(f"  DEBUG x_train.shape={getattr(x_train, 'shape', '?')}, inferred input_shape={input_shape}")
 
-        if input_shape is not None:
-            # update config and rebuild model if needed
-            config['input_shape'] = list(input_shape)
-            model = self._build_model(config)
+        # Build the model ONCE, here: input width is known from the real arrays
+        # and (when scaling is on) the Normalization statistics are in config.
+        # A missing input_shape used to fall through silently and reuse a model
+        # built from the preview -- which, now that scaling lives in the graph,
+        # would produce an UNSCALED model that still trains and still saves.
+        # Fail loudly instead.
+        if input_shape is None:
+            raise RuntimeError(
+                'could not determine input_shape from x_train; refusing to build '
+                'a model (a silently unscaled model would look identical)'
+            )
+        config['input_shape'] = list(input_shape)
+        model = self._build_model(config)
 
         # Training hyperparameters (allow override in config)
         epochs = int(config.get('epochs'))
@@ -344,9 +397,10 @@ class MAPETuner(BaseHyperparameterTuner):
                 wtp_hours_back=config.get('wtp_hours_back', 24),
                 pred_atp_interval=config.get('pred_atp_interval', 1),
                 IPPOffset=config.get('IPPOffset', 0.0),
-                # Apply the SAME training-fit scaler (None when scaling is off) so
-                # the independent year is scaled exactly like training — no re-fit.
-                scaler=fitted_scaler,
+                # NO scaler here, deliberately. The model now carries a frozen
+                # Normalization layer and scales its own inputs, so the
+                # independent year must arrive RAW — exactly like training did.
+                # Passing the scaler as well would double-scale it, silently.
             )
             if x_2021.shape[0] > 0:
                 eval_results = model.evaluate(x_2021, y_2021, verbose=0)
@@ -376,17 +430,61 @@ class MAPETuner(BaseHyperparameterTuner):
             from tuner_utils import job_base_name
             base_name = job_base_name(config)
             model.save(save_dir / f"{base_name}.keras")
-            with open(save_dir / f"{base_name}_history.json", 'w') as _hf:
-                _json.dump(hist, _hf, default=lambda o: float(o) if hasattr(o, 'item') else str(o))
-            # Persist the fitted scaler next to its .keras (single io site). No-op
-            # when scaling is off (fitted_scaler is None).
+            # Metadata sidecar - the artifact that REPLACES _scaler.joblib. The
+            # scaler's numbers now live in the model; what still has to ship
+            # beside it is the input column ORDER, which the model cannot check.
+            # The training history goes IN here too (no more _history.json), so
+            # one job is one .keras plus one sidecar.
+            #
+            # This block does NOT swallow errors. A .keras whose column order was
+            # never recorded is an unusable artifact that looks fine on disk, so
+            # a metadata failure must fail the job loudly rather than leave a
+            # silently-unusable model behind.
+            from esb.io.results import save_model_metadata
+            from esb.stages.features import feature_names as _feature_names
             try:
-                from esb.io.results import save_scaler
-                scaler_path = save_scaler(save_dir, base_name, fitted_scaler)
-                if scaler_path:
-                    print(f"  saved scaler -> {scaler_path}")
-            except Exception as e:
-                print(f"  WARNING: scaler persistence failed: {e}")
+                _names = _feature_names(
+                    input_structure=config.get('input_structure', 'descending'),
+                    input_hours_forecast=config.get(
+                        'input_hours_forecast', config.get('lead_time')),
+                    atp_hours_back=config.get('atp_hours_back', 24),
+                    wtp_hours_back=config.get('wtp_hours_back', 24),
+                    pred_atp_interval=config.get('pred_atp_interval', 1),
+                )
+            except NotImplementedError as e:
+                # Non-descending structure: ship metadata without a name list
+                # rather than a guessed (silently wrong) one.
+                print(f"  WARNING: no feature-name list written: {e}")
+                _names = None
+            # Width cross-check: the derived contract must agree with the
+            # array the model was actually built from. Disagreement means
+            # feature engineering and config have drifted apart.
+            if _names is not None and len(_names) != int(input_shape[-1]):
+                raise RuntimeError(
+                    f'feature-name contract width {len(_names)} != model input '
+                    f'width {int(input_shape[-1])} - config and feature '
+                    f'engineering disagree'
+                )
+            # Coerce numpy scalars the same way the old _history.json dump did,
+            # since json.dump inside save_model_metadata has no default= hook.
+            _hist = _json.loads(_json.dumps(
+                hist,
+                default=lambda o: float(o) if hasattr(o, 'item') else str(o)))
+            meta_path = save_model_metadata(
+                save_dir, base_name,
+                feature_names=_names,
+                config=config,
+                scaling='in_graph' if fitted_scaler is not None else 'none',
+                history=_hist,
+            )
+            print(f"  saved metadata -> {meta_path}")
+
+            # NOTE: no _scaler.joblib is written any more. The scaler's numbers
+            # live inside the .keras as the frozen Normalization layer, and they
+            # remain recoverable from it if ever needed:
+            #     m, v = model.get_layer(index=0).get_weights()
+            #     mean, scale = m, np.sqrt(v)
+            # so nothing is lost by not persisting the sklearn object.
 
         # Free model and TF session memory to prevent OOM across iterations
         del model, history, x_train, y_train
