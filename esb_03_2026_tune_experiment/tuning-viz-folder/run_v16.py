@@ -14,12 +14,17 @@ V16 changes:
 import argparse
 import glob
 import sys
+import traceback
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 import pandas as pd
 from tuning_viz.data_loader import TuningResultsLoader
-from tuning_viz.plot_types.unified_plot_v15 import plot_unified_v15
+# v16 explorer adds on-the-fly Raw/Avg/Avg+Spread aggregation.
+# To revert to the previous behavior, swap this import (and the call below) back
+# to unified_plot_v15 / plot_unified_v15.
+from tuning_viz.plot_types.unified_plot_v17 import plot_unified_v17
+from tuning_viz.plot_types.timeseries_cove import plot_timeseries_cove
 from tuning_viz.plot_types.heatmap_plot_v8 import plot_heatmap_v8
 from tuning_viz.plot_types.top_configs_plot_v12 import plot_top_configs_v12, plot_top10_per_cycle_v12
 from tuning_viz.plot_types.parallel_coords_v8 import plot_parallel_coords_v8
@@ -83,6 +88,18 @@ def load_data(csv_paths, metric_column, test_iterations=0):
     return combined
 
 
+def _safe(label, failures, fn, *args, **kwargs):
+    """Run one plot; if it raises, log the traceback and keep going so the rest
+    of the suite still gets drawn. Records the label of any plot that failed."""
+    print(f"\n--- {label} ---")
+    try:
+        fn(*args, **kwargs)
+    except Exception as e:  # noqa: BLE001 - one bad plot shouldn't abort the run
+        failures.append(label)
+        print(f"[FAILED] {label}: {type(e).__name__}: {e}")
+        traceback.print_exc()
+
+
 def run_v16(data, metric_column, output_dir, results_folder=None):
     print(f"\n{'='*60}")
     print(f"V16 Visualizations: {output_dir}")
@@ -95,35 +112,61 @@ def run_v16(data, metric_column, output_dir, results_folder=None):
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    print("\n--- Unified Explorer (Send to Time Series) ---")
-    plot_unified_v15(data, metric_column, output_dir=output_dir)
+    failures = []
 
-    print("\n--- Heatmaps ---")
-    plot_heatmap_v8(data, metric_column, output_dir=output_dir)
-
-    print("\n--- Top Configs (cycle + leadtime dropdowns) ---")
-    plot_top_configs_v12(data, metric_column, output_dir=output_dir)
-    plot_top10_per_cycle_v12(data, metric_column, output_dir=output_dir)
-
-    print("\n--- Parallel Coordinates ---")
-    plot_parallel_coords_v8(data, metric_column, output_dir=output_dir)
-
-    print("\n--- Iteration Stability ---")
-    plot_iteration_comparison_v8(data, metric_column, output_dir=output_dir)
-
-    print("\n--- Histogram ---")
-    plot_histogram_v1(data, metric_column, output_dir=output_dir)
+    _safe("Unified Explorer (Send to Time Series)", failures,
+          plot_unified_v17, data, metric_column, output_dir=output_dir)
+    _safe("Histogram", failures,
+          plot_histogram_v1, data, metric_column, output_dir=output_dir)
+    _safe("Heatmaps", failures,
+          plot_heatmap_v8, data, metric_column, output_dir=output_dir)
+    _safe("Top Configs (cycle + leadtime dropdowns)", failures,
+          plot_top_configs_v12, data, metric_column, output_dir=output_dir)
+    _safe("Top 10 per cycle", failures,
+          plot_top10_per_cycle_v12, data, metric_column, output_dir=output_dir)
+    _safe("Parallel Coordinates", failures,
+          plot_parallel_coords_v8, data, metric_column, output_dir=output_dir)
+    _safe("Iteration Stability", failures,
+          plot_iteration_comparison_v8, data, metric_column, output_dir=output_dir)
 
     if results_folder:
+        # COVE time series: self-contained page the explorer's Send-to-Time-Series
+        # opens. Needs the wide CSVs from `python -m esb.predict <campaign>`;
+        # skipped (not failed) when they are absent, since most campaigns are
+        # screened on metrics alone and never get predictions generated.
+        wide_dir = Path(results_folder) / 'predictions_wide'
+        # Two layouts are valid: loose *_wide.csv (one combined page), or LT<n>/
+        # subfolders from `esb.predict --split-by-leadtime` (one page per lead
+        # time). Checking only the first would SKIP the split layout while
+        # printing "run esb.predict first" at someone who just did.
+        has_loose = wide_dir.is_dir() and any(wide_dir.glob('*_wide.csv'))
+        has_split = wide_dir.is_dir() and any(
+            p.is_dir() and any(p.glob('*_wide.csv'))
+            for p in wide_dir.glob('LT*'))
+        if has_loose or has_split:
+            # datasets=None: bake whatever esb.predict produced, so this never
+            # drifts out of step with what was actually generated.
+            # split_by_leadtime=None: let it read the layout off disk too.
+            _safe("COVE Time Series (embedded predictions)", failures,
+                  plot_timeseries_cove, results_folder,
+                  output_dir=output_dir, datasets=None)
+        else:
+            print(f"\n--- COVE Time Series: SKIPPED (no {wide_dir}, "
+                  f"run `python -m esb.predict {results_folder}` first) ---")
+
         pred_dir = str(Path(results_folder) / 'predictions')
         if Path(pred_dir).exists() and (Path(pred_dir) / '_index.csv').exists():
-            print("\n--- Time Series Comparison (v16) ---")
-            plot_timeseries_compare_v16(pred_dir, output_dir=output_dir)
+            _safe("Time Series Comparison (v16)", failures,
+                  plot_timeseries_compare_v16, pred_dir, output_dir=output_dir)
         else:
             print("\n--- Time Series Comparison: SKIPPED (no predictions/ folder, run generate_predictions.py first) ---")
 
     print(f"\n{'='*60}")
-    print(f"All v16 plots saved to: {output_dir}")
+    if failures:
+        print(f"v16 plots saved to: {output_dir}")
+        print(f"{len(failures)} plot(s) FAILED (see tracebacks above): {', '.join(failures)}")
+    else:
+        print(f"All v16 plots saved to: {output_dir}")
     print(f"{'='*60}")
 
 
@@ -152,7 +195,8 @@ if __name__ == "__main__":
     else:
         folder = pick_folder()
     csv_paths = discover_csvs(folder)
-    output_dir = str(folder.parent / f"{folder.name}_visuals")
+    # Put the visuals INSIDE the selected results folder (was a sibling folder).
+    output_dir = str(folder / "_visuals")
 
     print(f"Found CSVs: {[Path(p).name for p in csv_paths]}")
     print(f"Output dir: {output_dir}")

@@ -65,12 +65,25 @@ def pick_folder():
 def parse_keras_filename(name):
     """Parse model config from filename.
 
-    Pattern: {type}_{lt}h_cycle{c}_{activation}_{layers}L_{neurons}N_run{r}.keras
-    Example: MAPE_12h_cycle0_leaky_relu_1L_100N_run1.keras
+    Pattern: {type}_{lt}h_cycle{c}_{activation}_{layers}L_{neurons}N[_d{dropout}]_run{r}[_rawinput].keras
+    Example: MAPE_12h_cycle0_leaky_relu_1L_100N_d0.0_run1_rawinput.keras
+
+    BANDAGE (see TODO below). The two optional segments were both added after
+    this parser was written, and without them EVERY modern artifact failed to
+    parse and was skipped, so the script produced nothing on any dropout-era
+    campaign. Both are now parsed and dropout participates in the metrics-join
+    key, since two models differing only in dropout are different models.
+
+    TODO: delete this function. Identity belongs in <base>_metadata.json, not in
+    filenames that every consumer re-parses - which is exactly why adding the
+    dropout axis broke this. The metadata-driven rewrite is the real fix.
     """
     stem = Path(name).stem  # strip .keras
+    if stem.endswith('_rawinput'):
+        # Wrapped (raw-input) model. Same identity, different input convention.
+        stem = stem[: -len('_rawinput')]
     m = re.match(
-        r'^(\w+?)_(\d+)h_cycle(\d+)_(.+?)_(\d+)L_(\d+)N_run(\d+)$',
+        r'^(\w+?)_(\d+)h_cycle(\d+)_(.+?)_(\d+)L_(\d+)N(?:_d([\d.]+))?_run(\d+)$',
         stem
     )
     if not m:
@@ -82,7 +95,9 @@ def parse_keras_filename(name):
         'activation': m.group(4),
         'num_layers': int(m.group(5)),
         'neurons': int(m.group(6)),
-        'run_num': int(m.group(7)),
+        # Pre-dropout campaigns have no _d segment; those runs were all dropout 0.
+        'dropout': float(m.group(7)) if m.group(7) is not None else 0.0,
+        'run_num': int(m.group(8)),
         'basename': stem,
     }
 
@@ -302,12 +317,20 @@ def main(folder):
             for _, row in pdf.iterrows():
                 if str(row.get('status', '')).strip() != 'completed':
                     continue
-                # Build the same basename the tuner uses
+                # Key on the PARSED fields, not on a reconstructed filename.
+                # String-building the name here is what let the two sides drift
+                # apart when the dropout axis was added: the models grew a _d
+                # segment and this key did not, so every lookup silently missed
+                # and the metric columns came out blank with no error.
                 key = (
-                    f"{row.get('model_type', 'MAPE')}_{int(row.get('leadtime', 0))}h"
-                    f"_cycle{int(row.get('cycle', 0))}_{row.get('activation', '')}"
-                    f"_{int(row.get('num_layers', 0))}L_{int(row.get('neurons', 0))}N"
-                    f"_run{int(row.get('run_num', 1))}"
+                    str(row.get('model_type', 'MAPE')),
+                    int(row.get('leadtime', 0)),
+                    int(row.get('cycle', 0)),
+                    str(row.get('activation', '')),
+                    int(row.get('num_layers', 0)),
+                    int(row.get('neurons', 0)),
+                    float(row.get('dropout', 0.0) or 0.0),
+                    int(row.get('run_num', 1)),
                 )
                 metrics_lookup[key] = {
                     'val_mae': row.get('val_mae', None),
@@ -331,9 +354,18 @@ def main(folder):
             'neurons': cfg['neurons'],
             'leadtime': cfg['leadtime'],
             'cycle': cfg['cycle'],
+            'dropout': cfg['dropout'],
             'run_num': cfg['run_num'],
         }
-        m = metrics_lookup.get(cfg['basename'], {})
+        key = (cfg['model_type'], cfg['leadtime'], cfg['cycle'],
+               cfg['activation'], cfg['num_layers'], cfg['neurons'],
+               cfg['dropout'], cfg['run_num'])
+        m = metrics_lookup.get(key, {})
+        if not m:
+            # Loud, not blank. A missing metrics row used to show up only as
+            # empty columns in _index.csv, which reads like "no metrics" rather
+            # than "the join is broken".
+            print(f"  WARNING: no progress-CSV metrics row for {cfg['basename']}")
         row.update(m)
         index_rows.append(row)
 
