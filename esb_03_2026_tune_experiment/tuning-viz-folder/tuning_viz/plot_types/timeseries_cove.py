@@ -316,6 +316,7 @@ PAGE = """<meta charset="utf-8">
       <legend>Reps</legend>
       <label><input type="checkbox" id="showReps" checked> show individual reps</label>
       <label><input type="checkbox" id="showMean" checked> show mean</label>
+      <label><input type="checkbox" id="soloReps"> toggle each rep separately</label>
     </fieldset>
     <fieldset>
       <legend>Notes</legend>
@@ -357,6 +358,13 @@ function build() {
   }];
 
   // DATA.order already puts favorites last, so they are drawn on top.
+  const solo = $('soloReps').checked;
+  // With a single combo on screen there is no combo-vs-combo comparison
+  // left to encode, so the shared colour is free for a more useful job:
+  // telling the reps apart. With several combos selected the reps MUST
+  // stay one colour per combo, otherwise the band that shows the spread
+  // stops reading as a band.
+  const colorByRep = selected.size === 1;
   for (const label of DATA.order) {
     if (!selected.has(label)) continue;
     const combo = DATA.combos[label];
@@ -372,10 +380,22 @@ function build() {
         // Each rep is its own visible, legend-listed trace: the point of showing
         // reps is to read the spread between them, so they are drawn solid and
         // only lightly faded. The mean is what gets the heavier line below.
+        // run numbers start at 1; the palette wraps if a campaign ever has
+        // more reps than colours.
+        const repColor = colorByRep
+          ? palette[(Number(run) - 1) % palette.length] : color;
         traces.push({
           x: ds.x, y: byDs[dataset], name: nameBase + ' run' + run,
-          mode: 'lines', legendgroup: label, opacity: 0.55,
-          line: { color: color, width: 1 },
+          // Distinct colours are worth seeing clearly; faded overlapping lines
+          // of one colour are not.
+          mode: 'lines', opacity: colorByRep ? 0.9 : 0.55,
+          // legendgroup ties every rep + the mean of one combo together, so a
+          // legend click toggles the whole combo. Solo mode gives each trace
+          // its OWN group, which is what makes single reps individually
+          // clickable (and double-click-to-isolate work per rep) -- needed to
+          // judge one repetition against the other four.
+          legendgroup: solo ? nameBase + ' run' + run : label,
+          line: { color: repColor, width: colorByRep ? 1.5 : 1 },
           hovertemplate: '%{y:.2f}C  run' + run + '<extra>' + label + '</extra>'
         });
       }
@@ -386,7 +406,8 @@ function build() {
         name: nameBase + '  (mean of ' + combo.n_reps + ')',
         // Favorites stay solid. They are still called out by the star in the
         // legend, a heavier line, and being drawn last (on top).
-        mode: 'lines', legendgroup: label,
+        mode: 'lines',
+        legendgroup: solo ? nameBase + ' mean' : label,
         line: { color: color, width: fav ? 3 : 2 },
         hovertemplate: '%{y:.2f}C<extra>' + label
           + '<br>mean of ' + combo.n_reps + ' reps' + noteText + '</extra>'
@@ -495,6 +516,7 @@ function init() {
   $('clear').onclick = () => { selected.clear(); syncCombos(); build(); };
   $('showReps').onchange = build;
   $('showMean').onchange = build;
+  $('soloReps').onchange = build;
   $('showNotes').onchange = toggleNotes;
   applyExplorerSelection();
   syncCombos();
