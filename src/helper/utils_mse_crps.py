@@ -256,39 +256,74 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 
     return x_train, y_train, x_val, y_val, x_test, y_test, training_dates, validation_dates, testingDates, testingAirTemps
 
-'''  
--------------------------------------------------------------------------
-                            def readingData
-input:
-        path_to_data - a path to the folder that contains the csv files                        
-purpose:
-        find all of the csv files from the given path and sort them.
-        print the number of files found, and their names. 
-        set the first file aside for independent testing year.
-        load each csv file into a dataframe and store them in a list.
-output: 
-        data_list - a list of dataframes for each year 
-------------------------------------------------------------------------- '''
-def readingData(path_to_data):
 
+
+
+
+
+
+# Year roles declared by NAME, not by sort order. These used to be positional
+# (sorted glob: [0] independent, [1:] rotation), so a 6th file -- or a missing
+# one -- silently shifted every year into the wrong role, with no error.
+#
+# ORDER-SENSITIVE: this is year2..year5, and splittingData rotates the list to
+# derive train/val/test per cycle. Reordering changes every cycle's split.
+ESB_ROTATION_YEARS = (
+    "esb_2021_2022",
+    "esb_2022_2023",
+    "esb_2023_2024",
+    "esb_2024_2025",
+)
+
+# Held out of the rotation entirely. Winter Storm Uri.
+ESB_INDEPENDENT_YEARS = ("esb_2020_2021",)
+
+
+def readingData(path_to_data, rotation_years=None):
+    '''
+    -------------------------------------------------------------------------
+                                def readingData
+    input:
+            path_to_data - folder containing the year CSVs
+            rotation_years - ordered year names (no .csv) for year2..year5.
+                             Defaults to ESB_ROTATION_YEARS.
+    purpose:
+            load the NAMED years, in the order given. Files in the folder
+            that are not named get ignored; a named file that is missing
+            is an error.
+    output:
+            data_list - one dataframe per name in rotation_years
+    -------------------------------------------------------------------------
+    '''
 
     import os
     import glob
     import pandas as pd
 
-    # find all CSV files and sort them 
+    if rotation_years is None:
+        rotation_years = ESB_ROTATION_YEARS
+
+    # Key each CSV by its filename stem: a year is found by NAME, not position.
     csv_files = sorted(glob.glob(os.path.join(path_to_data, "*.csv")))
+    
+    # dict comprehension that builds a lookup table mapping year name → full path
+    by_name = {os.path.splitext(os.path.basename(f))[0]: f for f in csv_files}
 
-    print(f"Found {len(csv_files)} CSV files.")
-    print("Files:", [os.path.basename(f) for f in csv_files])
+    missing = set(rotation_years) - set(by_name)
+    if missing:
+        raise FileNotFoundError(
+            f"rotation year(s) {sorted(missing)} not found in {path_to_data}. "
+            f"Present: {sorted(by_name)}"
+        )
 
-    # skip the first file; the first is our winter storm uri independent testing year
-    csv_files_to_read = csv_files[1:]
+    # Ignoring unnamed files is what lets esb_2025_2026 sit in this folder
+    # harmlessly -- but say so, since ignored must never mean silently dropped.
+    ignored = sorted(set(by_name) - set(rotation_years))
+    print(f"Found {len(csv_files)} CSVs. Rotation: {list(rotation_years)}")
+    if ignored:
+        print("Ignored (not in rotation):", ignored)
 
-    # Load each CSV into a DataFrame
-    data_list = [pd.read_csv(f) for f in csv_files_to_read]
-
-    return data_list
+    return [pd.read_csv(by_name[name]) for name in rotation_years]
 
 # r treats this string as a RAW STRING 
 r'''  
