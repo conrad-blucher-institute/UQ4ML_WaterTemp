@@ -90,6 +90,28 @@ def save_model_metadata(save_dir: str | Path, base_name: str, *,
             )
         },
     }
+
+    # Which YEAR played which role. Optional: campaigns that use the plain
+    # rotation omit it, and its absence means "the standard split for this
+    # cycle". A campaign that reassigns years -- phase 5 folds the old test year
+    # and the independent 2020-21 year INTO training -- must say so here,
+    # because nothing else in the artifact records it and the alternative is a
+    # human remembering which k-fold chart applies to which folder.
+    roles = config.get("dataset_roles")
+    if roles:
+        payload["dataset_roles"] = dict(roles)
+        payload["training_datasets"] = sorted(
+            y for y, r in roles.items() if r == "train")
+        payload["dataset_roles_note"] = (
+            "Year -> role for THIS model. Roles other than the standard "
+            "rotation mean metrics computed on a folded-in year are IN-SAMPLE "
+            "and are not comparable across campaigns."
+        )
+    if config.get("metrics_are_in_sample"):
+        payload["metrics_are_in_sample"] = True
+    if config.get("phase"):
+        payload["phase"] = config["phase"]
+
     if history is not None:
         payload["history"] = history
 

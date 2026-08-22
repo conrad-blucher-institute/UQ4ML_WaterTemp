@@ -120,6 +120,24 @@ class MAPETuner(BaseHyperparameterTuner):
 
         return model
     
+    def _prepare_arrays(self, prep_kwargs: dict, config: dict):
+        """Return preparingData()'s 6-tuple for one job.
+
+        This is a SEAM, not an abstraction: the default body is exactly the
+        call it replaced, so the grid-search path is unchanged. It exists so a
+        runner that trains on a different assembly of the same years (the
+        phase-5 all-data retrain folds test + 2021 into training) can supply
+        its arrays without duplicating this module's build / fit / save path.
+
+        Overriders must return the full 6-tuple in preparingData() order --
+        scale=True asserts len(data) >= 6.
+        """
+        try:
+            from src.helper.utils_mse_crps import preparingData
+        except Exception:
+            from helper.utils_mse_crps import preparingData
+        return preparingData(**prep_kwargs)
+
     def _train_model(self, model, config: dict) -> float:
         """
         Train the MAPE model and return the validation loss.
@@ -167,7 +185,7 @@ class MAPETuner(BaseHyperparameterTuner):
             'verbose': config.get('verbose', 0)
         }
 
-        preview = preparingData(**prep_kwargs)
+        preview = self._prepare_arrays(prep_kwargs, config)
 
         input_shape = None
         if preview is not None:
@@ -192,7 +210,7 @@ class MAPETuner(BaseHyperparameterTuner):
         # Get the actual training/validation data. Reuse the earlier preview
         # if available to avoid duplicate work; otherwise call preparingData().
         if preview is None:
-            data = preparingData(**prep_kwargs)
+            data = self._prepare_arrays(prep_kwargs, config)
         else:
             data = preview
 
