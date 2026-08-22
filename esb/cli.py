@@ -25,6 +25,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Console output is UTF-8 regardless of redirection; see esb/_encoding.py.
+# Must run before anything prints.
+from esb._encoding import force_utf8
+force_utf8()
+
 from esb.config import Config, add_run_arguments, describe
 
 PROFILES_DIR = Path(__file__).resolve().parent / "profiles"

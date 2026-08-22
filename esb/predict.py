@@ -70,6 +70,11 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+# Console output is UTF-8 regardless of redirection; see esb/_encoding.py.
+# Must run before anything prints.
+from esb._encoding import force_utf8
+force_utf8()
+
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
 
