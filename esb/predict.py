@@ -128,17 +128,20 @@ def prepare_splits(lead_time: int, cycle: int):
     return out
 
 
-def prepare_2021(lead_time: int):
-    """Return (X, y, dates) for the independent year."""
+def independent_csv_default() -> str:
+    """The historical default: the first file, sorted. Kept so that omitting
+    --independent-csv reproduces prior runs exactly."""
     import glob
     import os
+    return sorted(glob.glob(os.path.join(_data_path(), "*.csv")))[0]
+
+
+def prepare_2021(lead_time: int, csv_path: str):
+    """Return (X, y, dates) for the independent year held in ``csv_path``."""
     from src.helper.utils_mse_crps import prepare_independent_year
 
-    csv_files = sorted(glob.glob(os.path.join(_data_path(), "*.csv")))
-    # TODO: the independent set is hardcoded to the first file. Parameterizing
-    # this is a separate todo item (needed for the esb_2025_2026 set).
     return prepare_independent_year(
-        csv_path=csv_files[0],
+        csv_path=csv_path,
         input_structure=_INPUT_STRUCTURE,
         lead_time=lead_time,
         atp_hours_back=_ATP_HOURS_BACK,
@@ -156,6 +159,11 @@ def main() -> int:
     ap.add_argument("--datasets", default="2021,test",
                     help=f"comma-separated subset of {','.join(ALL_DATASETS)} "
                          f"(default: 2021,test)")
+    ap.add_argument("--independent-csv", type=Path, default=None,
+                    help="CSV to use as the independent set for the '2021' "
+                         "dataset (default: first file in the data folder). "
+                         "The output file is named after this file's stem, so "
+                         "an independent run never overwrites another year's.")
     ap.add_argument("--max-models", type=int, default=500,
                     help="refuse to run beyond this many models (default 500)")
     ap.add_argument("--limit", type=int, default=None,
@@ -181,6 +189,21 @@ def main() -> int:
     if unknown:
         print(f"ERROR: unknown dataset(s) {unknown}; choose from {ALL_DATASETS}")
         return 2
+
+    if args.independent_csv is not None:
+        if not args.independent_csv.is_file():
+            print(f"ERROR: --independent-csv not found: {args.independent_csv}")
+            return 2
+        indep_csv = str(args.independent_csv)
+    else:
+        indep_csv = independent_csv_default()
+    # The dataset key stays "2021" internally; only the FILENAME follows the
+    # data, so a 2025-26 run cannot silently land in 2021_wide.csv.
+    indep_label = Path(indep_csv).stem
+    labels = {d: d for d in ALL_DATASETS}
+    labels["2021"] = indep_label
+    if "2021" in datasets:
+        print(f"Independent set: {indep_csv}  ->  {indep_label}_wide.csv")
 
     from esb.campaign import load_campaign
 
@@ -245,7 +268,7 @@ def main() -> int:
             # Outer join: ragged coverage across cycles is expected (docstring).
             frame = frame.join(pd.DataFrame(columns[dataset]), how="outer")
             frame.index.name = "datetime"
-            out_path = destination / f"{dataset}_wide.csv"
+            out_path = destination / f"{labels[dataset]}_wide.csv"
             frame.to_csv(out_path, float_format="%.4f")
             size_mb = out_path.stat().st_size / 1e6
             print(f"\n{dataset}: {len(frame)} rows x {len(frame.columns)} cols "
@@ -279,7 +302,7 @@ def main() -> int:
             prepared.update(prepare_splits(lt, cy))
         if "2021" in datasets:
             print("  preparing 2021 ...")
-            prepared["2021"] = prepare_2021(lt)
+            prepared["2021"] = prepare_2021(lt, indep_csv)
 
         tensors = {d: tf.constant(prepared[d][0], dtype=tf.float32)
                    for d in datasets}

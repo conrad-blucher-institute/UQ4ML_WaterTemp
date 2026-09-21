@@ -80,20 +80,40 @@ _ALIASES = {
 }
 
 
-def _assert_year_roles(data_path: Path, cycle: int) -> None:
-    """Re-derive the year->role map from the real rotation and compare.
+def derive_year_roles(data_path: Path, cycle: int) -> dict:
+    """Return the year->role map for `cycle`, addressed by NAME.
 
-    The map above is a constant so it can be written into metadata without
-    importing pandas. A constant that silently disagrees with the code is worse
-    than no constant, so it is checked against splittingData's actual rotation
-    on every run. Pure filename arithmetic -- no pandas, no data read.
+    Phase 5 folds the old test year and the old independent year into training;
+    only the validation year (which drives early stopping) rotates with cycle.
+
+    The rotation comes from ESB_ROTATION_YEARS -- the same constant
+    readingData() uses -- NOT from a positional glob. It used to be
+    sorted(*.csv) with [0] as independent and [1:] as the rotation, so a 6th
+    file in the folder shifted every year into the wrong role: once
+    esb_2025_2026.csv landed there, cycle 0 made the one true holdout the
+    VALIDATION year. Naming the years is what makes an unrelated file inert.
+
+    Pure filename arithmetic -- no pandas, no data read.
     """
-    files = sorted(p.stem for p in Path(data_path).glob("*.csv"))
-    if len(files) < 5:
+    # esb_years, not utils_mse_crps: that module imports TensorFlow at line 1
+    # and --dry-run promises not to.
+    from src.helper.esb_years import ESB_ROTATION_YEARS, ESB_INDEPENDENT_YEARS
+
+    present = {q.stem for q in Path(data_path).glob("*.csv")}
+    required = set(ESB_ROTATION_YEARS) | set(ESB_INDEPENDENT_YEARS)
+    missing = sorted(required - present)
+    if missing:
         raise SystemExit(
-            f"expected >=5 yearly CSVs in {data_path}, found {len(files)}: {files}"
+            f"year CSV(s) missing from {data_path}: {missing}\n"
+            f"  present: {sorted(present)}"
         )
-    independent, year_list = files[0], list(files[1:])
+    if not 0 <= cycle < len(ESB_ROTATION_YEARS):
+        raise SystemExit(
+            f"--cycle must be 0..{len(ESB_ROTATION_YEARS) - 1}, got {cycle}"
+        )
+
+    independent = ESB_INDEPENDENT_YEARS[0]
+    year_list = list(ESB_ROTATION_YEARS)
     for j in range(cycle + 1):
         for i in range(len(year_list)):
             if i > 0:
@@ -106,21 +126,18 @@ def _assert_year_roles(data_path: Path, cycle: int) -> None:
     derived[year_list[n - 1]] = "train"   # old test, folded in
     derived[independent] = "train"        # old independent, folded in
 
-    if derived != CYCLE1_YEAR_ROLES:
-        hint = (
-            f"CYCLE1_YEAR_ROLES describes cycle 1; you asked for cycle {cycle}. "
-            "Phase 5 is a cycle-1 experiment -- drop --cycle, or update the "
-            "constant and the phase5 README together."
-            if cycle != 1 else
-            "The data folder or the split logic changed. Fix CYCLE1_YEAR_ROLES "
-            "(and re-check the phase5 README) before training."
-        )
+    # Cycle 1 is the phase-5 baseline and its map is written down. Keep checking
+    # it: if this ever stops matching, the rotation logic moved under us and
+    # every other cycle derived here is suspect too.
+    if cycle == 1 and derived != CYCLE1_YEAR_ROLES:
         raise SystemExit(
             "year->role map disagrees with splittingData's actual rotation.\n"
             f"  constant: {CYCLE1_YEAR_ROLES}\n"
             f"  derived : {derived}\n"
-            + hint
+            "The data folder or the split logic changed. Fix CYCLE1_YEAR_ROLES "
+            "(and re-check the phase5 README) before training."
         )
+    return derived
 
 
 def load_selections(csv_path: Path, cycle: int) -> list[dict]:
@@ -239,7 +256,7 @@ def main(argv=None) -> int:
     if args.reps < 1:
         raise SystemExit(f"--reps must be >= 1, got {args.reps}")
 
-    _assert_year_roles(args.data_path, args.cycle)
+    year_roles = derive_year_roles(args.data_path, args.cycle)
     combos = load_selections(args.selections, args.cycle)
 
     if args.only_leadtimes:
@@ -255,8 +272,8 @@ def main(argv=None) -> int:
             )
         combos = [c for c in combos if c["lead_time"] in want]
 
-    train_years = sorted(y for y, r in CYCLE1_YEAR_ROLES.items() if r == "train")
-    val_years = sorted(y for y, r in CYCLE1_YEAR_ROLES.items() if r == "val")
+    train_years = sorted(y for y, r in year_roles.items() if r == "train")
+    val_years = sorted(y for y, r in year_roles.items() if r == "val")
 
     print("=" * 78)
     print("PHASE 5 -- final operational models, trained on all available data")
@@ -306,7 +323,9 @@ def main(argv=None) -> int:
     # Phase 5 assembles its own training set inside Phase5Tuner._prepare_arrays;
     # 'cycle' keeps preparingData's rotation as the source of the base split.
     overrides["independent_year"] = "cycle"
-    overrides["dataset_roles"] = dict(CYCLE1_YEAR_ROLES)
+    # THIS cycle's roles. Was dict(CYCLE1_YEAR_ROLES), which stamped cycle-1
+    # provenance onto every model no matter what --cycle said.
+    overrides["dataset_roles"] = dict(year_roles)
     overrides["training_datasets"] = train_years
     overrides["phase"] = "phase5_final"
     overrides["metrics_are_in_sample"] = True

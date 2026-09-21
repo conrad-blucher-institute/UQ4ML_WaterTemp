@@ -34,7 +34,12 @@ follows the same philosophy but is behavior-preserving (paper-replication baseli
   when one becomes load-bearing. `scripts/tuning_tests/` holds the campaign
   statistical tests (one test = one script: rank_stability, seed_noise_by_group,
   metric_agreement) sharing `common.py`
-- `docs/` — design doc + per-stage reports + presentation source content
+- `docs/` — two LIVING docs only: `ESB_PIPELINE_DESIGN.md` (where it's going +
+  locked decisions C1-C4) and `ESB_PIPELINE_CURRENT.md` (how it works now).
+  `docs/archive/` = frozen historical records (stage reports, golden digests) —
+  append-only, never updated to reflect current behavior; see its README.
+  `docs/update/` = the presentation (`deck_spec.yaml` is the single source,
+  `scripts/make_deck.py` builds `ESB_update_deck.pptx` from it)
 - `results/` — gitignored run outputs, one folder per campaign
   (e.g. `esb_tuner_scaled`, `esb_tuner_scaled_17lt`); discover contents fresh, never assume
 - `src/`, `main/` — legacy pipeline + clean-room refactor (see parent CLAUDE.md)

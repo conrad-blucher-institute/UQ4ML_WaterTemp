@@ -266,17 +266,12 @@ def preparingData(path_to_data, input_structure, independent_year, input_hours_f
 # (sorted glob: [0] independent, [1:] rotation), so a 6th file -- or a missing
 # one -- silently shifted every year into the wrong role, with no error.
 #
-# ORDER-SENSITIVE: this is year2..year5, and splittingData rotates the list to
-# derive train/val/test per cycle. Reordering changes every cycle's split.
-ESB_ROTATION_YEARS = (
-    "esb_2021_2022",
-    "esb_2022_2023",
-    "esb_2023_2024",
-    "esb_2024_2025",
+# Defined in esb_years so that TF-free callers (retrain_final --dry-run) can read
+# them; re-exported here so existing imports from this module keep working.
+from src.helper.esb_years import (  # noqa: F401  (re-export)
+    ESB_ROTATION_YEARS,
+    ESB_INDEPENDENT_YEARS,
 )
-
-# Held out of the rotation entirely. Winter Storm Uri.
-ESB_INDEPENDENT_YEARS = ("esb_2020_2021",)
 
 
 def readingData(path_to_data, rotation_years=None):

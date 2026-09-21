@@ -1,0 +1,54 @@
+flowchart TB
+    classDef cli    stroke:#4e9af1,stroke-width:2px,fill:none
+    classDef data   stroke:#2ec27e,stroke-width:2px,fill:none
+    classDef scale  stroke:#f5a623,stroke-width:2px,fill:none
+    classDef model  stroke:#e0555e,stroke-width:2px,fill:none
+    classDef art    stroke:#b07cf0,stroke-width:2px,fill:none,stroke-dasharray:4 3
+    classDef post   stroke:#8a8f98,stroke-width:2px,fill:none
+
+    subgraph L["Legend"]
+        direction LR
+        l1[CLI / orchestration]:::cli
+        l2[data prep]:::data
+        l3[scale stage]:::scale
+        l4[model]:::model
+        l5[artifact on disk]:::art
+        l6[post-hoc consumers]:::post
+    end
+
+    A["python -m esb  --profile mape_scaled<br/>esb/cli.py → config.py"]:::cli
+    B["esb/pipeline.py run_experiment()<br/>builds grid → _tuner_class(loss)"]:::cli
+    C["esb/sharding.py + tuner_utils.ProgressTracker<br/>GridSearchConfig.generate_configs() → ProcessPoolExecutor"]:::cli
+    A --> B --> C
+
+    D["data/ESB_datasets/*.csv (4 years)"]:::art
+    E["src/helper/utils_mse_crps.preparingData()<br/>readingData → creatingAdditionalColumns(shift)<br/>→ deletingMissingValues → splittingData(cycle) → reshaping"]:::data
+    F["6 RAW arrays<br/>x_train y_train x_val y_val x_test y_test"]:::data
+    D --> E --> F
+    C -->|"per config: lead_time, cycle,<br/>activation, num_layers, neurons"| E
+
+    G{"config['scale']?"}:::scale
+    H["esb/stages/scale.py<br/>fit_scaler(x_train) — leakage assert<br/>normalization_stats() → mean, scale_²"]:::scale
+    F --> G
+    G -->|yes| H
+    H -->|"config['norm_mean'] / ['norm_variance']"| I
+
+    I["mape_tuner._build_model()<br/>Input → <b>frozen Normalization</b> → Dense×N (+Dropout) → Dense(out)"]:::model
+    G -->|"no (byte-identical to unscaled path)"| I
+    J["model.fit(x_train RAW, y_train)<br/>val = (x_val, y_val) · EarlyStopping"]:::model
+    I --> J
+    F -->|raw arrays| J
+
+    K["results/&lt;campaign&gt;/…/<br/>&lt;base&gt;.keras (scaler inside)"]:::art
+    M["&lt;base&gt;_metadata.json<br/>feature_names · input_width · scaling · provenance · history"]:::art
+    N["progress CSV row<br/>val_mae, val_mae12, mae_2021 …"]:::art
+    J --> K
+    J -->|"save_model_metadata() — esb/io/results.py"| M
+    J -->|"post-hoc 2021 eval via prepare_independent_year()"| N
+
+    P["esb/predict.py<br/>load_model(compile=False) → net(raw x)"]:::post
+    Q["COVE viz (run_v17) · scripts/tuning_tests · retrain_final.py (phase 5)"]:::post
+    K --> P
+    M -->|column-order contract| P
+    N --> Q
+    P --> Q
