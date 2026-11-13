@@ -352,14 +352,8 @@ def temp(args):
         pickle.dump(compute_times, f)
 
 
-def main():
-    print('I am in main')
-    pass
-
-def show_keys(args):
-    args_dict = vars(args)
-    for key, value in args_dict.items():
-        print(f"{key}: {value}")
+from src.driver.tunerResults import main  # moved: single home
+from src.driver.tunerResults import show_keys  # moved: single home
 
 from src.helper.my_parser import create_parser
 
