@@ -334,57 +334,9 @@ def deletingMissingValues(df):
     
     return df
 
-def reshaping(training, testing, validation, model):
-    '''reshaping() reshaping the training, testing, and validation datasets to be 
-    able to use them as an input for the AI model'''
-    import numpy as np
+from src.helper.utils_pnn import reshaping  # moved: single home
 
-    rangeValues = len(training.columns) - 1 # for marina, why is this variable here? -hector
-    
-    #print(testing['dateAndTime', 'packeryATP_lighthouse', 'npsbiWTP_lighthouse'].head(125))
-    # Dividing the datasets between the inputs and the target
-    trainingData = training.iloc[:,3:-1].values.astype(float) 
-    trainingTarget = training.iloc[:,-1].values.astype(float)
-    
-    testingData = testing.iloc[:,3:-1].values.astype(float) 
-    testingTarget = testing.iloc[:,-1].values.astype(float) 
-    
-    validationData = validation.iloc[:,3:-1].values.astype(float) 
-    validationTarget = validation.iloc[:,-1].values.astype(float) 
-    
-    if(model == "LSTM"):
-        # Reshaping the datasets
-        x_train = np.reshape(trainingData, (trainingData.shape[0], 1, trainingData.shape[1]))
-        x_test = np.reshape(testingData, (testingData.shape[0], 1, testingData.shape[1]))
-        x_val = np.reshape(validationData, (validationData.shape[0], 1, validationData.shape[1]))
-
-        y_train = np.expand_dims(trainingTarget, axis = -1)    
-        y_test = np.expand_dims(testingTarget, axis = -1)    
-        y_val = np.expand_dims(validationTarget, axis = -1)
-    else:
-        x_train = trainingData
-        x_test = testingData
-        x_val = validationData
-
-        y_train = trainingTarget
-        y_test = testingTarget
-        y_val = validationTarget
-    
-    return x_train, y_train, x_val, y_val, x_test, y_test
-
-def DateTimeRetriever(df, input_hours_forecast):
-    '''This function is designed to grab the date times from the testing data set for computations.'''
-
-    import pandas as pd
-
-    Dates = [] # holds date times
-
-    # Loop to add date times for future calculations
-    df['dateAndTime'] = pd.to_datetime(df['dateAndTime'], format='%m-%d-%Y %H%M', yearfirst=False) + pd.DateOffset(hours=input_hours_forecast)
-
-    Dates = df['dateAndTime'].tolist() # Converts series into a list
-
-    return Dates
+from src.helper.utils_pnn import DateTimeRetriever  # moved: single home
 
 def offSetCreator(dataYear, IPPOffset, input_hours_forecast):
     '''This function will be in charge of creating offsets for the given dataset and 
@@ -433,60 +385,7 @@ load2021testing()
 for PNN
 author: hector
 """
-def load_for_testing(input_hours_forecast, atp_hours_back, wtp_hours_back, dataset="cold", year=None): 
-    import pandas as pd
-
-    if year == None: raise NameError("year is None, need to receive year param in load_for_testing func")
-
-    if dataset == "cold":
-        var1 = "Cold"
-        var2 = "coldseason"
-    else:
-        var1 = "Full"
-        var2 = "year"
-
-    # Reading years with extra rows (5 days back and 5 days after)
-    match year:
-        case 'simulated-1':
-            data_year = pd.read_csv('./simulatedDataset/simulatedCSE_1314_-1.csv')
-
-        case 'simulated-1':
-            data_year = pd.read_csv('./simulatedDataset/simulatedCSE_1314_-2.csv')
-
-        case 'simulated-1':
-            data_year = pd.read_csv('./simulatedDataset/simulatedCSE_1314_-3.csv')
-
-        case '2021':
-            data_year = pd.read_csv(f"data\June_May_Datasets\june_atp_and_wtp_2020_2021_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
-            
-        case '2024':
-            data_year = pd.read_csv(f"data\June_May_Datasets\june_atp_and_wtp_2023_2024_withExtraRows_INDEPENDENTTESTINGYEAR_MW.csv")
-            
-        case _:
-            data_year = pd.read_csv('./' + var1 + '_Season_Input_Dataset/' + var2 + '_' + year + '_withExtraRows.csv')
-
-
-    
-        
-    # Function call to create additional columns
-    year_ = creatingAdditionalColumns(data_year, input_hours_forecast, atp_hours_back, wtp_hours_back)
-    
-    year__afterDelete = deletingMissingValues(year_)
-
-    # year__afterDelete = year__afterDelete.reset_index(drop=True) # this resets the index of the df, so that the 120 lines that got erased (could be more) dont affect the index for later graphing
-    
-    # Dividing the datasets between the inputs and the target
-    year__data = year__afterDelete.iloc[:,3:-1].values.astype(float) 
-    year__target = year__afterDelete.iloc[:,-1].values.astype(float)
-
-    # _datetime = pd.to_datetime(year__afterDelete['dateAndTime'], format='%m-%d-%Y %H%M') + pd.DateOffset(hours=input_hours_forecast)
-
-    '''i dont think you need the offset here, when you load the df in dataPreparation.py, it is before you have done the predictions.
-    Only after you have done the predictions do you then *need* to do the offset'''
-    # _datetime = pd.to_datetime(year__afterDelete['dateAndTime'], format='%m-%d-%Y %H%M')     
-    _datetime = DateTimeRetriever(year__afterDelete, input_hours_forecast)
-
-    return year__data, year__target, _datetime
+from src.helper.utils_pnn import load_for_testing  # moved: single home
     
 
 
