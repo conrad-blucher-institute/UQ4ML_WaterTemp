@@ -58,6 +58,16 @@ After the environment finishes installing, press the green play button next to e
 Now you're ready to follow the rest of the guide! Dont forgot to change the directory into the folder containing the repo you downloaded.
 
 
+# Running the esb command
+
+Run from the repository root. `python -m esb` is the same as the `esb.bat` / `esb.sh` launcher.
+
+* `esb run --profile mape_smoke --dry-run`: print the resolved config and exit (no training).
+* `esb run --profile mape_scaled --shard k/40`: run shard k of 40 (1 to 40). Each shard writes its own progress CSV, so it can resume after a crash.
+* `esb status --profile mape_scaled`: read-only progress per shard, cross-checked against the `.keras` files.
+* `esb gui`: launch the local web GUI (requires streamlit).
+* Outputs go to `results/esb_tuner/` by default (progress CSV, provenance, and `keras_files/`).
+
 # Preparing Models for Training
 **Variable descriptions for training (MSE and CRPS):**
 * independent_year: 
