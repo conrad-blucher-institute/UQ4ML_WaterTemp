@@ -247,7 +247,7 @@ def mme_mse_crps_PNN_lead_times_singlePlot(architectures, iterations, cycles, le
 
 # END: def mme_mse_crps_PNN_lead_times_singlePlot()
 
-def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save):
+def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, save, air_temp_path=None):
     """
     This function serves as a driver that will retrieve the created files and 
     plot standard deviation plots.
@@ -304,7 +304,7 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
             arch_title = architectures[0]
         
         # Call the boxplot function with the aggregated data.
-        standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTime, arch_title, cycle, obsVsPred, save)
+        standardDeviationFan_leadTime_plot(modelsDict_cycle, leadTime, arch_title, cycle, obsVsPred, save, air_temp_path=air_temp_path)
 
         print(f"Plot_Created_{obsVsPred}_{leadTime}h_{architecture}_Cycle_{cycle}")
     
@@ -312,7 +312,7 @@ def decentralized_graphing_driver(architectures, leadTime, cycles, obsVsPred, sa
 
 ########### Graphing Function ############
 
-def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsVsPred, save):
+def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsVsPred, save, air_temp_path=None):
     
     """
     This function serves as the plotting function for a standard deviation fan.
@@ -455,6 +455,15 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
 
     rep_df = next(iter(dfDict.values()))
     fig.add_trace(go.Scatter(x=rep_df.index, y=rep_df['target'].round(3), name="Observed Water Temperature", marker=dict(color='black'), mode='lines', showlegend=True,line=dict( width=3)))
+
+    # Add observed air temperature if path is provided
+    if air_temp_path is not None:
+        air_df = pd.read_csv(air_temp_path, parse_dates=['date'])
+        air_df = air_df.set_index('date')
+        air_df.index = air_df.index.tz_localize(None)
+        rep_index = rep_df.index.tz_localize(None) if rep_df.index.tz is not None else rep_df.index
+        air_df = air_df.reindex(rep_index)
+        fig.add_trace(go.Scatter(x=rep_df.index, y=air_df['Air Average'].round(3), name="Observed Air Temperature", marker=dict(color='orange'), mode='lines', showlegend=True, line=dict(width=3)))
 
     # Threshold Line
     fig.add_hline(y=8, line_dash="dot", line_color="red", annotation_text="Turtle Threshold", annotation_position="top left", annotation_font_size=26, annotation_font_color="red")
