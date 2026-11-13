@@ -1088,7 +1088,7 @@ def fanGraph(df_allMembers, saver, start_date, end_date, onset, offset, line_cou
     plt.close()
 
 # christian, i think having the same name is problamatic, either refactor so that 1 func works and is backwards compatible, or keep keep but rename the second, wdyt? -hector
-def onset_offset_calculations(df, threshold, date_range):
+def onset_offset_calculations_v1(df, threshold, date_range):
     """
     Author(s): Christian Duff
 
