@@ -842,9 +842,11 @@ except ImportError:
     from losses import crps_loss
 
 
-def crps(y_true, y_pred):
-    # Alias for crps_loss
-    return crps_loss(y_true, y_pred)
+# crps is the same function as losses.crps_loss (both are metrics.crps)
+try:
+    from src.helper.metrics import crps
+except ImportError:
+    from metrics import crps
 
 
 # this is for debugging
