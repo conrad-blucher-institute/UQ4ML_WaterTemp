@@ -29,7 +29,7 @@ We use water and air temperature observation measurements provided by Texas Coas
 There are a few ways you can set up the environment to get this repo working. Here's one approach that worked for us—your setup might differ depending on your hardware and preferences.
 
 This repository was made using Windows 11. We used specific versions of certain Python libraries. Most notably Tensorflow version 2.15.0
-If you have the exact libraries specified in the file src/setup/UQ4ML_2025.yml, everything in this repository will work. 
+Create the environment with `conda env create -f environment.yml` (short, cross-platform). The exact Windows 11 record of the original machine is kept in src/setup/UQ4ML_2025_full_lock.yml. 
 
 1. Install Anaconda Distribution GUI:
  - Download from:
@@ -43,7 +43,7 @@ No need to make an account.
  - Go to the Environments tab (left side)
     * Might need to wait for it to load
  - Click Import at the bottom
- - Use the file browser to navigate to src/setup/UQ4ML_2025.yml in the repo
+ - Use the file browser to navigate to environment.yml in the repo
     * You may have to extract the contents of the zip folder that has the repo
  - Click Import
 
@@ -52,7 +52,7 @@ After the environment finishes installing, press the green play button next to e
 
  - If successful, your shell prompt will be:
 ```bash
-(UQ4ML_2025)
+(uq4ml)
 ``` 
 
 Now you're ready to follow the rest of the guide! Dont forgot to change the directory into the folder containing the repo you downloaded.
