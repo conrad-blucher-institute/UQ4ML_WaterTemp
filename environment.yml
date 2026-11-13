@@ -1,0 +1,22 @@
+name: uq4ml
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - plotly
+  - psutil
+  - joblib
+  - pyyaml
+  - pip
+  - pip:
+      - tensorflow==2.15.0
+      - tensorflow-probability==0.23.0
+      - keras-tuner
+      - streamlit
+      - python-pptx
