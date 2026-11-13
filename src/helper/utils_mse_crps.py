@@ -274,51 +274,7 @@ from src.helper.esb_years import (  # noqa: F401  (re-export)
 )
 
 
-def readingData(path_to_data, rotation_years=None):
-    '''
-    -------------------------------------------------------------------------
-                                def readingData
-    input:
-            path_to_data - folder containing the year CSVs
-            rotation_years - ordered year names (no .csv) for year2..year5.
-                             Defaults to ESB_ROTATION_YEARS.
-    purpose:
-            load the NAMED years, in the order given. Files in the folder
-            that are not named get ignored; a named file that is missing
-            is an error.
-    output:
-            data_list - one dataframe per name in rotation_years
-    -------------------------------------------------------------------------
-    '''
-
-    import os
-    import glob
-    import pandas as pd
-
-    if rotation_years is None:
-        rotation_years = ESB_ROTATION_YEARS
-
-    # Key each CSV by its filename stem: a year is found by NAME, not position.
-    csv_files = sorted(glob.glob(os.path.join(path_to_data, "*.csv")))
-    
-    # dict comprehension that builds a lookup table mapping year name → full path
-    by_name = {os.path.splitext(os.path.basename(f))[0]: f for f in csv_files}
-
-    missing = set(rotation_years) - set(by_name)
-    if missing:
-        raise FileNotFoundError(
-            f"rotation year(s) {sorted(missing)} not found in {path_to_data}. "
-            f"Present: {sorted(by_name)}"
-        )
-
-    # Ignoring unnamed files is what lets esb_2025_2026 sit in this folder
-    # harmlessly -- but say so, since ignored must never mean silently dropped.
-    ignored = sorted(set(by_name) - set(rotation_years))
-    print(f"Found {len(csv_files)} CSVs. Rotation: {list(rotation_years)}")
-    if ignored:
-        print("Ignored (not in rotation):", ignored)
-
-    return [pd.read_csv(by_name[name]) for name in rotation_years]
+from .data_readers import readingData_esb_rotation as readingData  # moved: single home (see data_readers.py)
 
 # r treats this string as a RAW STRING 
 r'''  

@@ -19,29 +19,7 @@ The goal of this code is to prepare the cold stunning dataset to be used as inpu
 '''
 
 
-def readingData(path_to_data):
-    '''readingData() reads the data for each year'''
-
-    import glob
-    import pandas as pd
-
-    print('inside readingData in utils. path_to_data:',path_to_data)
-    csvs = glob.glob(f"{path_to_data}/*csv")
-    
-    # Reading years with extra rows (5 days back and 5 days after)
-    #print(csvs)
-    data_year1 = pd.read_csv(csvs[11])
-    data_year2 = pd.read_csv(csvs[1])
-    data_year3 = pd.read_csv(csvs[2])
-    data_year4 = pd.read_csv(csvs[3])
-    data_year5 = pd.read_csv(csvs[4])
-    data_year6 = pd.read_csv(csvs[5])
-    data_year7 = pd.read_csv(csvs[6])
-    data_year8 = pd.read_csv(csvs[7])
-    data_year9 = pd.read_csv(csvs[8])
-    data_year10 = pd.read_csv(csvs[10])
-    
-    return data_year1, data_year2, data_year3, data_year4, data_year5, data_year6, data_year7, data_year8, data_year9, data_year10
+from .data_readers import readingData_pnn as readingData  # moved: single home (see data_readers.py)
 
 # I added a default value for pred_atp_interval of 1 -hector (12/21/2024)
 def creatingAdditionalColumns(df, input_hours_forecast, atp_hours_back, wtp_hours_back, pred_atp_interval=1, IPPOffset=0.0):
