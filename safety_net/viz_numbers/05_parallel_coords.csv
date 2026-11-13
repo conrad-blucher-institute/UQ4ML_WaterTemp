@@ -1,0 +1,23 @@
+key,value
+plot0[0].dimensions[0].label,'Activation'
+plot0[0].dimensions[0].ticktext[0],'relu'
+plot0[0].dimensions[0].tickvals[0],0
+plot0[0].dimensions[0].values[0],0
+plot0[0].dimensions[1].label,'Num Layers'
+plot0[0].dimensions[1].ticktext[0],'1'
+plot0[0].dimensions[1].tickvals[0],1
+plot0[0].dimensions[1].values[0],1
+plot0[0].dimensions[2].label,'Hidden Units'
+plot0[0].dimensions[2].ticktext[0],'16'
+plot0[0].dimensions[2].tickvals[0],16
+plot0[0].dimensions[2].values[0],16
+plot0[0].dimensions[3].label,'Leadtime (h)'
+plot0[0].dimensions[3].ticktext[0],'12'
+plot0[0].dimensions[3].tickvals[0],12
+plot0[0].dimensions[3].values[0],12
+plot0[0].dimensions[4].label,'Cycle'
+plot0[0].dimensions[4].ticktext[0],'0'
+plot0[0].dimensions[4].tickvals[0],0
+plot0[0].dimensions[4].values[0],0
+plot0[0].dimensions[5].label,'val_mae'
+plot0[0].dimensions[5].values[0],2.339776039123535
