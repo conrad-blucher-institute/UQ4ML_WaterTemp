@@ -1,0 +1,14 @@
+key,value
+allRecords[0].val_mae,2.339776
+allRecords[0].val_mae12,3.193323
+allRecords[0].mae_2021,2.388191
+allRecords[0].mae12_2021,2.709147
+allRecords[0].val_mape,11.747548
+allRecords[0].val_loss,11.747548
+allRecords[0].loss_value,11.747548
+allRecords[0].neurons,16.0
+allRecords[0].num_layers,1.0
+allRecords[0].leadtime,12.0
+allRecords[0].cycle,0.0
+allRecords[0].activation,'relu'
+allRecords[0].metric_type,'MAPE'

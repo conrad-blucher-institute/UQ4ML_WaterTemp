@@ -1,0 +1,77 @@
+{
+  "what": "mape_smoke baseline. digest = Stage B training-input fingerprint (exact). metrics band = [min-0.5*range, max+0.5*range] over n_runs unseeded smoke runs (MAE/MAPE floored at 0).",
+  "digest": "d80ae5421e8ba0c69593777ac3857512609a16b962ccd7cd1cd7da2fbb63c9e7",
+  "n_runs": 20,
+  "metrics": {
+    "val_mae": {
+      "median": 15.2633,
+      "min": 1.8132,
+      "max": 61.952,
+      "lo": 0.0,
+      "hi": 92.0215
+    },
+    "val_mae12": {
+      "median": 4.8259,
+      "min": 2.2086,
+      "max": 22.8904,
+      "lo": 0.0,
+      "hi": 33.2313
+    },
+    "val_me": {
+      "median": 11.3914,
+      "min": -16.3708,
+      "max": 61.952,
+      "lo": -55.5322,
+      "hi": 101.1134
+    },
+    "val_me12": {
+      "median": -4.1558,
+      "min": -22.8806,
+      "max": 4.2196,
+      "lo": -36.4307,
+      "hi": 17.7698
+    },
+    "val_mape": {
+      "median": 62.3715,
+      "min": 8.9861,
+      "max": 255.9143,
+      "lo": 0.0,
+      "hi": 379.3783
+    },
+    "mae_2021": {
+      "median": 14.4697,
+      "min": 1.7995,
+      "max": 59.1502,
+      "lo": 0.0,
+      "hi": 87.8256
+    },
+    "mae12_2021": {
+      "median": 4.1734,
+      "min": 2.1502,
+      "max": 20.6528,
+      "lo": 0.0,
+      "hi": 29.9042
+    },
+    "me_2021": {
+      "median": 10.8755,
+      "min": -15.3792,
+      "max": 59.1502,
+      "lo": -52.6439,
+      "hi": 96.4149
+    },
+    "me12_2021": {
+      "median": -3.4297,
+      "min": -20.4878,
+      "max": 2.4859,
+      "lo": -31.9747,
+      "hi": 13.9728
+    },
+    "mape_2021": {
+      "median": 62.5452,
+      "min": 9.8545,
+      "max": 256.3737,
+      "lo": 0.0,
+      "hi": 379.6332
+    }
+  }
+}
