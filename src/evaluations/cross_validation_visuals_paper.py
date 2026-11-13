@@ -377,20 +377,7 @@ def standardDeviationFan_leadTime_plot(dfDict, leadTime, arch_title, cycle, obsV
                 "Central_MAE<12 (°C): %{customdata[3]}"
             ])
             
-        elif 'mse' in key:
-            color = "#A8E6A1"
-            customda = df[['target','central_mae', 'central_mae<12', 'rmse_avg']]
-            hovertemp = "<br>".join([
-                "date_time: %{x}",
-                f"Model: {model_name}",
-                "Mean Predicted Temperature (°C): %{y}",
-                "Actual temperature (°C): %{customdata[0]}",
-                "RMSE_Average_Func (°C): %{customdata[3]}",
-                "Central_MAE (°C): %{customdata[1]}",
-                "Central_MAE<12 (°C): %{customdata[2]}"
-            ])
-
-        elif 'mape' in key:
+        elif 'mse' in key or 'mape' in key:
             color = "#A8E6A1"
             customda = df[['target','central_mae', 'central_mae<12', 'rmse_avg']]
             hovertemp = "<br>".join([
