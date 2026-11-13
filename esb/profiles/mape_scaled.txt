@@ -1,6 +1,6 @@
 # MAPE grid-search profile WITH input scaling (Stage C).
-# Identical grid to mape.txt, but --scale fits a StandardScaler on training data
-# only, transforms val/test, and persists the scaler (.joblib) per model.
+# Differs from mape.txt only in --activations (3 here, 5 there): 2880 jobs vs 4800.
+# --scale fits a StandardScaler on training data only, transforms val/test, and persists the scaler (.joblib) per model.
 # Launch: python -m esb run --profile mape_scaled
 --loss mape
 --scale
