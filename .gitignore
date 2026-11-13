@@ -155,3 +155,9 @@ debug_*.csv
 
 # make_deck two-way-sync sidecar (machine-local mtime marker)
 docs/.*.sync
+
+# --- results never go in git (card #17) ---
+results/
+test_results/
+*.html
+*.xlsx

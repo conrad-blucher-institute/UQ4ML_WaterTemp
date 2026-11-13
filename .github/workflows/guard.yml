@@ -1,0 +1,25 @@
+name: guard
+on: [push, pull_request]
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - name: Block results and large files
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            range="${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            base=$(git merge-base origin/dev_refactor "${{ github.sha }}" 2>/dev/null) || { echo "new branch, no base: skipping"; exit 0; }
+            range="$base...${{ github.sha }}"
+          else
+            range="${{ github.event.before }}...${{ github.sha }}"
+          fi
+          bad=""
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            sz=$(git cat-file -s "HEAD:$f" 2>/dev/null || echo 0)
+            case "$f" in results/*|*/results/*|test_results/*|*.html|*.xlsx) bad="$bad\n  $f";; *) if [ "$sz" -gt 5242880 ]; then bad="$bad\n  $f"; fi;; esac
+          done < <(git diff --name-only --diff-filter=A "$range")
+          [ -z "$bad" ] || { printf "::error::Added files not allowed (results or >5MB):%b\n" "$bad"; exit 1; }
