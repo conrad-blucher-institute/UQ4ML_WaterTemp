@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.10
-  - numpy
+  - numpy<2   # tensorflow 2.15 needs numpy 1.x
   - pandas
   - scipy
   - scikit-learn
