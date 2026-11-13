@@ -12,8 +12,8 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
 
-from esb_03-2026_tune_experiment.base_tuner import BaseHyperparameterTuner
-from esb_03-2026_tune_experiment.tuner_utils import GridSearchConfig
+from esb_03_2026_tune_experiment.base_tuner import BaseHyperparameterTuner
+from esb_03_2026_tune_experiment.tuner_utils import GridSearchConfig
 
 # Import your model building and training logic here
 # from src.driver.your_training_module import build_crps_model, train_crps_model
